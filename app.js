@@ -1042,9 +1042,10 @@ function hitTestSelection(sx, sy, sw, sh) {
             const eX = endX * state.camZ + halfW - state.camX * state.camZ;
             const eY = endY * state.camZ + halfH - state.camY * state.camZ;
 
-            // If start AND end are inside selection box
-            if (sX > sx && sX < sx + sw && sY > sy && sY < sy + sh &&
-                eX > sx && eX < sx + sw && eY > sy && eY < sy + sh) {
+            // If start OR end is inside selection box
+            const startInside = sX > sx && sX < sx + sw && sY > sy && sY < sy + sh;
+            const endInside = eX > sx && eX < sx + sw && eY > sy && eY < sy + sh;
+            if (startInside || endInside) {
                 state.selectedConnIds.push(conn.id);
                 if (connEl) connEl.classList.add('selected');
             } else {
