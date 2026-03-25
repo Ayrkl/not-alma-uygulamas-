@@ -1323,7 +1323,7 @@ body.light-theme .dropdown-options {
     gap: 8px;
 }
 
-#video-url-input {
+#video-url-input, #embed-url-input {
     flex: 1;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--glass-border);
@@ -1336,9 +1336,9 @@ body.light-theme .dropdown-options {
     transition: border-color 0.2s;
 }
 
-#video-url-input:focus { border-color: var(--accent-color); }
+#video-url-input:focus, #embed-url-input:focus { border-color: var(--accent-color); }
 
-#btn-add-video-url {
+#btn-add-video-url, #btn-add-embed-url {
     background: var(--accent-color);
     color: white;
     border: none;
@@ -1349,7 +1349,7 @@ body.light-theme .dropdown-options {
     transition: background 0.2s;
 }
 
-#btn-add-video-url:hover { background: var(--accent-hover); }
+#btn-add-video-url:hover, #btn-add-embed-url:hover { background: var(--accent-hover); }
 
 .modal-divider {
     display: flex;
