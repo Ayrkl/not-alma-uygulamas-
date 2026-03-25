@@ -3,38 +3,31 @@
  * Feature: Infinite Canvas, Pan/Zoom, Arbitrary Placement
  */
 
-// --- State Management ---
+// --- State Management (Kamera Mantığı) ---
 const state = {
-    zoom: 1.0,
-    panX: 0,
-    panY: 0,
+    // Mevcut konum ve derinlik
+    camX: 0,
+    camY: 0,
+    camZ: 1.0,
+    
+    // Hedef konum ve derinlik (Pürüzsüz geçiş için)
+    targetX: 0,
+    targetY: 0,
+    targetZ: 1.0,
+
     isPanning: false,
-    startPanX: 0,
-    startPanY: 0,
-    currentTool: 'pan', // pan, text, image, note, select, connect
-    objects: [], // { id, type, x, y, content, width, height, fontFamily, fontSize, color }
+    startMouseX: 0,
+    startMouseY: 0,
+    startCamX: 0,
+    startCamY: 0,
+
+    currentTool: 'pan',
+    objects: [],
     selectedId: null,
-    isDragging: false,
-    isResizing: false,
-    dragTarget: null,
-    dragStartX: 0,
-    dragStartY: 0,
-    resizeStartWidth: 0,
-    resizeStartHeight: 0,
-    connections: [],
-    connectSourceId: null,
     selectedIds: [],
-    isSelecting: false,
-    selectionStartX: 0,
-    selectionStartY: 0,
-    connStyle: 'curved',
-    // Smooth Transition Params
-    zoomTarget: 1.0,
-    panXTarget: 0,
-    panYTarget: 0,
-    isAnimating: false,
+    connections: [],
     settings: {
-        smoothness: 0.8,
+        smoothness: 0.85,
         sensitivity: 0.15
     }
 };
@@ -60,10 +53,10 @@ function init() {
         setupEventListeners();
         setupSettingsListeners();
         
-        // Use targets instead of direct values
-        state.zoomTarget = state.zoom;
-        state.panXTarget = state.panX;
-        state.panYTarget = state.panY;
+        // Sync camera targets
+        state.targetZ = state.camZ;
+        state.targetX = state.camX;
+        state.targetY = state.camY;
         
         updateCanvas();
         lucide.createIcons();
@@ -80,8 +73,7 @@ function saveState() {
     localStorage.setItem('lumina_canvas_data', JSON.stringify({
         objects: state.objects,
         connections: state.connections,
-        pan: { x: state.panX, y: state.panY },
-        zoom: state.zoom
+        cam: { x: state.camX, y: state.camY, z: state.camZ }
     }));
 }
 
@@ -92,11 +84,11 @@ function loadState() {
             const parsed = JSON.parse(data);
             state.objects = parsed.objects || [];
             state.connections = parsed.connections || [];
-            if (parsed.pan) {
-                state.panX = parsed.pan.x || 0;
-                state.panY = parsed.pan.y || 0;
+            if (parsed.cam) {
+                state.camX = parsed.cam.x || 0;
+                state.camY = parsed.cam.y || 0;
+                state.camZ = parsed.cam.z || 1.0;
             }
-            state.zoom = parsed.zoom || 1.0;
         } catch (e) {
             console.error("Data Load Error:", e);
         }
@@ -105,37 +97,43 @@ function loadState() {
 
 function animationLoop() {
     const s = state.settings.smoothness;
-    // Basic linear interpolation (lerp) toward targets
-    const dZoom = state.zoomTarget - state.zoom;
-    const dPanX = state.panXTarget - state.panX;
-    const dPanY = state.panYTarget - state.panY;
+    const dX = state.targetX - state.camX;
+    const dY = state.targetY - state.camY;
+    const dZ = state.targetZ - state.camZ;
 
-    // Run updates if zoom/pan is animating OR if user is dragging an object
-    if (Math.abs(dZoom) > 0.0001 || Math.abs(dPanX) > 0.01 || Math.abs(dPanY) > 0.01 || state.isDragging) {
-        state.zoom += dZoom * (1 - s);
-        state.panX += dPanX * (1 - s);
-        state.panY += dPanY * (1 - s);
+    // Sadece hareket varsa güncelle
+    if (Math.abs(dX) > 0.01 || Math.abs(dY) > 0.01 || Math.abs(dZ) > 0.0001 || state.isDragging) {
+        state.camX += dX * (1 - s);
+        state.camY += dY * (1 - s);
+        state.camZ += dZ * (1 - s);
         updateCanvas();
         if (state.connections.length > 0) renderConnections();
     }
-
     requestAnimationFrame(animationLoop);
 }
 
-// --- Canvas Controls ---
+// --- Kamera Kontrolleri ---
 function updateCanvas() {
-    // Apply transform to content
-    canvasContent.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
+    const rect = canvasContainer.getBoundingClientRect();
+    const halfW = rect.width / 2;
+    const halfH = rect.height / 2;
+
+    // Kamera Formülü: Dünyayı kameranın bakış açısına göre kilitliyoruz.
+    // Her şey "halfW/halfH" merkezinde zoomlanır.
+    const transform = `translate(${halfW}px, ${halfH}px) scale(${state.camZ}) translate(${-state.camX}px, ${-state.camY}px)`;
+    canvasContent.style.transform = transform;
     
-    // Fixed Grid
-    const size = 50 * state.zoom;
-    canvasGrid.style.backgroundSize = `${size}px ${size}px`;
-    canvasGrid.style.backgroundPosition = `${state.panX}px ${state.panY}px`;
+    // Izgara Senkronizasyonu — kamera pozisyonuyla tam kilitli
+    const gridSize = 50 * state.camZ;
+    const offsetX = halfW - state.camX * state.camZ;
+    const offsetY = halfH - state.camY * state.camZ;
+    canvasGrid.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+    canvasGrid.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
     
-    // UI Update
-    zoomLevelEl.innerText = `${Math.round(state.zoom * 100)}%`;
-    coordXEl.innerText = `X: ${Math.round(state.panX)}`;
-    coordYEl.innerText = `Y: ${Math.round(state.panY)}`;
+    // UI Güncelleme
+    zoomLevelEl.innerText = `${Math.round(state.camZ * 100)}%`;
+    coordXEl.innerText = `X: ${Math.round(state.camX)}`;
+    coordYEl.innerText = `Y: ${Math.round(state.camY)}`;
 }
 
 function setupEventListeners() {
@@ -153,9 +151,10 @@ function setupEventListeners() {
 
         if (state.currentTool === 'pan' || e.button === 1) {
             state.isPanning = true;
-            // Capture initial target-based offset
-            state.startPanX = e.clientX - state.panXTarget;
-            state.startPanY = e.clientY - state.panYTarget;
+            state.startMouseX = e.clientX;
+            state.startMouseY = e.clientY;
+            state.startCamX = state.targetX;
+            state.startCamY = state.targetY;
             deselectAll();
             canvasContainer.classList.add('panning');
             e.preventDefault();
@@ -176,11 +175,13 @@ function setupEventListeners() {
 
     window.addEventListener('mousemove', e => {
         if (state.isPanning) {
-            // Update BOTH current and target to prevent fighting the animation loop
-            state.panXTarget = e.clientX - state.startPanX;
-            state.panYTarget = e.clientY - state.startPanY;
-            state.panX = state.panXTarget; 
-            state.panY = state.panYTarget;
+            const dx = (e.clientX - state.startMouseX) / state.camZ;
+            const dy = (e.clientY - state.startMouseY) / state.camZ;
+            state.targetX = state.startCamX - dx;
+            state.targetY = state.startCamY - dy;
+            // Immediate partial scroll for feedback
+            state.camX = state.targetX;
+            state.camY = state.targetY;
             updateCanvas();
         } else if (state.isSelecting) {
             const selectionBox = document.getElementById('selection-box');
@@ -200,8 +201,8 @@ function setupEventListeners() {
         }
         
         if (state.isDragging && state.dragTarget) {
-            const dx = (e.clientX - state.dragStartX) / state.zoom;
-            const dy = (e.clientY - state.dragStartY) / state.zoom;
+            const dx = (e.clientX - state.dragStartX) / state.camZ;
+            const dy = (e.clientY - state.dragStartY) / state.camZ;
             
             const obj = state.objects.find(o => o.id === state.dragTarget);
             if (obj) {
@@ -252,23 +253,15 @@ function setupEventListeners() {
         }
     });
 
-    // Smooth Precise Zoom
+    // Sabit Merkezli Z-Kamera Zoom
     canvasContainer.addEventListener('wheel', e => {
         e.preventDefault();
         
-        const rect = canvasContainer.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        // Use sensitivity from settings
+        // Sadece Z (derinlik) hedefini değiştiriyoruz, X ve Y sabit kalıyor.
+        // Bu sayede zoom her zaman tam ekranın ortasına doğru yapılır.
         const sensitivity = state.settings.sensitivity || 0.15;
         const zoomDelta = Math.pow(1 + sensitivity, -e.deltaY / 120);
-        const nextZoom = Math.min(Math.max(state.zoomTarget * zoomDelta, 0.05), 10.0);
-        
-        const actualFactor = nextZoom / state.zoomTarget;
-        state.panXTarget = mouseX - (mouseX - state.panXTarget) * actualFactor;
-        state.panYTarget = mouseY - (mouseY - state.panYTarget) * actualFactor;
-        state.zoomTarget = nextZoom;
+        state.targetZ = Math.min(Math.max(state.targetZ * zoomDelta, 0.05), 10.0);
     }, { passive: false });
 
     // Tool switching
@@ -374,8 +367,10 @@ function setupEventListeners() {
             document.getElementById('tool-pan').click();
         } else if (state.currentTool === 'connect') {
             const rect = canvasContainer.getBoundingClientRect();
-            const x = (e.clientX - state.panX - rect.left) / state.zoom;
-            const y = (e.clientY - state.panY - rect.top) / state.zoom;
+            const halfW = rect.width / 2;
+            const halfH = rect.height / 2;
+            const x = (e.clientX - rect.left - halfW) / state.camZ + state.camX;
+            const y = (e.clientY - rect.top - halfH) / state.camZ + state.camY;
             
             // Create a small anchor point when clicking empty canvas in connect mode
             const pointId = addObject('point', x, y);
@@ -435,16 +430,9 @@ function setupEventListeners() {
 
     // Centered Zoom Buttons
     const handleViewportZoom = (factor) => {
-        const rect = canvasContainer.getBoundingClientRect();
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        
-        const newZoom = Math.min(Math.max(state.zoomTarget * factor, 0.05), 10.0);
-        const actualDelta = newZoom / state.zoomTarget;
-        
-        state.panXTarget = centerX - (centerX - state.panXTarget) * actualDelta;
-        state.panYTarget = centerY - (centerY - state.panYTarget) * actualDelta;
-        state.zoomTarget = newZoom;
+        state.targetZ = Math.min(Math.max(state.targetZ * factor, 0.05), 10.0);
+        // Bu butonlar merkezli olduğu için targetX/Y değişmez, 
+        // çünkü kamera zaten hedeflenen dünya noktasında duruyor.
     };
 
     document.getElementById('zoom-in').addEventListener('click', () => handleViewportZoom(1.2));
@@ -968,6 +956,7 @@ function renderConnections() {
             const tw = toEl.offsetWidth || (toObj.width === 'auto' ? 200 : toObj.width);
             const th = toEl.offsetHeight || (toObj.height === 'auto' ? 100 : toObj.height);
             
+            // World coordinates are already mapped in the camera model
             const startX = fromObj.x + (fw / 2);
             const startY = fromObj.y + (fh / 2);
             const endX = toObj.x + (tw / 2);
@@ -991,10 +980,9 @@ function renderConnections() {
 }
 
 function getCanvasCenter() {
-    const rect = canvasContainer.getBoundingClientRect();
     return {
-        x: (rect.width / 2 - state.panX) / state.zoom,
-        y: (rect.height / 2 - state.panY) / state.zoom
+        x: state.camX,
+        y: state.camY
     };
 }
 
