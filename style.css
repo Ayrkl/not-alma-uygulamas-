@@ -1385,3 +1385,92 @@ body.light-theme .dropdown-options {
 }
 
 .upload-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+
+/* --- PDF Object Stilleri --- */
+.pdf-obj {
+    padding: 2.5rem 1rem 1rem 1rem !important;
+    min-width: 450px;
+    background: #1e293b !important;
+    border-radius: 12px;
+}
+
+.pdf-viewer-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.pdf-canvas {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.pdf-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 8px 16px;
+    border-radius: 100px;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 100;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    pointer-events: none;
+}
+
+.pdf-obj:hover .pdf-controls {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.pdf-nav-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pdf-nav-btn:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    transform: scale(1.1);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.pdf-nav-btn:active {
+    transform: scale(0.95);
+}
+
+.pdf-page-info {
+    font-size: 0.8rem;
+    color: white;
+    font-weight: 600;
+    font-family: var(--font-main);
+    min-width: 90px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}

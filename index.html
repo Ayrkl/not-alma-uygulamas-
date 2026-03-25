@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Roboto:wght@400;700&family=Montserrat:wght@400;700&family=Playfair+Display:wght@400;700&family=Lora:wght@400;700&family=Fira+Code:wght@400;700&family=Poppins:wght@400;600&family=Ubuntu:wght@400;700&family=Merriweather:wght@400;700&family=Oswald:wght@400;600&family=Caveat:wght@400;700&family=Shadows+Into+Light&family=Dancing+Script:wght@400;700&family=Source+Code+Pro:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
     <div id="app">
@@ -58,6 +59,9 @@
                         </button>
                         <button class="tool-btn" id="tool-video" title="Video Ekle (M)">
                             <i data-lucide="video"></i>
+                        </button>
+                        <button class="tool-btn" id="tool-pdf" title="PDF Ekle (P)">
+                            <i data-lucide="file-text"></i>
                         </button>
                         <button class="tool-btn" id="tool-connect" title="Bağlantı Kur (L)">
                             <i data-lucide="share-2"></i>
@@ -322,6 +326,8 @@
         <input type="file" id="image-upload" accept="image/*" hidden>
         <!-- Hidden input for videos -->
         <input type="file" id="video-upload" accept="video/*" hidden>
+        <!-- Hidden input for PDFs -->
+        <input type="file" id="pdf-upload" accept="application/pdf" hidden>
     </div>
 
     <script src="app.js" type="module"></script>

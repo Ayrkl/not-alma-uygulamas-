@@ -107,6 +107,7 @@ const coordXEl = document.getElementById('coord-x');
 const coordYEl = document.getElementById('coord-y');
 const imageUpload = document.getElementById('image-upload');
 const videoUpload = document.getElementById('video-upload');
+const pdfUpload = document.getElementById('pdf-upload');
 const floatingToolbar = document.getElementById('floating-toolbar');
 
 // --- Initialization ---
@@ -447,7 +448,7 @@ function setupEventListeners() {
                 state.currentTool = toolId;
 
                 // Submenu araçlarından biri seçildiyse group-trigger'ı vurgula
-                const subMenuTools = ['text', 'note', 'image', 'checklist', 'connect', 'video'];
+                const subMenuTools = ['text', 'note', 'image', 'checklist', 'connect', 'video', 'pdf'];
                 const groupTrigger = document.getElementById('tool-create');
                 if (subMenuTools.includes(toolId)) {
                     groupTrigger?.classList.add('has-active');
@@ -462,6 +463,8 @@ function setupEventListeners() {
                     // Show Video URL Modal instead of direct file picker
                     const modal = document.getElementById('video-url-modal');
                     if (modal) modal.classList.remove('hidden');
+                } else if (state.currentTool === 'pdf') {
+                    pdfUpload.click();
                 } else if (state.currentTool === 'text' || state.currentTool === 'note' || state.currentTool === 'checklist') {
                     addObject(state.currentTool);
                     document.getElementById('tool-pan').click();
@@ -573,6 +576,14 @@ function setupEventListeners() {
         }
     });
 
+    // PDF Upload
+    pdfUpload.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) {
+            handlePdfFile(file);
+        }
+    });
+
     // Move sidebar toggle logic here
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebar-toggle');
@@ -617,6 +628,7 @@ function setupEventListeners() {
         if (key === 't') document.getElementById('tool-text').click();
         if (key === 'i') document.getElementById('tool-image').click();
         if (key === 'm') document.getElementById('tool-video').click();
+        if (key === 'p') document.getElementById('tool-pdf').click();
         if (key === 'n') document.getElementById('tool-note').click();
         
         if (key === 'delete' || (key === 'backspace' && !isEditing)) {
@@ -1007,13 +1019,22 @@ function handleVideoFile(file) {
     reader.readAsDataURL(file);
 }
 
+function handlePdfFile(file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const center = getCanvasCenter();
+        addObject('pdf', center.x, center.y, event.target.result);
+    };
+    reader.readAsDataURL(file);
+}
+
 // --- Object Logic ---
 function addObject(type, x, y, content = '') {
     // If coordinates are not provided, use canvas center
     if (x === undefined || y === undefined) {
         const center = getCanvasCenter();
-        const w = (type === 'note' || type === 'checklist' ? 250 : (type === 'video' ? 400 : 200));
-        const h = (type === 'note' ? 180 : (type === 'checklist' ? 150 : (type === 'video' ? 225 : 60)));
+        const w = (type === 'note' || type === 'checklist' ? 250 : (type === 'video' || type === 'pdf' ? 400 : 200));
+        const h = (type === 'note' ? 180 : (type === 'checklist' ? 150 : (type === 'video' ? 225 : (type === 'pdf' ? 600 : 60))));
         x = center.x - w / 2;
         y = center.y - h / 2;
     }
@@ -1033,8 +1054,9 @@ function addObject(type, x, y, content = '') {
         x,
         y: y + 20, // Vertical offset
         content: finalContent || '',
-        width: type === 'note' || type === 'checklist' ? 250 : (type === 'image' ? 300 : (type === 'video' ? 400 : (type === 'point' ? 8 : 200))),
-        height: type === 'note' ? 180 : (type === 'checklist' ? 'auto' : (type === 'video' ? 225 : (type === 'point' ? 8 : 'auto'))),
+        width: type === 'note' || type === 'checklist' ? 250 : (type === 'image' ? 300 : (type === 'video' || type === 'pdf' ? 450 : (type === 'point' ? 8 : 200))),
+        height: type === 'note' ? 180 : (type === 'checklist' ? 'auto' : (type === 'video' ? 225 : (type === 'pdf' ? 630 : (type === 'point' ? 8 : 'auto')))),
+        pdfPage: type === 'pdf' ? 1 : undefined,
         fontFamily: 'Inter',
         fontSize: '16px',
         color: 'default',
@@ -1450,6 +1472,55 @@ function renderObject(obj) {
         }
         
         el.appendChild(wrapper);
+    } else if (obj.type === 'pdf') {
+        const container = document.createElement('div');
+        container.className = 'pdf-viewer-container';
+        
+        const canvas = document.createElement('canvas');
+        canvas.className = 'pdf-canvas';
+        container.appendChild(canvas);
+        
+        const controls = document.createElement('div');
+        controls.className = 'pdf-controls';
+        
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'pdf-nav-btn';
+        prevBtn.innerHTML = '<i data-lucide="chevron-left"></i>';
+        
+        const pageInfo = document.createElement('span');
+        pageInfo.className = 'pdf-page-info';
+        pageInfo.textContent = `Sayfa ${obj.pdfPage || 1}`;
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'pdf-nav-btn';
+        nextBtn.innerHTML = '<i data-lucide="chevron-right"></i>';
+        
+        controls.appendChild(prevBtn);
+        controls.appendChild(pageInfo);
+        controls.appendChild(nextBtn);
+        container.appendChild(controls);
+        el.appendChild(container);
+        
+        // PDF.js rendering
+        renderPdfPage(obj, canvas, pageInfo);
+        
+        prevBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (obj.pdfPage > 1) {
+                obj.pdfPage--;
+                renderPdfPage(obj, canvas, pageInfo);
+                saveState();
+            }
+        };
+        
+        nextBtn.onclick = (e) => {
+            e.stopPropagation();
+            obj.pdfPage = (obj.pdfPage || 1) + 1;
+            renderPdfPage(obj, canvas, pageInfo);
+            saveState();
+        };
+        
+        lucide.createIcons();
     } else {
         const editor = document.createElement('div');
         editor.className = 'note-editor';
@@ -1826,6 +1897,37 @@ function parseVideoUrl(url) {
     }
     
     return url; // Direct link
+}
+
+async function renderPdfPage(obj, canvas, pageInfoEl) {
+    if (!obj.content) return;
+    
+    try {
+        const pdfData = obj.content;
+        const loadingTask = pdfjsLib.getDocument(pdfData);
+        const pdf = await loadingTask.promise;
+        
+        const totalPages = pdf.numPages;
+        if (obj.pdfPage > totalPages) obj.pdfPage = totalPages;
+        if (obj.pdfPage < 1) obj.pdfPage = 1;
+        
+        pageInfoEl.textContent = `Sayfa ${obj.pdfPage} / ${totalPages}`;
+        
+        const page = await pdf.getPage(obj.pdfPage);
+        const viewport = page.getViewport({ scale: 1.5 });
+        
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        const renderContext = {
+            canvasContext: context,
+            viewport: viewport
+        };
+        await page.render(renderContext).promise;
+    } catch (error) {
+        console.error('PDF render error:', error);
+    }
 }
 
 async function exportCanvas() {
