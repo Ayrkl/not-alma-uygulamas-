@@ -304,14 +304,86 @@ nav.tools,
 .bottom-tools {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 0.75rem;
+    width: 100%;
 }
 
 .tool-separator {
-    width: 24px;
+    width: 28px;
     height: 1px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 4px 0;
+    background: rgba(255, 255, 255, 0.08); /* biraz daha şeffaf */
+    margin: 6px auto; /* 0 yerine auto ile tam merkezleme */
+    flex-shrink: 0;
+}
+
+/* Tool Group — Flyout Submenu */
+.tool-group {
+    position: relative;
+}
+
+.group-trigger.has-active {
+    background: rgba(59, 130, 246, 0.2);
+    opacity: 1;
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.tool-submenu {
+    position: absolute;
+    left: calc(100% + 14px);
+    top: 50%;
+    transform: translateY(-50%) translateX(-8px) scale(0.95);
+    padding: 10px 8px;
+    border-radius: 16px;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    opacity: 0;
+    pointer-events: none;
+    /* kapanırken 200ms bekle, açılırken anlık */
+    transition: opacity 0.15s ease 0.2s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s;
+    min-width: 56px;
+    align-items: center;
+}
+
+/* Fare boşluğu geçerken menu kapanmasın: solda görünmez köprü */
+.tool-submenu::before {
+    content: '';
+    position: absolute;
+    right: 100%;
+    top: 0;
+    width: 18px;
+    height: 100%;
+}
+
+.tool-group:hover .tool-submenu {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(-50%) translateX(0) scale(1);
+    /* açılırken gecikme yok */
+    transition: opacity 0.15s ease 0s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0s;
+}
+
+.submenu-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.4;
+    font-weight: 600;
+    margin-bottom: 2px;
+    white-space: nowrap;
+}
+
+/* Bottom tools — normal sütun */
+.tool-group-row {
+    display: contents;
+}
+
+.tool-group-row .tool-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
 }
 
 #search-panel {

@@ -28,35 +28,49 @@
                     <i data-lucide="search"></i>
                 </button>
                 <div class="tool-separator"></div>
-                <button class="tool-btn" id="tool-select" title="Çoklu Seçim (V)">
-                    <i data-lucide="mouse-pointer-2"></i>
-                </button>
                 <button class="tool-btn active" id="tool-pan" title="Kaydır (H)">
                     <i data-lucide="hand"></i>
                 </button>
-                <button class="tool-btn" id="tool-text" title="Metin Ekle (T)">
-                    <i data-lucide="type"></i>
+                <button class="tool-btn" id="tool-select" title="Çoklu Seçim (V)">
+                    <i data-lucide="mouse-pointer-2"></i>
                 </button>
-                <button class="tool-btn" id="tool-image" title="Resim Ekle (I)">
-                    <i data-lucide="image"></i>
-                </button>
-                <button class="tool-btn" id="tool-note" title="Not Kağıdı (N)">
-                    <i data-lucide="sticky-note"></i>
-                </button>
-                <button class="tool-btn" id="tool-connect" title="Bağlantı Kur (L)">
-                    <i data-lucide="share-2"></i>
-                </button>
+                <div class="tool-separator"></div>
+
+                <!-- Oluştur Alt Menüsü -->
+                <div class="tool-group" id="create-group">
+                    <button class="tool-btn group-trigger" id="tool-create" title="Oluştur">
+                        <i data-lucide="plus-circle"></i>
+                    </button>
+                    <div class="tool-submenu glass">
+                        <div class="submenu-label">Oluştur</div>
+                        <button class="tool-btn" id="tool-text" title="Metin Ekle (T)">
+                            <i data-lucide="type"></i>
+                        </button>
+                        <button class="tool-btn" id="tool-note" title="Not Kağıdı (N)">
+                            <i data-lucide="sticky-note"></i>
+                        </button>
+                        <button class="tool-btn" id="tool-image" title="Resim Ekle (I)">
+                            <i data-lucide="image"></i>
+                        </button>
+                        <button class="tool-btn" id="tool-connect" title="Bağlantı Kur (L)">
+                            <i data-lucide="share-2"></i>
+                        </button>
+                    </div>
+                </div>
             </nav>
 
             <div class="bottom-tools">
+                <div class="tool-group-row">
+                    <button class="tool-btn" id="undo-btn" title="Geri Al (Ctrl+Z)" style="opacity: 0.3;">
+                        <i data-lucide="undo-2"></i>
+                    </button>
+                    <button class="tool-btn" id="save-btn" title="Kaydet">
+                        <i data-lucide="save"></i>
+                    </button>
+                </div>
+                <div class="tool-separator"></div>
                 <button class="tool-btn" id="open-settings" title="Ayarlar">
                     <i data-lucide="settings"></i>
-                </button>
-                <button class="tool-btn" id="undo-btn" title="Geri Al (Ctrl+Z)" style="opacity: 0.3;">
-                    <i data-lucide="undo-2"></i>
-                </button>
-                <button class="tool-btn" id="save-btn" title="Kaydet">
-                    <i data-lucide="save"></i>
                 </button>
                 <button class="tool-btn" id="theme-toggle">
                     <i data-lucide="moon"></i>

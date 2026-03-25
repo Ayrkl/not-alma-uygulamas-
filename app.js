@@ -410,10 +410,22 @@ function setupEventListeners() {
                 return;
             }
 
+            // tool-create sadece submenu tetikleyicisi — araç değiştirme
+            if (btn.id === 'tool-create') return;
+
             if (btn.id.startsWith('tool-')) {
                 document.querySelector('.tool-btn.active')?.classList.remove('active');
                 btn.classList.add('active');
                 state.currentTool = toolId;
+
+                // Submenu araçlarından biri seçildiyse group-trigger'ı vurgula
+                const subMenuTools = ['text', 'note', 'image', 'connect'];
+                const groupTrigger = document.getElementById('tool-create');
+                if (subMenuTools.includes(toolId)) {
+                    groupTrigger?.classList.add('has-active');
+                } else {
+                    groupTrigger?.classList.remove('has-active');
+                }
                 
                 // Immediate action for certain tools
                 if (state.currentTool === 'image') {
