@@ -45,6 +45,9 @@
             </nav>
 
             <div class="bottom-tools">
+                <button class="tool-btn" id="open-settings" title="Ayarlar">
+                    <i data-lucide="settings"></i>
+                </button>
                 <button class="tool-btn" id="save-btn" title="Kaydet">
                     <i data-lucide="save"></i>
                 </button>
@@ -155,6 +158,28 @@
         </div>
 
         <!-- Main Canvas Area -->
+        <!-- Settings Panel -->
+        <div id="settings-panel" class="glass">
+            <div class="settings-header">
+                <h3>Kişiselleştir</h3>
+                <button id="close-settings"><i data-lucide="x"></i></button>
+            </div>
+            <div class="setting-item">
+                <label>Zoom Akıcılığı</label>
+                <input type="range" id="zoom-smoothness" min="0" max="95" value="80">
+                <span class="value-display">80%</span>
+            </div>
+            <div class="setting-item">
+                <label>Zoom Hassasiyeti</label>
+                <input type="range" id="zoom-sensitivity" min="5" max="30" value="15">
+                <span class="value-display">1.5x</span>
+            </div>
+            <div class="setting-item">
+                <label>Izgara Rengi (Dots)</label>
+                <input type="color" id="grid-color-picker" value="#3b82f6">
+            </div>
+        </div>
+
         <main id="canvas-container">
             <div id="canvas-grid" class="infinite-bg"></div>
             <div id="canvas-content">

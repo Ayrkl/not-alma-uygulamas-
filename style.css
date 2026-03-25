@@ -394,6 +394,46 @@ body.light-theme .connection-path {
     box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
+/* Settings Panel */
+#settings-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 80px;
+    width: 280px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    z-index: 3000;
+    transform: translateX(-400px);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    color: white;
+}
+
+#settings-panel.active { transform: translateX(0); }
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.settings-header h3 { font-family: var(--font-heading); font-size: 1rem; font-weight: 600; }
+
+#close-settings { background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.6; transition: opacity 0.2s; }
+#close-settings:hover { opacity: 1; }
+
+.setting-item { display: flex; flex-direction: column; gap: 0.5rem; }
+.setting-item label { font-size: 0.8rem; opacity: 0.7; }
+.setting-item input[type="range"] { width: 100%; accent-color: var(--accent-color); cursor: pointer; }
+.setting-item .value-display { align-self: flex-end; font-size: 0.75rem; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent-color); }
+.setting-item input[type="color"] { width: 100%; height: 32px; border: none; border-radius: 4px; background: transparent; cursor: pointer; }
+
 /* Object Drag Handle (Top Header) */
 .obj-handle {
     height: 12px;

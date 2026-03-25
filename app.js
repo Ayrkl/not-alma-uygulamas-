@@ -27,8 +27,17 @@ const state = {
     isSelecting: false,
     selectionStartX: 0,
     selectionStartY: 0,
-    connFlow: 'forward',
-    connStyle: 'curved'
+    connStyle: 'curved',
+    // Smooth Transition Params
+    zoomTarget: 1.0,
+    panXTarget: 0,
+    panYTarget: 0,
+    isAnimating: false,
+    settings: {
+        smoothness: 0.8,
+        sensitivity: 0.15,
+        gridColor: '#3b82f6'
+    }
 };
 
 // --- DOM Elements ---
@@ -50,8 +59,18 @@ function init() {
         renderObjects();
         renderConnections();
         setupEventListeners();
+        setupSettingsListeners();
+        
+        // Use targets instead of direct values
+        state.zoomTarget = state.zoom;
+        state.panXTarget = state.panX;
+        state.panYTarget = state.panY;
+        
         updateCanvas();
         lucide.createIcons();
+        
+        // Start animation loop
+        requestAnimationFrame(animationLoop);
     } catch (err) {
         console.error("Lumina Init Error:", err);
     }
@@ -85,13 +104,34 @@ function loadState() {
     }
 }
 
+function animationLoop() {
+    const s = state.settings.smoothness;
+    // Basic linear interpolation (lerp) toward targets
+    const dZoom = state.zoomTarget - state.zoom;
+    const dPanX = state.panXTarget - state.panX;
+    const dPanY = state.panYTarget - state.panY;
+
+    if (Math.abs(dZoom) > 0.0001 || Math.abs(dPanX) > 0.01 || Math.abs(dPanY) > 0.01) {
+        state.zoom += dZoom * (1 - s);
+        state.panX += dPanX * (1 - s);
+        state.panY += dPanY * (1 - s);
+        updateCanvas();
+        if (state.connections.length > 0) renderConnections();
+    }
+
+    requestAnimationFrame(animationLoop);
+}
+
 // --- Canvas Controls ---
 function updateCanvas() {
     // Apply transform to content
     canvasContent.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
     
-    // Grid follows pan (subtly)
-    canvasGrid.style.transform = `translate(${state.panX % (50 * state.zoom)}px, ${state.panY % (50 * state.zoom)}px) scale(${state.zoom})`;
+    // Fixed Grid
+    const size = 50 * state.zoom;
+    canvasGrid.style.backgroundSize = `${size}px ${size}px`;
+    canvasGrid.style.backgroundPosition = `${state.panX}px ${state.panY}px`;
+    canvasGrid.style.setProperty('--dot-color', state.settings.gridColor);
     
     // UI Update
     zoomLevelEl.innerText = `${Math.round(state.zoom * 100)}%`;
@@ -209,30 +249,23 @@ function setupEventListeners() {
         }
     });
 
-    // Zoom
+    // Smooth Precise Zoom
     canvasContainer.addEventListener('wheel', e => {
         e.preventDefault();
         
         const rect = canvasContainer.getBoundingClientRect();
-        const cursorX = e.clientX - rect.left;
-        const cursorY = e.clientY - rect.top;
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
 
-        // Calculate world coordinates under cursor before zoom
-        const worldX = (cursorX - state.panX) / state.zoom;
-        const worldY = (cursorY - state.panY) / state.zoom;
-
-        const delta = -e.deltaY;
-        const factor = 1.1;
-        const zoomChange = delta > 0 ? factor : 1/factor;
+        // Use sensitivity from settings
+        const sensitivity = state.settings.sensitivity || 0.15;
+        const zoomDelta = Math.pow(1 + sensitivity, -e.deltaY / 120);
+        const nextZoom = Math.min(Math.max(state.zoomTarget * zoomDelta, 0.05), 10.0);
         
-        const oldZoom = state.zoom;
-        state.zoom = Math.min(Math.max(state.zoom * zoomChange, 0.1), 5.0);
-
-        // Adjust pan to keep world coordinates under cursor constant
-        state.panX = cursorX - worldX * state.zoom;
-        state.panY = cursorY - worldY * state.zoom;
-        
-        updateCanvas();
+        const actualFactor = nextZoom / state.zoomTarget;
+        state.panXTarget = mouseX - (mouseX - state.panXTarget) * actualFactor;
+        state.panYTarget = mouseY - (mouseY - state.panYTarget) * actualFactor;
+        state.zoomTarget = nextZoom;
     }, { passive: false });
 
     // Tool switching
@@ -397,15 +430,22 @@ function setupEventListeners() {
         }
     });
 
-    // Zoom Buttons
-    document.getElementById('zoom-in').addEventListener('click', () => {
-        state.zoom *= 1.2;
-        updateCanvas();
-    });
-    document.getElementById('zoom-out').addEventListener('click', () => {
-        state.zoom /= 1.2;
-        updateCanvas();
-    });
+    // Centered Zoom Buttons
+    const handleViewportZoom = (factor) => {
+        const rect = canvasContainer.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        const newZoom = Math.min(Math.max(state.zoomTarget * factor, 0.05), 10.0);
+        const actualDelta = newZoom / state.zoomTarget;
+        
+        state.panXTarget = centerX - (centerX - state.panXTarget) * actualDelta;
+        state.panYTarget = centerY - (centerY - state.panYTarget) * actualDelta;
+        state.zoomTarget = newZoom;
+    };
+
+    document.getElementById('zoom-in').addEventListener('click', () => handleViewportZoom(1.2));
+    document.getElementById('zoom-out').addEventListener('click', () => handleViewportZoom(1/1.2));
     
     // Global Floating Toolbar Actions
     const floatingToolbar = document.getElementById('floating-toolbar');
@@ -953,6 +993,55 @@ function getCanvasCenter() {
         x: (rect.width / 2 - state.panX) / state.zoom,
         y: (rect.height / 2 - state.panY) / state.zoom
     };
+}
+
+function setupSettingsListeners() {
+    const panel = document.getElementById('settings-panel');
+    const openBtn = document.getElementById('open-settings');
+    const closeBtn = document.getElementById('close-settings');
+    const smoothInput = document.getElementById('zoom-smoothness');
+    const sensInput = document.getElementById('zoom-sensitivity');
+    const gridColorInput = document.getElementById('grid-color-picker');
+
+    if (openBtn) {
+        openBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            panel.classList.toggle('active');
+        });
+    }
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            panel.classList.remove('active');
+        });
+    }
+
+    panel.addEventListener('mousedown', e => e.stopPropagation());
+    panel.addEventListener('click', e => e.stopPropagation());
+
+    if (smoothInput) {
+        smoothInput.addEventListener('input', () => {
+            const val = parseInt(smoothInput.value);
+            state.settings.smoothness = val / 100;
+            smoothInput.nextElementSibling.innerText = `${val}%`;
+        });
+    }
+
+    if (sensInput) {
+        sensInput.addEventListener('input', () => {
+            const val = parseInt(sensInput.value);
+            state.settings.sensitivity = val / 100;
+            sensInput.nextElementSibling.innerText = `${(val/10).toFixed(1)}x`;
+        });
+    }
+
+    if (gridColorInput) {
+        gridColorInput.addEventListener('input', () => {
+            state.settings.gridColor = gridColorInput.value;
+            updateCanvas();
+        });
+    }
 }
 
 // Initialize the app
