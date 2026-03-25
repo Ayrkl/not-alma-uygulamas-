@@ -272,11 +272,14 @@ function updateCanvas() {
 }
 
 function setupEventListeners() {
+    // Disable default context menu on canvas
+    canvasContainer.addEventListener('contextmenu', e => e.preventDefault());
+
     // Middle Mouse or Space + drag to pan
     canvasContainer.addEventListener('mousedown', e => {
         if (e.target.closest('#sidebar') || e.target.closest('#controls') || e.target.closest('.glass')) return;
 
-        // Unfocus active editors when starting to pan on empty canvas
+        // Unfocus active editors
         if (e.target === canvasContainer || e.target === canvasGrid) {
             if (document.activeElement && document.activeElement.classList.contains('note-editor')) {
                 document.activeElement.blur();
@@ -284,7 +287,8 @@ function setupEventListeners() {
             }
         }
 
-        if (state.currentTool === 'pan' || e.button === 1) {
+        // Left Click (0) -> Pan
+        if (e.button === 0 && (e.target === canvasContainer || e.target === canvasGrid)) {
             state.isPanning = true;
             state.startMouseX = e.clientX;
             state.startMouseY = e.clientY;
@@ -293,7 +297,9 @@ function setupEventListeners() {
             deselectAll();
             canvasContainer.classList.add('panning');
             e.preventDefault();
-        } else if (state.currentTool === 'select' && e.button === 0) {
+        } 
+        // Right Click (2) -> Selection Box
+        else if (e.button === 2) {
             state.isSelecting = true;
             state.selectionStartX = e.clientX;
             state.selectionStartY = e.clientY;
@@ -303,8 +309,18 @@ function setupEventListeners() {
             document.body.appendChild(selectionBox);
             selectionBox.style.display = 'block';
             deselectAll();
-        } else if (e.target === canvasGrid || e.target === canvasContainer) {
+            e.preventDefault();
+        } 
+        // Middle Click (1) -> Pan (Backup)
+        else if (e.button === 1) {
+            state.isPanning = true;
+            state.startMouseX = e.clientX;
+            state.startMouseY = e.clientY;
+            state.startCamX = state.targetX;
+            state.startCamY = state.targetY;
             deselectAll();
+            canvasContainer.classList.add('panning');
+            e.preventDefault();
         }
     });
 
