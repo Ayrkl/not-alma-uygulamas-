@@ -682,14 +682,17 @@ function setupEventListeners() {
     // Object Alignment Actions
     document.getElementById('btn-align-left').addEventListener('click', (e) => {
         e.stopPropagation();
+        pushHistory();
         alignSelectedObjects('left');
     });
     document.getElementById('btn-align-center').addEventListener('click', (e) => {
         e.stopPropagation();
+        pushHistory();
         alignSelectedObjects('center');
     });
     document.getElementById('btn-align-top').addEventListener('click', (e) => {
         e.stopPropagation();
+        pushHistory();
         alignSelectedObjects('top');
     });
 
@@ -714,6 +717,7 @@ function setupEventListeners() {
             if (state.selectedId) {
                 const obj = state.objects.find(o => o.id === state.selectedId);
                 if (obj) {
+                    pushHistory();
                     obj.fontFamily = font;
                     const el = document.querySelector(`#obj-${obj.id} .note-editor`);
                     if (el) el.style.fontFamily = font;
@@ -743,6 +747,7 @@ function setupEventListeners() {
             if (state.selectedId) {
                 const obj = state.objects.find(o => o.id === state.selectedId);
                 if (obj) {
+                    pushHistory();
                     obj.fontSize = size;
                     const el = document.querySelector(`#obj-${obj.id} .note-editor`);
                     if (el) el.style.fontSize = size;
@@ -759,6 +764,7 @@ function setupEventListeners() {
             if (state.selectedId) {
                 const obj = state.objects.find(o => o.id === state.selectedId);
                 if (obj) {
+                    pushHistory();
                     const color = btn.getAttribute('data-color');
                     obj.color = color;
                     
@@ -786,6 +792,7 @@ function setupEventListeners() {
             if (state.selectedId) {
                 const obj = state.objects.find(o => o.id === state.selectedId);
                 if (obj) {
+                    pushHistory();
                     const color = btn.getAttribute('data-color');
                     obj.textColor = color;
                     
@@ -1163,6 +1170,7 @@ function handleConnectionClick(objId) {
         const el = document.getElementById(`obj-${objId}`);
         if (el) el.style.boxShadow = "0 0 15px var(--accent-color)";
     } else if (state.connectSourceId !== objId) {
+        pushHistory();
         const exists = state.connections.some(c => 
             (c.fromId === state.connectSourceId && c.toId === objId) ||
             (c.fromId === objId && c.toId === state.connectSourceId)
@@ -1298,6 +1306,10 @@ function renderObject(obj) {
         
         const isHandle = e.target.classList.contains('obj-handle');
         const isResize = e.target.classList.contains('resize-handle');
+        
+        if (isHandle || isResize) {
+            pushHistory();
+        }
         
         if (isHandle) {
             state.isDragging = true;
