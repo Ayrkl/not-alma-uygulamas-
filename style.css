@@ -911,7 +911,7 @@ body.light-theme .dropdown-options {
 /* Transitions */
 #mini-map-container {
     position: fixed;
-    bottom: 20px;
+    bottom: 70px;
     right: 20px;
     width: 180px;
     height: 120px;
