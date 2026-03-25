@@ -909,6 +909,47 @@ body.light-theme .dropdown-options {
 }
 
 /* Transitions */
+#mini-map-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 180px;
+    height: 120px;
+    padding: 6px;
+    border-radius: 12px;
+    z-index: 1000;
+    overflow: hidden;
+    user-select: none;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+#mini-map-canvas {
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    cursor: crosshair;
+}
+
+#mini-map-label {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 8px;
+    font-weight: 800;
+    color: var(--accent-color);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0.5;
+    pointer-events: none;
+    font-family: var(--font-main);
+}
+
 .fade-in {
     animation: fadeIn 0.3s ease-out;
 }

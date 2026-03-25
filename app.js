@@ -44,6 +44,7 @@ const zoomLevelEl = document.getElementById('zoom-level');
 const coordXEl = document.getElementById('coord-x');
 const coordYEl = document.getElementById('coord-y');
 const imageUpload = document.getElementById('image-upload');
+const floatingToolbar = document.getElementById('floating-toolbar');
 
 // --- Initialization ---
 function init() {
@@ -62,6 +63,8 @@ function init() {
         state.targetY = state.camY;
         
         updateCanvas();
+        setupMiniMapListeners();
+        updateMiniMap();
         
         // Start animation loop
         requestAnimationFrame(animationLoop);
@@ -192,6 +195,7 @@ function animationLoop() {
         state.camZ += dZ * (1 - s);
         updateCanvas();
         if (state.connections.length > 0) renderConnections();
+        updateMiniMap();
     }
     requestAnimationFrame(animationLoop);
 }
@@ -604,35 +608,6 @@ function setupEventListeners() {
         alignSelectedObjects('top');
     });
 
-    function alignSelectedObjects(type) {
-        if (!state.selectedIds || state.selectedIds.length < 2) return;
-        
-        const selectedObjects = state.objects.filter(o => state.selectedIds.includes(o.id));
-        
-        if (type === 'left') {
-            const minX = Math.min(...selectedObjects.map(o => o.x));
-            selectedObjects.forEach(obj => obj.x = minX);
-        } else if (type === 'top') {
-            const minY = Math.min(...selectedObjects.map(o => o.y));
-            selectedObjects.forEach(obj => obj.y = minY);
-        } else if (type === 'center') {
-            const centers = selectedObjects.map(obj => {
-                const el = document.getElementById(`obj-${obj.id}`);
-                const w = el ? el.offsetWidth : (obj.width === 'auto' ? 200 : obj.width);
-                return obj.x + w / 2;
-            });
-            const avgCenter = centers.reduce((a, b) => a + b, 0) / centers.length;
-            selectedObjects.forEach(obj => {
-                const el = document.getElementById(`obj-${obj.id}`);
-                const w = el ? el.offsetWidth : (obj.width === 'auto' ? 200 : obj.width);
-                obj.x = avgCenter - w / 2;
-            });
-        }
-        
-        renderObjects();
-        saveState();
-    }
-    
     // Custom Font Dropdown Logic
     const fontDropdown = document.getElementById('font-dropdown');
     const dropdownSelected = fontDropdown.querySelector('.dropdown-selected');
@@ -671,7 +646,6 @@ function setupEventListeners() {
     sizeSelected.addEventListener('click', (e) => {
         e.stopPropagation();
         sizeDropdown.classList.toggle('open');
-        // Close other dropdowns
         fontDropdown.classList.remove('open');
     });
     
@@ -712,10 +686,8 @@ function setupEventListeners() {
                         }
                     }
                     
-                    // Update UI selection
                     floatingToolbar.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    
                     saveState();
                 }
             }
@@ -737,10 +709,8 @@ function setupEventListeners() {
                         el.style.color = color === 'default' ? '' : color;
                     }
                     
-                    // Update UI selection
                     floatingToolbar.querySelectorAll('.text-color-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    
                     saveState();
                 }
             }
@@ -749,36 +719,157 @@ function setupEventListeners() {
 
     // Close dropdowns when clicking outside
     window.addEventListener('click', () => {
-        fontDropdown.classList.remove('open');
-        sizeDropdown.classList.remove('open');
+        if (fontDropdown) fontDropdown.classList.remove('open');
+        if (sizeDropdown) sizeDropdown.classList.remove('open');
     });
 
-    // Deselect logic when clicking empty canvas
-    canvasContainer.addEventListener('mousedown', (e) => {
-        if (e.target === canvasContainer || e.target === canvasGrid) {
-            selectObject(null);
-        }
+    // Save button logic
+    const saveBtn = document.getElementById('save-btn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            const textData = JSON.stringify({
+                objects: state.objects,
+                connections: state.connections,
+                cam: { x: state.camX, y: state.camY, z: state.camZ }
+            }, null, 2);
+            
+            if (window.electronAPI) {
+                const success = await window.electronAPI.saveFile(textData);
+                if (success) console.log('Dosya başarıyla kaydedildi.');
+            } else {
+                const blob = new Blob([textData], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'board_data.txt';
+                a.click();
+            }
+        });
+    }
+}
+
+// Mini-Map Logic & Interactivity
+function updateMiniMap() {
+    const canvas = document.getElementById('mini-map-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    if (canvas.width !== canvas.offsetWidth) {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    }
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Bounds calculation
+    let minX = state.camX - (window.innerWidth / state.camZ) / 2;
+    let minY = state.camY - (window.innerHeight / state.camZ) / 2;
+    let maxX = state.camX + (window.innerWidth / state.camZ) / 2;
+    let maxY = state.camY + (window.innerHeight / state.camZ) / 2;
+    
+    state.objects.forEach(obj => {
+        const w = (obj.width === 'auto' ? 200 : obj.width);
+        const h = (obj.height === 'auto' ? 100 : obj.height);
+        minX = Math.min(minX, obj.x);
+        minY = Math.min(minY, obj.y);
+        maxX = Math.max(maxX, obj.x + w);
+        maxY = Math.max(maxY, obj.y + h);
     });
     
-    // Save button (Direct storage in Electron or Download in Browser)
-    document.getElementById('save-btn').addEventListener('click', async () => {
-        const textData = JSON.stringify(state.objects, null, 2);
+    // Add margin
+    const margin = 1000;
+    minX -= margin; minY -= margin; maxX += margin; maxY += margin;
+    
+    const rangeX = maxX - minX;
+    const rangeY = maxY - minY;
+    state.miniMapBounds = { minX, minY, maxX, maxY };
+
+    // Draw Objects
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.5)';
+    state.objects.forEach(obj => {
+        const ox = ((obj.x - minX) / rangeX) * canvas.width;
+        const oy = ((obj.y - minY) / rangeY) * canvas.height;
+        const ow = ((obj.width === 'auto' ? 200 : obj.width) / rangeX) * canvas.width;
+        const oh = ((obj.height === 'auto' ? 100 : obj.height) / rangeY) * canvas.height;
+        ctx.fillRect(ox, oy, Math.max(2, ow), Math.max(2, oh));
+    });
+
+    // Draw Viewport
+    const vw = window.innerWidth / state.camZ;
+    const vh = window.innerHeight / state.camZ;
+    const vx = ((state.camX - vw/2 - minX) / rangeX) * canvas.width;
+    const vy = ((state.camY - vh/2 - minY) / rangeY) * canvas.height;
+    const vsw = (vw / rangeX) * canvas.width;
+    const vsh = (vh / rangeY) * canvas.height;
+    
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(vx, vy, vsw, vsh);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.fillRect(vx, vy, vsw, vsh);
+}
+
+function setupMiniMapListeners() {
+    const canvas = document.getElementById('mini-map-canvas');
+    if (!canvas) return;
+
+    const handleNav = (e) => {
+        if (!state.miniMapBounds) return;
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) / rect.width;
+        const my = (e.clientY - rect.top) / rect.height;
         
-        if (window.electronAPI) {
-            // Electron Mode
-            const success = await window.electronAPI.saveFile(textData);
-            if (success) console.log('Dosya başarıyla kaydedildi.');
-        } else {
-            // Web Browser Mode
-            const blob = new Blob([textData], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'board_data.txt';
-            a.click();
-        }
+        const worldX = state.miniMapBounds.minX + mx * (state.miniMapBounds.maxX - state.miniMapBounds.minX);
+        const worldY = state.miniMapBounds.minY + my * (state.miniMapBounds.maxY - state.miniMapBounds.minY);
+        
+        state.targetX = worldX;
+        state.targetY = worldY;
+    };
+
+    canvas.addEventListener('mousedown', (e) => {
+        state.isMiniMapNavigating = true;
+        handleNav(e);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (state.isMiniMapNavigating) handleNav(e);
+    });
+
+    window.addEventListener('mouseup', () => {
+        state.isMiniMapNavigating = false;
     });
 }
+
+function alignSelectedObjects(type) {
+        if (!state.selectedIds || state.selectedIds.length < 2) return;
+        
+        const selectedObjects = state.objects.filter(o => state.selectedIds.includes(o.id));
+        
+        if (type === 'left') {
+            const minX = Math.min(...selectedObjects.map(o => o.x));
+            selectedObjects.forEach(obj => obj.x = minX);
+        } else if (type === 'top') {
+            const minY = Math.min(...selectedObjects.map(o => o.y));
+            selectedObjects.forEach(obj => obj.y = minY);
+        } else if (type === 'center') {
+            const centers = selectedObjects.map(obj => {
+                const el = document.getElementById(`obj-${obj.id}`);
+                const w = el ? el.offsetWidth : (obj.width === 'auto' ? 200 : obj.width);
+                return obj.x + w / 2;
+            });
+            const avgCenter = centers.reduce((a, b) => a + b, 0) / centers.length;
+            selectedObjects.forEach(obj => {
+                const el = document.getElementById(`obj-${obj.id}`);
+                const w = el ? el.offsetWidth : (obj.width === 'auto' ? 200 : obj.width);
+                obj.x = avgCenter - w / 2;
+            });
+        }
+        
+        renderObjects();
+        saveState();
+    }
+    
+
 
 function toggleTheme() {
     const body = document.body;
@@ -1191,6 +1282,7 @@ function selectObject(id) {
 }
 
 function renderObjects() {
+    updateMiniMap();
     canvasContent.innerHTML = '';
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.id = "connection-layer";
