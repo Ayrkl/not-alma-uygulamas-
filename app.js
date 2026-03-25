@@ -404,12 +404,6 @@ function setupEventListeners() {
         btn.addEventListener('click', () => {
             const toolId = btn.id.replace('tool-', '');
             
-            // For theme toggle, it's a special action
-            if (btn.id === 'theme-toggle') {
-                toggleTheme();
-                return;
-            }
-
             // tool-create sadece submenu tetikleyicisi — araç değiştirme
             if (btn.id === 'tool-create') return;
 
@@ -945,22 +939,6 @@ function alignSelectedObjects(type) {
     }
     
 
-
-function toggleTheme() {
-    const body = document.body;
-    const isDark = body.classList.contains('dark-theme');
-    const icon = document.querySelector('#theme-toggle i');
-    
-    if (isDark) {
-        body.classList.replace('dark-theme', 'light-theme');
-        icon.setAttribute('data-lucide', 'sun');
-    } else {
-        body.classList.replace('light-theme', 'dark-theme');
-        icon.setAttribute('data-lucide', 'moon');
-    }
-    lucide.createIcons();
-    saveState();
-}
 
 function handleImageFile(file) {
     const reader = new FileReader();

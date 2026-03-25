@@ -24,32 +24,6 @@
     --sidebar-gap: 20px;
 }
 
-body.light-theme {
-    --bg-color: #f1f5f9;
-    --fg-color: #0f172a;
-    --accent-color: #2563eb;
-    --accent-hover: #1d4ed8;
-    --glass-bg: rgba(255, 255, 255, 0.85);
-    --glass-border: rgba(0, 0, 0, 0.1);
-    --grid-color: rgba(15, 23, 42, 0.05);
-    --glass-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05);
-}
-
-/* Helper to ensure text visibility on light backgrounds */
-.canvas-obj[style*="background: #"] .note-editor {
-    color: #0f172a !important;
-}
-
-body.light-theme .canvas-obj .note-editor {
-    color: #0f172a;
-}
-
-body.light-theme .custom-dropdown, 
-body.light-theme .toolbar-btn {
-    border-color: rgba(0, 0, 0, 0.1);
-    color: #0f172a;
-}
-
 * {
     margin: 0;
     padding: 0;
@@ -76,11 +50,6 @@ body.light-theme .toolbar-btn {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--accent-hover);
-}
-
-body.light-theme ::-webkit-scrollbar-thumb {
-    background: var(--accent-color);
-    opacity: 0.3;
 }
 
 body {
@@ -527,18 +496,6 @@ nav.tools,
     filter: drop-shadow(0 0 15px var(--accent-glow));
 }
 
-body.light-theme .connection-path {
-    stroke: var(--accent-color);
-    opacity: 0.4;
-    filter: none;
-}
-
-body.light-theme .connection-path.selected {
-    stroke: var(--accent-color);
-    stroke-width: 6;
-    opacity: 1;
-}
-
 #selection-box {
     position: absolute;
     background: rgba(59, 130, 246, 0.1);
@@ -829,10 +786,6 @@ body.light-theme .connection-path.selected {
     opacity: 1;
 }
 
-body.light-theme .toolbar-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
-}
-
 .toolbar-btn.active {
     background: var(--accent-color);
     color: white;
@@ -875,9 +828,6 @@ body.light-theme .toolbar-btn:hover {
     background: var(--glass-bg);
 }
 
-body.light-theme .color-btn[data-color="default"] {
-    background: white;
-}
 .custom-dropdown {
     position: relative;
     width: 150px;
