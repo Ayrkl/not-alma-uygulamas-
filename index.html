@@ -22,16 +22,12 @@
                 <i data-lucide="infinity" class="logo-icon"></i>
                 <span class="logo-text">Lumina</span>
             </div>
-
-            <div class="search-container">
-                <div class="search-input-wrapper">
-                    <i data-lucide="search" class="search-icon"></i>
-                    <input type="text" id="canvas-search" placeholder="Notlarda ara...">
-                </div>
-                <div id="search-results" class="search-results-list"></div>
-            </div>
             
             <nav class="tools">
+                <button class="tool-btn" id="tool-search" title="Ara (F)">
+                    <i data-lucide="search"></i>
+                </button>
+                <div class="tool-separator"></div>
                 <button class="tool-btn" id="tool-select" title="Çoklu Seçim (V)">
                     <i data-lucide="mouse-pointer-2"></i>
                 </button>
@@ -64,6 +60,15 @@
                 </button>
             </div>
         </aside>
+
+        <!-- Search Panel (Slide-out) -->
+        <div id="search-panel" class="glass">
+            <div class="search-input-wrapper">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="canvas-search" placeholder="Notlarda ara...">
+            </div>
+            <div id="search-results" class="search-results-list"></div>
+        </div>
 
         <!-- Floating Formatting Toolbar -->
         <div id="floating-toolbar" class="glass">

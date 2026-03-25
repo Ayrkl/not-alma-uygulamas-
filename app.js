@@ -47,6 +47,8 @@ const imageUpload = document.getElementById('image-upload');
 
 // --- Initialization ---
 function init() {
+    lucide.createIcons();
+    setupSearchListeners();
     try {
         loadState();
         renderObjects();
@@ -60,8 +62,6 @@ function init() {
         state.targetY = state.camY;
         
         updateCanvas();
-        lucide.createIcons();
-        setupSearchListeners();
         
         // Start animation loop
         requestAnimationFrame(animationLoop);
@@ -130,27 +130,36 @@ function updateSearchResults(query) {
     }
 
     const filtered = state.objects.filter(obj => {
-        const content = (obj.content || "").toLowerCase();
-        return content.includes(query.toLowerCase());
+        const rawContent = (obj.content || "");
+        // Strip HTML tags for cleaner searching
+        const cleanContent = rawContent.replace(/<[^>]*>/g, ' ');
+        return cleanContent.toLowerCase().includes(query.toLowerCase());
     });
 
     if (filtered.length === 0) {
         resultsEl.innerHTML = '<div class="search-result-item" style="cursor:default; opacity:0.5;">Sonuç bulunamadı</div>';
     } else {
-        resultsEl.innerHTML = filtered.map(obj => `
-            <div class="search-result-item" onclick="window.focusOnCanvasObject('${obj.id}')">
-                <div class="result-title">${obj.content.substring(0, 30)}${obj.content.length > 30 ? '...' : ''}</div>
-                <div class="result-meta">${obj.type}</div>
-            </div>
-        `).join('');
+        resultsEl.innerHTML = filtered.map(obj => {
+            const cleanTitle = (obj.content || "").replace(/<[^>]*>/g, ' ').trim();
+            const displayTitle = cleanTitle || (obj.type === 'image' ? 'Resim Dosyası' : 'Boş Not');
+            return `
+                <div class="search-result-item" onclick="window.focusOnCanvasObject('${obj.id}')">
+                    <div class="result-title">${displayTitle.substring(0, 35)}${displayTitle.length > 35 ? '...' : ''}</div>
+                    <div class="result-meta">${obj.type}</div>
+                </div>
+            `;
+        }).join('');
     }
     resultsEl.classList.add('active');
 }
 
-// Expose focus function to window for onclick markers
+// Expose focus function to window early for onclick markers
 window.focusOnCanvasObject = (id) => {
     const obj = state.objects.find(o => o.id === id);
     if (!obj) return;
+
+    // Remove previous highlights
+    document.querySelectorAll('.search-highlight').forEach(h => h.classList.remove('search-highlight'));
 
     // Teleport camera
     state.targetX = obj.x + 100; // Offset to center better
@@ -160,9 +169,6 @@ window.focusOnCanvasObject = (id) => {
     // Highlight
     const el = document.getElementById(`obj-${id}`);
     if (el) {
-        // Remove previous highlights
-        document.querySelectorAll('.search-highlight').forEach(h => h.classList.remove('search-highlight'));
-        
         el.classList.add('search-highlight');
         selectObject(id); // Select it too
 
@@ -523,6 +529,39 @@ function setupEventListeners() {
     document.getElementById('zoom-in').addEventListener('click', () => handleViewportZoom(1.2));
     document.getElementById('zoom-out').addEventListener('click', () => handleViewportZoom(1/1.2));
     
+    // Search Panel Toggle
+    const searchPanel = document.getElementById('search-panel');
+    const searchBtn = document.getElementById('tool-search');
+    
+    if (searchBtn && searchPanel) {
+        searchBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isActive = searchPanel.classList.toggle('active');
+            if (isActive) {
+                document.getElementById('canvas-search').focus();
+            }
+        });
+        
+        // Key shortcut 'f' for search
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey && 
+                document.activeElement.tagName !== 'INPUT' && 
+                document.activeElement.getAttribute('contenteditable') !== 'true') {
+                e.preventDefault();
+                searchPanel.classList.add('active');
+                document.getElementById('canvas-search').focus();
+            }
+            if (e.key === 'Escape') {
+                searchPanel.classList.remove('active');
+            }
+        });
+        
+        // Close search when clicking on canvas
+        canvasContainer.addEventListener('mousedown', () => {
+            searchPanel.classList.remove('active');
+        });
+    }
+
     // Global Floating Toolbar Actions
     const floatingToolbar = document.getElementById('floating-toolbar');
     floatingToolbar.querySelectorAll('.toolbar-btn').forEach(btn => {
