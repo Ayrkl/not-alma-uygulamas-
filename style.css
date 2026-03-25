@@ -1299,7 +1299,7 @@ body.light-theme .dropdown-options {
     color: var(--accent-color);
 }
 
-#close-video-modal {
+#close-video-modal, #close-embed-modal {
     margin-left: auto;
     background: none;
     border: none;
@@ -1310,7 +1310,7 @@ body.light-theme .dropdown-options {
     transition: opacity 0.2s;
 }
 
-#close-video-modal:hover { opacity: 1; }
+#close-video-modal:hover, #close-embed-modal:hover { opacity: 1; }
 
 .modal-body {
     display: flex;
