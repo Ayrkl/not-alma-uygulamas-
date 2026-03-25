@@ -12,7 +12,7 @@
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 
     /* Grid */
-    --grid-color: rgba(255, 255, 255, 0.03);
+    --grid-color: rgba(255, 255, 255, 0.05);
     --grid-size: 50px;
 
     /* Typography */
@@ -31,7 +31,7 @@ body.light-theme {
     --accent-hover: #1d4ed8;
     --glass-bg: rgba(255, 255, 255, 0.85);
     --glass-border: rgba(0, 0, 0, 0.1);
-    --grid-color: rgba(0, 0, 0, 0.05);
+    --grid-color: rgba(15, 23, 42, 0.05);
     --glass-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05);
 }
 
@@ -397,21 +397,22 @@ body.light-theme .connection-path {
 /* Settings Panel */
 #settings-panel {
     position: fixed;
-    bottom: 20px;
-    left: 80px;
-    width: 280px;
+    bottom: 120px;
+    left: 90px;
+    width: 300px;
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.5rem;
     z-index: 3000;
-    transform: translateX(-400px);
+    transform: translateX(-450px);
     transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    color: white;
+    background: var(--glass-bg);
+    backdrop-filter: blur(25px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    color: var(--fg-color);
 }
 
 #settings-panel.active { transform: translateX(0); }

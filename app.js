@@ -35,8 +35,7 @@ const state = {
     isAnimating: false,
     settings: {
         smoothness: 0.8,
-        sensitivity: 0.15,
-        gridColor: '#3b82f6'
+        sensitivity: 0.15
     }
 };
 
@@ -131,7 +130,6 @@ function updateCanvas() {
     const size = 50 * state.zoom;
     canvasGrid.style.backgroundSize = `${size}px ${size}px`;
     canvasGrid.style.backgroundPosition = `${state.panX}px ${state.panY}px`;
-    canvasGrid.style.setProperty('--dot-color', state.settings.gridColor);
     
     // UI Update
     zoomLevelEl.innerText = `${Math.round(state.zoom * 100)}%`;
@@ -1033,13 +1031,6 @@ function setupSettingsListeners() {
             const val = parseInt(sensInput.value);
             state.settings.sensitivity = val / 100;
             sensInput.nextElementSibling.innerText = `${(val/10).toFixed(1)}x`;
-        });
-    }
-
-    if (gridColorInput) {
-        gridColorInput.addEventListener('input', () => {
-            state.settings.gridColor = gridColorInput.value;
-            updateCanvas();
         });
     }
 }
