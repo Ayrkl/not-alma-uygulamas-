@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,16 +8,19 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Roboto:wght@400;700&family=Montserrat:wght@400;700&family=Playfair+Display:wght@400;700&family=Lora:wght@400;700&family=Fira+Code:wght@400;700&family=Poppins:wght@400;600&family=Ubuntu:wght@400;700&family=Merriweather:wght@400;700&family=Oswald:wght@400;600&family=Caveat:wght@400;700&family=Shadows+Into+Light&family=Dancing+Script:wght@400;700&family=Source+Code+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Roboto:wght@400;700&family=Montserrat:wght@400;700&family=Playfair+Display:wght@400;700&family=Lora:wght@400;700&family=Fira+Code:wght@400;700&family=Poppins:wght@400;600&family=Ubuntu:wght@400;700&family=Merriweather:wght@400;700&family=Oswald:wght@400;600&family=Caveat:wght@400;700&family=Shadows+Into+Light&family=Dancing+Script:wght@400;700&family=Source+Code+Pro:wght@400;700&display=swap"
+        rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
+
 <body>
     <div id="app">
         <!-- Electron Window Support -->
         <div class="drag-region"></div>
-        
+
         <!-- Dashboard / Sidebar -->
         <aside id="sidebar" class="glass">
             <button id="sidebar-toggle"><i data-lucide="chevron-left"></i></button>
@@ -24,7 +28,7 @@
                 <i data-lucide="infinity" class="logo-icon"></i>
                 <span class="logo-text">Lumina</span>
             </div>
-            
+
             <nav class="tools">
                 <button class="tool-btn" id="tool-search" title="Ara (F)">
                     <i data-lucide="search"></i>
@@ -109,7 +113,8 @@
         <div id="floating-toolbar" class="glass">
             <div class="toolbar-group">
                 <button class="toolbar-btn" data-cmd="bold" title="Kalın (Ctrl+B)"><i data-lucide="bold"></i></button>
-                <button class="toolbar-btn" data-cmd="italic" title="İtalik (Ctrl+I)"><i data-lucide="italic"></i></button>
+                <button class="toolbar-btn" data-cmd="italic" title="İtalik (Ctrl+I)"><i
+                        data-lucide="italic"></i></button>
             </div>
             <div class="toolbar-divider"></div>
             <div class="toolbar-group">
@@ -124,20 +129,30 @@
                     <div class="dropdown-options">
                         <div class="dropdown-opt" data-value="Inter" style="font-family:'Inter'">Normal (Inter)</div>
                         <div class="dropdown-opt" data-value="Outfit" style="font-family:'Outfit'">Modern (Outfit)</div>
-                        <div class="dropdown-opt" data-value="Poppins" style="font-family:'Poppins'">Yumuşak (Poppins)</div>
+                        <div class="dropdown-opt" data-value="Poppins" style="font-family:'Poppins'">Yumuşak (Poppins)
+                        </div>
                         <div class="dropdown-opt" data-value="Roboto" style="font-family:'Roboto'">İş (Roboto)</div>
-                        <div class="dropdown-opt" data-value="Montserrat" style="font-family:'Montserrat'">Vurgulu (Montserrat)</div>
+                        <div class="dropdown-opt" data-value="Montserrat" style="font-family:'Montserrat'">Vurgulu
+                            (Montserrat)</div>
                         <div class="dropdown-opt" data-value="Ubuntu" style="font-family:'Ubuntu'">Keskin (Ubuntu)</div>
-                        <div class="dropdown-opt" data-value="Playfair Display" style="font-family:'Playfair Display'">Zarif (Playfair)</div>
+                        <div class="dropdown-opt" data-value="Playfair Display" style="font-family:'Playfair Display'">
+                            Zarif (Playfair)</div>
                         <div class="dropdown-opt" data-value="Lora" style="font-family:'Lora'">Kitap (Lora)</div>
-                        <div class="dropdown-opt" data-value="Merriweather" style="font-family:'Merriweather'">Klasik (Merriweather)</div>
+                        <div class="dropdown-opt" data-value="Merriweather" style="font-family:'Merriweather'">Klasik
+                            (Merriweather)</div>
                         <div class="dropdown-opt" data-value="Oswald" style="font-family:'Oswald'">Sert (Oswald)</div>
-                        <div class="dropdown-opt" data-value="Caveat" style="font-family:'Caveat'">El Yazısı (Caveat)</div>
-                        <div class="dropdown-opt" data-value="Dancing Script" style="font-family:'Dancing Script'">El Yazısı (Dancing)</div>
-                        <div class="dropdown-opt" data-value="Shadows Into Light" style="font-family:'Shadows Into Light'">Not Defteri</div>
-                        <div class="dropdown-opt" data-value="Fira Code" style="font-family:'Fira Code'">Kod (Fira Code)</div>
-                        <div class="dropdown-opt" data-value="Source Code Pro" style="font-family:'Source Code Pro'">Kod (Source)</div>
-                        <div class="dropdown-opt" data-value="monospace" style="font-family:'monospace'">Sistem Kodu</div>
+                        <div class="dropdown-opt" data-value="Caveat" style="font-family:'Caveat'">El Yazısı (Caveat)
+                        </div>
+                        <div class="dropdown-opt" data-value="Dancing Script" style="font-family:'Dancing Script'">El
+                            Yazısı (Dancing)</div>
+                        <div class="dropdown-opt" data-value="Shadows Into Light"
+                            style="font-family:'Shadows Into Light'">Not Defteri</div>
+                        <div class="dropdown-opt" data-value="Fira Code" style="font-family:'Fira Code'">Kod (Fira Code)
+                        </div>
+                        <div class="dropdown-opt" data-value="Source Code Pro" style="font-family:'Source Code Pro'">Kod
+                            (Source)</div>
+                        <div class="dropdown-opt" data-value="monospace" style="font-family:'monospace'">Sistem Kodu
+                        </div>
                     </div>
                 </div>
             </div>
@@ -196,11 +211,14 @@
             <div class="toolbar-divider"></div>
             <div class="toolbar-group text-color-picker">
                 <i data-lucide="baseline" style="width: 16px; opacity: 0.5;"></i>
-                <button class="text-color-btn" data-color="default" title="Varsayılan" style="background: var(--fg-color); border: 1px solid var(--glass-border);"></button>
+                <button class="text-color-btn" data-color="default" title="Varsayılan"
+                    style="background: var(--fg-color); border: 1px solid var(--glass-border);"></button>
                 <button class="text-color-btn" data-color="#ffffff" title="Beyaz" style="background: #ffffff;"></button>
                 <button class="text-color-btn" data-color="#0f172a" title="Koyu" style="background: #0f172a;"></button>
-                <button class="text-color-btn" data-color="#ef4444" title="Kırmızı" style="background: #ef4444;"></button>
-                <button class="text-color-btn" data-color="#f59e0b" title="Turuncu" style="background: #f59e0b;"></button>
+                <button class="text-color-btn" data-color="#ef4444" title="Kırmızı"
+                    style="background: #ef4444;"></button>
+                <button class="text-color-btn" data-color="#f59e0b" title="Turuncu"
+                    style="background: #f59e0b;"></button>
                 <button class="text-color-btn" data-color="#10b981" title="Yeşil" style="background: #10b981;"></button>
             </div>
             <div class="toolbar-divider"></div>
@@ -255,7 +273,7 @@
                 </button>
             </div>
         </div>
-        
+
         <!-- Embed URL Input Modal -->
         <div id="embed-url-modal" class="glass hidden">
             <div class="modal-header">
@@ -265,7 +283,8 @@
             </div>
             <div class="modal-body">
                 <div class="url-input-group">
-                    <input type="text" id="embed-url-input" placeholder="Spotify listesi veya Google Harita linki yapıştırın...">
+                    <input type="text" id="embed-url-input"
+                        placeholder="Spotify listesi veya Google Harita linki yapıştırın...">
                     <button id="btn-add-embed-url">Ekle</button>
                 </div>
             </div>
@@ -275,19 +294,24 @@
         <div id="connection-toolbar" class="glass">
             <div class="toolbar-group">
                 <span class="toolbar-label" style="font-size: 0.75rem; opacity: 0.6; margin-right: 4px;">Yön:</span>
-                <button class="toolbar-btn active" data-flow="forward" title="Tektaraflı Ok"><i data-lucide="arrow-right"></i></button>
-                <button class="toolbar-btn" data-flow="both" title="Çift Taraflı Ok"><i data-lucide="arrow-left-right"></i></button>
+                <button class="toolbar-btn active" data-flow="forward" title="Tektaraflı Ok"><i
+                        data-lucide="arrow-right"></i></button>
+                <button class="toolbar-btn" data-flow="both" title="Çift Taraflı Ok"><i
+                        data-lucide="arrow-left-right"></i></button>
                 <button class="toolbar-btn" data-flow="none" title="Düz Çizgi"><i data-lucide="minus"></i></button>
             </div>
             <div class="toolbar-divider"></div>
             <div class="toolbar-group">
                 <span class="toolbar-label" style="font-size: 0.75rem; opacity: 0.6; margin-right: 4px;">Stil:</span>
-                <button class="toolbar-btn active" data-style="curved" title="Kavisli"><i data-lucide="spline"></i></button>
-                <button class="toolbar-btn" data-style="dashed" title="Kesikli"><i data-lucide="more-horizontal"></i></button>
+                <button class="toolbar-btn active" data-style="curved" title="Kavisli"><i
+                        data-lucide="spline"></i></button>
+                <button class="toolbar-btn" data-style="dashed" title="Kesikli"><i
+                        data-lucide="more-horizontal"></i></button>
             </div>
             <div class="toolbar-divider"></div>
             <div class="toolbar-group">
-                <button class="toolbar-btn" id="cancel-connection" title="Vazgeç" style="color: #ef4444;"><i data-lucide="x-circle"></i></button>
+                <button class="toolbar-btn" id="cancel-connection" title="Vazgeç" style="color: #ef4444;"><i
+                        data-lucide="x-circle"></i></button>
             </div>
         </div>
 
@@ -325,7 +349,8 @@
                     <option value="space">Derin Uzay</option>
                     <option value="blueprint">Mavi Çizim Planı</option>
                 </select>
-                <i data-lucide="chevron-down" style="position: absolute; right: 12px; bottom: 10px; width: 16px; pointer-events: none; opacity: 0.5;"></i>
+                <i data-lucide="chevron-down"
+                    style="position: absolute; right: 12px; bottom: 10px; width: 16px; pointer-events: none; opacity: 0.5;"></i>
             </div>
             <div class="setting-item">
                 <label>Arka Plan Parlaklığı</label>
@@ -334,7 +359,7 @@
             </div>
             <div class="setting-item">
                 <label>Arka Plan Büyüklüğü</label>
-                <input type="range" id="bg-size" min="20" max="300" value="100">
+                <input type="range" id="bg-size" min="20" max="100value=" 100">
                 <span class="value-display">100%</span>
             </div>
         </div>
@@ -398,13 +423,16 @@
                 <div class="focus-divider"></div>
                 <!-- Ambient Audio Controls -->
                 <div class="ambient-controls">
-                    <button class="ambient-btn" id="audio-rain" data-src="https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg" title="Yağmur Sesi">
+                    <button class="ambient-btn" id="audio-rain"
+                        data-src="https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg" title="Yağmur Sesi">
                         <i data-lucide="cloud-rain"></i>
                     </button>
-                    <button class="ambient-btn" id="audio-coffee" data-src="https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg" title="Kafe Sesleri">
+                    <button class="ambient-btn" id="audio-coffee"
+                        data-src="https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg" title="Kafe Sesleri">
                         <i data-lucide="coffee"></i>
                     </button>
-                    <button class="ambient-btn" id="audio-lofi" data-src="https://stream.zeno.fm/f3wvbbqmdg8uv" title="Lo-Fi Radyo">
+                    <button class="ambient-btn" id="audio-lofi" data-src="https://stream.zeno.fm/f3wvbbqmdg8uv"
+                        title="Lo-Fi Radyo">
                         <i data-lucide="music"></i>
                     </button>
                 </div>
@@ -421,4 +449,5 @@
     <!-- Modals ve Scripts -->
     <script src="app.js"></script>
 </body>
+
 </html>
