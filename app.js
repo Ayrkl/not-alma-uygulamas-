@@ -287,12 +287,28 @@ function updateCanvas() {
     const transform = `translate(${halfW}px, ${halfH}px) scale(${state.camZ}) translate(${-state.camX}px, ${-state.camY}px)`;
     canvasContent.style.transform = transform;
     
-    // Izgara Senkronizasyonu — kamera pozisyonuyla tam kilitli
-    const gridSize = 50 * state.camZ;
+    // Izgara Senkronizasyonu — Tema Tablolarını Dinamik Olarak Yönetiyoruz
+    const themeSizes = {
+        'dark-grid': 50,
+        'light-grid': 50,
+        'corkboard': 60,
+        'dot-grid': 30,
+        'chalkboard': 50,
+        'space': 400,
+        'blueprint': 100
+    };
+    const theme = state.settings.theme || 'dark-grid';
+    const baseSize = themeSizes[theme] || 50;
+    const density = state.settings.bgDensity || 1.0;
+
+    // CSS Değişkenlerini Güncelle (Artık Grid CSS'i Variables Üzerinden Çalışıyor)
+    const gridSize = baseSize * density * state.camZ;
     const offsetX = halfW - state.camX * state.camZ;
     const offsetY = halfH - state.camY * state.camZ;
-    canvasGrid.style.backgroundSize = `${gridSize}px ${gridSize}px`;
-    canvasGrid.style.backgroundPosition = `${offsetX}px ${offsetY}px`;
+    
+    canvasGrid.style.setProperty('--bg-grid-size', `${gridSize}px`);
+    canvasGrid.style.setProperty('--bg-offset-x', `${offsetX}px`);
+    canvasGrid.style.setProperty('--bg-offset-y', `${offsetY}px`);
     
     // UI Güncelleme
     zoomLevelEl.innerText = `${Math.round(state.camZ * 100)}%`;
@@ -1850,6 +1866,41 @@ function setupSettingsListeners() {
             const newTheme = e.target.value;
             state.settings.theme = newTheme;
             applyTheme(newTheme);
+            updateCanvas(); // Force redraw for base size change
+            saveState();
+        });
+    }
+
+    const bgOpacityInput = document.getElementById('bg-opacity');
+    const bgSizeInput = document.getElementById('bg-size');
+
+    if (bgOpacityInput) {
+        if (state.settings.bgOpacity !== undefined) {
+            bgOpacityInput.value = state.settings.bgOpacity;
+            bgOpacityInput.nextElementSibling.innerText = `${state.settings.bgOpacity}%`;
+            canvasGrid.style.setProperty('--bg-opacity', state.settings.bgOpacity / 100);
+        } else {
+            canvasGrid.style.setProperty('--bg-opacity', 1);
+        }
+        bgOpacityInput.addEventListener('input', () => {
+            const val = parseInt(bgOpacityInput.value);
+            state.settings.bgOpacity = val;
+            bgOpacityInput.nextElementSibling.innerText = `${val}%`;
+            canvasGrid.style.setProperty('--bg-opacity', val / 100);
+            saveState();
+        });
+    }
+
+    if (bgSizeInput) {
+        if (state.settings.bgDensity !== undefined) {
+            bgSizeInput.value = Math.round(state.settings.bgDensity * 100);
+            bgSizeInput.nextElementSibling.innerText = `${Math.round(state.settings.bgDensity * 100)}%`;
+        }
+        bgSizeInput.addEventListener('input', () => {
+            const val = parseInt(bgSizeInput.value);
+            state.settings.bgDensity = val / 100;
+            bgSizeInput.nextElementSibling.innerText = `${val}%`;
+            updateCanvas(); // Force instant redraw to see density changes
             saveState();
         });
     }
