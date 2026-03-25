@@ -25,7 +25,10 @@ const state = {
     objects: [],
     selectedId: null,
     selectedIds: [],
+    selectedConnId: null,
     connections: [],
+    connFlow: 'forward', // forward, backward, both, none
+    connStyle: 'curved', // curved, straight, dashed
     settings: {
         smoothness: 0.85,
         sensitivity: 0.15
@@ -424,6 +427,8 @@ function setupEventListeners() {
                 bulkRemove(state.selectedIds);
             } else if (state.selectedId) {
                 removeObject(state.selectedId);
+            } else if (state.selectedConnId) {
+                removeConnection(state.selectedConnId);
             }
         }
     });
@@ -455,6 +460,8 @@ function setupEventListeners() {
                     bulkRemove(state.selectedIds);
                 } else if (state.selectedId) {
                     removeObject(state.selectedId);
+                } else if (state.selectedConnId) {
+                    removeConnection(state.selectedConnId);
                 }
             }
         });
@@ -650,8 +657,8 @@ function addObject(type, x, y, content = '') {
         x,
         y: y + 20, // Vertical offset
         content: content || '',
-        width: type === 'note' ? 250 : (type === 'image' ? 300 : (type === 'point' ? 10 : 200)),
-        height: type === 'note' ? 180 : (type === 'point' ? 10 : 'auto'),
+        width: type === 'note' ? 250 : (type === 'image' ? 300 : (type === 'point' ? 8 : 200)),
+        height: type === 'note' ? 180 : (type === 'point' ? 8 : 'auto'),
         fontFamily: 'Inter',
         fontSize: '16px',
         color: 'default',
@@ -686,6 +693,24 @@ function deselectAll() {
     });
     floatingToolbar.classList.remove('active');
     document.getElementById('connection-toolbar').classList.remove('active');
+    state.selectedConnId = null;
+}
+
+function selectConnection(connId) {
+    deselectAll();
+    state.selectedConnId = connId;
+    renderConnections();
+    
+    // Show the floating toolbar for the connection
+    const floatingToolbar = document.getElementById('floating-toolbar');
+    floatingToolbar.classList.add('active');
+}
+
+function removeConnection(connId) {
+    state.connections = state.connections.filter(c => c.id !== connId);
+    state.selectedConnId = null;
+    renderConnections();
+    saveState();
 }
 
 function hitTestSelection(sx, sy, sw, sh) {
@@ -738,12 +763,40 @@ function handleConnectionClick(objId) {
         );
         
         if (!exists) {
+            const fromObj = state.objects.find(o => o.id === state.connectSourceId);
+            const toObj = state.objects.find(o => o.id === objId);
+            
+            let fromX = null, fromY = null, toX = null, toY = null;
+            let finalFromId = state.connectSourceId;
+            let finalToId = objId;
+
+            // If source is a point, use its center coordinates and mark it for deletion
+            if (fromObj && fromObj.type === 'point') {
+                fromX = fromObj.x + 4;
+                fromY = fromObj.y + 4;
+                finalFromId = null; 
+            }
+            // If target is a point, use its center coordinates and mark it for deletion
+            if (toObj && toObj.type === 'point') {
+                toX = toObj.x + 4;
+                toY = toObj.y + 4;
+                finalToId = null;
+            }
+
             state.connections.push({ 
-                fromId: state.connectSourceId, 
-                toId: objId,
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                fromId: finalFromId,
+                fromX, fromY,
+                toId: finalToId,
+                toX, toY,
                 flow: state.connFlow,
                 style: state.connStyle
             });
+
+            // Cleanup helper points after connection is stored
+            if (fromObj && fromObj.type === 'point') removeObject(fromObj.id);
+            if (toObj && toObj.type === 'point') removeObject(toObj.id);
+
             saveState();
         }
         
@@ -759,19 +812,14 @@ function renderObject(obj) {
     if (obj.type === 'point') {
         const el = document.createElement('div');
         el.id = `obj-${obj.id}`;
-        el.className = 'canvas-obj point-anchor';
+        el.className = 'canvas-obj point-anchor fade-in';
         el.style.left = `${obj.x}px`;
         el.style.top = `${obj.y}px`;
-        el.style.width = '2px';
-        el.style.height = '2px';
-        el.style.background = 'var(--accent-color)';
-        el.style.borderRadius = '50%';
-        el.style.opacity = '0.4';
         
         el.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             if (state.currentTool === 'connect') handleConnectionClick(obj.id);
-            else if (state.currentTool === 'pan' || state.currentTool === '') selectObject(obj.id);
+            else if (state.currentTool === 'pan' || state.currentTool === 'select' || state.currentTool === '') selectObject(obj.id);
         });
 
         canvasContent.appendChild(el);
@@ -942,37 +990,63 @@ function renderObjects() {
 function renderConnections() {
     const svg = document.getElementById('connection-layer');
     if (!svg) return;
-    svg.innerHTML = svg.querySelector('defs').outerHTML; // Keep defs, clear paths
+    
+    // Clear only paths, keep <defs>
+    const existingPaths = svg.querySelectorAll('.connection-path');
+    existingPaths.forEach(p => p.remove());
     
     state.connections.forEach(conn => {
-        const fromObj = state.objects.find(o => o.id === conn.fromId);
-        const toObj = state.objects.find(o => o.id === conn.toId);
-        const fromEl = document.getElementById(`obj-${conn.fromId}`);
-        const toEl = document.getElementById(`obj-${conn.toId}`);
+        const fromObj = conn.fromId ? state.objects.find(o => o.id === conn.fromId) : null;
+        const toObj = conn.toId ? state.objects.find(o => o.id === conn.toId) : null;
+        const fromEl = conn.fromId ? document.getElementById(`obj-${conn.fromId}`) : null;
+        const toEl = conn.toId ? document.getElementById(`obj-${conn.toId}`) : null;
         
-        if (fromObj && toObj && fromEl && toEl) {
+        let startX, startY, endX, endY;
+
+        // Determine Start Point
+        if (fromObj && fromEl) {
             const fw = fromEl.offsetWidth || (fromObj.width === 'auto' ? 200 : fromObj.width);
             const fh = fromEl.offsetHeight || (fromObj.height === 'auto' ? 100 : fromObj.height);
+            startX = fromObj.x + (fw / 2);
+            startY = fromObj.y + (fh / 2);
+        } else if (conn.fromX !== null) {
+            startX = conn.fromX;
+            startY = conn.fromY;
+        }
+
+        // Determine End Point
+        if (toObj && toEl) {
             const tw = toEl.offsetWidth || (toObj.width === 'auto' ? 200 : toObj.width);
             const th = toEl.offsetHeight || (toObj.height === 'auto' ? 100 : toObj.height);
-            
-            // World coordinates are already mapped in the camera model
-            const startX = fromObj.x + (fw / 2);
-            const startY = fromObj.y + (fh / 2);
-            const endX = toObj.x + (tw / 2);
-            const endY = toObj.y + (th / 2);
-            
+            endX = toObj.x + (tw / 2);
+            endY = toObj.y + (th / 2);
+        } else if (conn.toX !== null) {
+            endX = conn.toX;
+            endY = conn.toY;
+        }
+
+        if (startX !== undefined && endX !== undefined) {
             const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            
             let classes = "connection-path";
             if (conn.style === 'dashed') classes += " dashed";
+            if (state.selectedConnId === conn.id) classes += " selected";
             p.setAttribute("class", classes);
+            
+            p.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectConnection(conn.id);
+            });
             
             if (conn.flow === 'forward' || conn.flow === 'both') p.setAttribute("marker-end", "url(#arrowhead)");
             if (conn.flow === 'both') p.setAttribute("marker-start", "url(#arrowstart)");
             
-            const dx = Math.abs(endX - startX) * 0.4;
-            const d = `M ${startX} ${startY} C ${startX + dx} ${startY}, ${endX - dx} ${endY}, ${endX} ${endY}`;
+            // Robust Curved Logic (Z-Curve)
+            const cpX1 = startX + (endX - startX) * 0.5;
+            const cpY1 = startY;
+            const cpX2 = startX + (endX - startX) * 0.5;
+            const cpY2 = endY;
+            
+            const d = `M ${startX} ${startY} C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${endX} ${endY}`;
             p.setAttribute("d", d);
             svg.appendChild(p);
         }

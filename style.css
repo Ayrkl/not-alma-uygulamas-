@@ -274,8 +274,6 @@ nav.tools,
     position: absolute;
     top: 0;
     left: 0;
-    width: 0;
-    height: 0;
     overflow: visible;
     pointer-events: none;
     z-index: 5;
@@ -289,12 +287,33 @@ nav.tools,
     opacity: 0.7;
     filter: drop-shadow(0 0 5px var(--accent-glow));
     transition: all 0.3s ease;
+    cursor: pointer;
+    pointer-events: visibleStroke; /* Sadece çizgi üzerine tıklanabilir */
+}
+
+.connection-path:hover {
+    stroke-width: 5;
+    opacity: 1;
+    filter: drop-shadow(0 0 10px var(--accent-glow));
+}
+
+.connection-path.selected {
+    stroke: #ffffff;
+    stroke-width: 6;
+    opacity: 1;
+    filter: drop-shadow(0 0 15px var(--accent-glow));
 }
 
 body.light-theme .connection-path {
     stroke: var(--accent-color);
     opacity: 0.4;
     filter: none;
+}
+
+body.light-theme .connection-path.selected {
+    stroke: var(--accent-color);
+    stroke-width: 6;
+    opacity: 1;
 }
 
 #selection-box {
@@ -382,6 +401,20 @@ body.light-theme .connection-path {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+}
+
+/* Fix for Blue Ovals: Small, elegant anchor points */
+.canvas-obj.point-anchor {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    width: 8px !important;
+    height: 8px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: var(--accent-color) !important;
+    box-shadow: 0 0 10px var(--accent-glow) !important;
+    border: none !important;
+    z-index: 20;
 }
 
 .canvas-obj:hover {
