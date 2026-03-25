@@ -389,6 +389,60 @@ function setupEventListeners() {
         });
     });
 
+    // Floating Toolbar Actions - COLORS
+    floatingToolbar.querySelectorAll('.color-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (state.selectedId) {
+                const obj = state.objects.find(o => o.id === state.selectedId);
+                if (obj) {
+                    const color = btn.getAttribute('data-color');
+                    obj.color = color;
+                    
+                    const el = document.getElementById(`obj-${obj.id}`);
+                    if (el) {
+                        if (color === 'default') {
+                            el.style.background = '';
+                        } else {
+                            el.style.background = color;
+                        }
+                    }
+                    
+                    // Update UI selection
+                    floatingToolbar.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    saveState();
+                }
+            }
+        });
+    });
+
+    // Floating Toolbar Actions - TEXT COLORS
+    floatingToolbar.querySelectorAll('.text-color-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (state.selectedId) {
+                const obj = state.objects.find(o => o.id === state.selectedId);
+                if (obj) {
+                    const color = btn.getAttribute('data-color');
+                    obj.textColor = color;
+                    
+                    const el = document.querySelector(`#obj-${obj.id} .note-editor`);
+                    if (el) {
+                        el.style.color = color === 'default' ? '' : color;
+                    }
+                    
+                    // Update UI selection
+                    floatingToolbar.querySelectorAll('.text-color-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    saveState();
+                }
+            }
+        });
+    });
+
     // Close dropdowns when clicking outside
     window.addEventListener('click', () => {
         fontDropdown.classList.remove('open');
@@ -460,6 +514,8 @@ function addObject(type, x, y, content = '') {
         height: type === 'note' ? 180 : 'auto',
         fontFamily: 'Inter',
         fontSize: '16px',
+        color: 'default',
+        textColor: 'default',
         newlyCreated: true
     };
     
@@ -486,6 +542,14 @@ function renderObject(obj) {
     el.style.width = obj.width === 'auto' ? 'auto' : `${obj.width}px`;
     el.style.height = obj.height === 'auto' ? 'auto' : `${obj.height}px`;
 
+    if (obj.color && obj.color !== 'default') {
+        el.style.background = obj.color;
+        // Auto-fix text visibility if user hasn't set a custom text color
+        if (obj.textColor === 'default') {
+            obj.textColor = '#0f172a'; // Dark blue/black for better contrast on colored notes
+        }
+    }
+
     // Drag Handle
     const handle = document.createElement('div');
     handle.className = 'obj-handle';
@@ -508,6 +572,9 @@ function renderObject(obj) {
         editor.innerHTML = obj.content || 'Buraya yazın...';
         editor.style.fontFamily = obj.fontFamily || 'Inter';
         editor.style.fontSize = obj.fontSize || '16px';
+        if (obj.textColor && obj.textColor !== 'default') {
+            editor.style.color = obj.textColor;
+        }
         
         editor.addEventListener('input', () => {
             obj.content = editor.innerHTML;
@@ -585,6 +652,17 @@ function selectObject(id) {
         if (obj && obj.fontSize) {
             sizeSelected.textContent = obj.fontSize;
         }
+
+        // Update Color Selection UI
+        floatingToolbar.querySelectorAll('.color-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-color') === (obj.color || 'default'));
+        });
+
+        // Update Text Color Selection UI
+        floatingToolbar.querySelectorAll('.text-color-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-color') === (obj.textColor || 'default'));
+        });
+
         floatingToolbar.classList.add('active');
     } else {
         floatingToolbar.classList.remove('active');

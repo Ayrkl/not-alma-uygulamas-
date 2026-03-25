@@ -35,6 +35,15 @@ body.light-theme {
     --glass-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05);
 }
 
+/* Helper to ensure text visibility on light backgrounds */
+.canvas-obj[style*="background: #"] .note-editor {
+    color: #0f172a !important;
+}
+
+body.light-theme .canvas-obj .note-editor {
+    color: #0f172a;
+}
+
 body.light-theme .custom-dropdown, 
 body.light-theme .toolbar-btn {
     border-color: rgba(0, 0, 0, 0.1);
@@ -456,7 +465,45 @@ body.light-theme .toolbar-btn:hover {
     opacity: 1;
 }
 
-/* Custom Dropdown Styling */
+.color-picker {
+    display: flex;
+    gap: 8px;
+    padding: 0 4px;
+}
+
+.color-btn, .text-color-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.color-btn:hover, .text-color-btn:hover {
+    transform: scale(1.2);
+    border-color: var(--accent-color);
+}
+
+.color-btn.active, .text-color-btn.active {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.text-color-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 4px;
+}
+
+.color-btn[data-color="default"] {
+    background: var(--glass-bg);
+}
+
+body.light-theme .color-btn[data-color="default"] {
+    background: white;
+}
 .custom-dropdown {
     position: relative;
     width: 150px;
