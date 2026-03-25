@@ -270,6 +270,52 @@ nav.tools,
     transform-origin: 0 0;
 }
 
+#connection-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.connection-path {
+    fill: none;
+    stroke: var(--accent-color);
+    stroke-width: 3;
+    stroke-linecap: round;
+    opacity: 0.7;
+    filter: drop-shadow(0 0 5px var(--accent-glow));
+    transition: all 0.3s ease;
+}
+
+body.light-theme .connection-path {
+    stroke: var(--accent-color);
+    opacity: 0.4;
+    filter: none;
+}
+
+#selection-box {
+    position: absolute;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid var(--accent-color);
+    pointer-events: none;
+    z-index: 3000;
+    display: none;
+}
+
+.canvas-obj.multi-selected {
+    box-shadow: 0 0 0 2px var(--accent-color), 0 0 20px var(--accent-glow) !important;
+}
+
+.tool-btn i {
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+
 /* Controls / Zoom UI */
 #controls {
     position: fixed;
@@ -396,12 +442,12 @@ nav.tools,
     margin-bottom: 0.4rem;
 }
 
-/* Formatting Toolbar (Global Floating) */
-#floating-toolbar {
+/* Floating Toolbars (Global) */
+#floating-toolbar, #connection-toolbar {
     position: fixed;
     top: 20px;
     left: 50%;
-    transform: translateX(-50%) translateY(-100px);
+    transform: translateX(-50%) translateY(-120px);
     height: 48px;
     padding: 0 12px;
     border-radius: 12px;
@@ -409,15 +455,25 @@ nav.tools,
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
     opacity: 0;
     pointer-events: none;
 }
 
-#floating-toolbar.active {
+#floating-toolbar.active, #connection-toolbar.active {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
     pointer-events: auto;
+}
+
+.dashed {
+    stroke-dasharray: 8, 8;
+    animation: dash-flow 20s linear infinite;
+}
+
+@keyframes dash-flow {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: -1000; }
 }
 
 .toolbar-group {

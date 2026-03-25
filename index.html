@@ -24,6 +24,9 @@
             </div>
             
             <nav class="tools">
+                <button class="tool-btn" id="tool-select" title="Çoklu Seçim (V)">
+                    <i data-lucide="mouse-pointer-2"></i>
+                </button>
                 <button class="tool-btn active" id="tool-pan" title="Kaydır (H)">
                     <i data-lucide="hand"></i>
                 </button>
@@ -35,6 +38,9 @@
                 </button>
                 <button class="tool-btn" id="tool-note" title="Not Kağıdı (N)">
                     <i data-lucide="sticky-note"></i>
+                </button>
+                <button class="tool-btn" id="tool-connect" title="Bağlantı Kur (L)">
+                    <i data-lucide="share-2"></i>
                 </button>
             </nav>
 
@@ -128,10 +134,31 @@
             </div>
         </div>
 
+        <!-- Connection Customization Toolbar -->
+        <div id="connection-toolbar" class="glass">
+            <div class="toolbar-group">
+                <span class="toolbar-label" style="font-size: 0.75rem; opacity: 0.6; margin-right: 4px;">Yön:</span>
+                <button class="toolbar-btn active" data-flow="forward" title="Tektaraflı Ok"><i data-lucide="arrow-right"></i></button>
+                <button class="toolbar-btn" data-flow="both" title="Çift Taraflı Ok"><i data-lucide="arrow-left-right"></i></button>
+                <button class="toolbar-btn" data-flow="none" title="Düz Çizgi"><i data-lucide="minus"></i></button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
+                <span class="toolbar-label" style="font-size: 0.75rem; opacity: 0.6; margin-right: 4px;">Stil:</span>
+                <button class="toolbar-btn active" data-style="curved" title="Kavisli"><i data-lucide="spline"></i></button>
+                <button class="toolbar-btn" data-style="dashed" title="Kesikli"><i data-lucide="more-horizontal"></i></button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
+                <button class="toolbar-btn" id="cancel-connection" title="Vazgeç" style="color: #ef4444;"><i data-lucide="x-circle"></i></button>
+            </div>
+        </div>
+
         <!-- Main Canvas Area -->
         <main id="canvas-container">
             <div id="canvas-grid" class="infinite-bg"></div>
             <div id="canvas-content">
+                <svg id="connection-layer"></svg>
                 <!-- Objects will be rendered here dynamically -->
             </div>
         </main>

@@ -11,8 +11,8 @@ const state = {
     isPanning: false,
     startPanX: 0,
     startPanY: 0,
-    currentTool: 'pan', // pan, text, image, note
-    objects: [], // { id, type, x, y, content, width, height }
+    currentTool: 'pan', // pan, text, image, note, select, connect
+    objects: [], // { id, type, x, y, content, width, height, fontFamily, fontSize, color }
     selectedId: null,
     isDragging: false,
     isResizing: false,
@@ -20,7 +20,15 @@ const state = {
     dragStartX: 0,
     dragStartY: 0,
     resizeStartWidth: 0,
-    resizeStartHeight: 0
+    resizeStartHeight: 0,
+    connections: [],
+    connectSourceId: null,
+    selectedIds: [],
+    isSelecting: false,
+    selectionStartX: 0,
+    selectionStartY: 0,
+    connFlow: 'forward',
+    connStyle: 'curved'
 };
 
 // --- DOM Elements ---
@@ -37,16 +45,23 @@ lucide.createIcons();
 
 // --- Initialization ---
 function init() {
-    loadState();
-    renderObjects();
-    setupEventListeners();
-    updateCanvas();
+    try {
+        loadState();
+        renderObjects();
+        renderConnections();
+        setupEventListeners();
+        updateCanvas();
+        lucide.createIcons();
+    } catch (err) {
+        console.error("Lumina Init Error:", err);
+    }
 }
 
 // --- Persistence ---
 function saveState() {
     localStorage.setItem('lumina_canvas_data', JSON.stringify({
         objects: state.objects,
+        connections: state.connections,
         pan: { x: state.panX, y: state.panY },
         zoom: state.zoom
     }));
@@ -55,11 +70,18 @@ function saveState() {
 function loadState() {
     const data = localStorage.getItem('lumina_canvas_data');
     if (data) {
-        const parsed = JSON.parse(data);
-        state.objects = parsed.objects || [];
-        state.panX = parsed.pan.x || 0;
-        state.panY = parsed.pan.y || 0;
-        state.zoom = parsed.zoom || 1.0;
+        try {
+            const parsed = JSON.parse(data);
+            state.objects = parsed.objects || [];
+            state.connections = parsed.connections || [];
+            if (parsed.pan) {
+                state.panX = parsed.pan.x || 0;
+                state.panY = parsed.pan.y || 0;
+            }
+            state.zoom = parsed.zoom || 1.0;
+        } catch (e) {
+            console.error("Data Load Error:", e);
+        }
     }
 }
 
@@ -80,6 +102,8 @@ function updateCanvas() {
 function setupEventListeners() {
     // Middle Mouse or Space + drag to pan
     canvasContainer.addEventListener('mousedown', e => {
+        if (e.target.closest('#sidebar') || e.target.closest('#controls') || e.target.closest('.glass')) return;
+
         // Unfocus active editors when starting to pan on empty canvas
         if (e.target === canvasContainer || e.target === canvasGrid) {
             if (document.activeElement && document.activeElement.classList.contains('note-editor')) {
@@ -88,12 +112,25 @@ function setupEventListeners() {
             }
         }
 
-        if (state.currentTool === 'pan' || e.button === 1 || (e.button === 0 && e.target === canvasContainer)) {
+        if (state.currentTool === 'pan' || e.button === 1) {
             state.isPanning = true;
             state.startPanX = e.clientX - state.panX;
             state.startPanY = e.clientY - state.panY;
+            deselectAll();
             canvasContainer.classList.add('panning');
             e.preventDefault();
+        } else if (state.currentTool === 'select' && e.button === 0) {
+            state.isSelecting = true;
+            state.selectionStartX = e.clientX;
+            state.selectionStartY = e.clientY;
+            
+            const selectionBox = document.createElement('div');
+            selectionBox.id = 'selection-box';
+            document.body.appendChild(selectionBox);
+            selectionBox.style.display = 'block';
+            deselectAll();
+        } else if (e.target === canvasGrid || e.target === canvasContainer) {
+            deselectAll();
         }
     });
 
@@ -102,6 +139,21 @@ function setupEventListeners() {
             state.panX = e.clientX - state.startPanX;
             state.panY = e.clientY - state.startPanY;
             updateCanvas();
+        } else if (state.isSelecting) {
+            const selectionBox = document.getElementById('selection-box');
+            if (selectionBox) {
+                const x1 = Math.min(state.selectionStartX, e.clientX);
+                const y1 = Math.min(state.selectionStartY, e.clientY);
+                const x2 = Math.max(state.selectionStartX, e.clientX);
+                const y2 = Math.max(state.selectionStartY, e.clientY);
+                
+                selectionBox.style.left = `${x1}px`;
+                selectionBox.style.top = `${y1}px`;
+                selectionBox.style.width = `${x2 - x1}px`;
+                selectionBox.style.height = `${y2 - y1}px`;
+                
+                hitTestSelection(x1, y1, x2 - x1, y2 - y1);
+            }
         }
         
         if (state.isDragging && state.dragTarget) {
@@ -111,7 +163,6 @@ function setupEventListeners() {
             const obj = state.objects.find(o => o.id === state.dragTarget);
             if (obj) {
                 if (state.isResizing) {
-                    // Resize logic
                     obj.width = Math.max(100, state.resizeStartWidth + dx);
                     obj.height = Math.max(50, state.resizeStartHeight + dy);
                     const el = document.getElementById(`obj-${obj.id}`);
@@ -120,7 +171,6 @@ function setupEventListeners() {
                         el.style.height = `${obj.height}px`;
                     }
                 } else {
-                    // Drag logic
                     obj.x += dx;
                     obj.y += dy;
                     const el = document.getElementById(`obj-${obj.id}`);
@@ -130,6 +180,10 @@ function setupEventListeners() {
                     }
                     state.dragStartX = e.clientX;
                     state.dragStartY = e.clientY;
+                    
+                    if (state.connections.length > 0) {
+                        renderConnections();
+                    }
                 }
             }
         }
@@ -141,10 +195,16 @@ function setupEventListeners() {
             canvasContainer.classList.remove('panning');
             saveState();
         }
+        if (state.isSelecting) {
+            state.isSelecting = false;
+            const selectionBox = document.getElementById('selection-box');
+            if (selectionBox) selectionBox.remove();
+        }
         if (state.isDragging) {
             state.isDragging = false;
             state.isResizing = false;
             state.dragTarget = null;
+            renderConnections();
             saveState();
         }
     });
@@ -152,21 +212,25 @@ function setupEventListeners() {
     // Zoom
     canvasContainer.addEventListener('wheel', e => {
         e.preventDefault();
+        
+        const rect = canvasContainer.getBoundingClientRect();
+        const cursorX = e.clientX - rect.left;
+        const cursorY = e.clientY - rect.top;
+
+        // Calculate world coordinates under cursor before zoom
+        const worldX = (cursorX - state.panX) / state.zoom;
+        const worldY = (cursorY - state.panY) / state.zoom;
+
         const delta = -e.deltaY;
         const factor = 1.1;
         const zoomChange = delta > 0 ? factor : 1/factor;
         
-        const rect = canvasContainer.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        // Zoom centered on mouse
         const oldZoom = state.zoom;
         state.zoom = Math.min(Math.max(state.zoom * zoomChange, 0.1), 5.0);
-        
-        const zoomDelta = state.zoom / oldZoom;
-        state.panX = mouseX - (mouseX - state.panX) * zoomDelta;
-        state.panY = mouseY - (mouseY - state.panY) * zoomDelta;
+
+        // Adjust pan to keep world coordinates under cursor constant
+        state.panX = cursorX - worldX * state.zoom;
+        state.panY = cursorY - worldY * state.zoom;
         
         updateCanvas();
     }, { passive: false });
@@ -191,13 +255,41 @@ function setupEventListeners() {
                 if (state.currentTool === 'image') {
                     imageUpload.click();
                 } else if (state.currentTool === 'text' || state.currentTool === 'note') {
-                    const center = getCanvasCenter();
-                    const w = state.currentTool === 'note' ? 250 : 200;
-                    const h = state.currentTool === 'note' ? 180 : 60;
-                    addObject(state.currentTool, center.x - w/2, center.y - h/2);
-                    // Switch back to pan tool for immediate movement
+                    addObject(state.currentTool);
                     document.getElementById('tool-pan').click();
+                } else if (state.currentTool === 'connect') {
+                    // Hide main toolbar immediately when switching to connect tool
+                    document.getElementById('floating-toolbar').classList.remove('active');
+                    document.getElementById('connection-toolbar').classList.add('active');
                 }
+            }
+        });
+    });
+
+    // Connection Toolbar Actions
+    const connectionToolbar = document.getElementById('connection-toolbar');
+    connectionToolbar.querySelectorAll('.toolbar-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.id === 'cancel-connection') {
+                state.connectSourceId = null;
+                document.querySelectorAll('.canvas-obj').forEach(o => o.classList.remove('connecting-source'));
+                document.getElementById('tool-pan').click();
+                connectionToolbar.classList.remove('active');
+                return;
+            }
+
+            const flow = btn.getAttribute('data-flow');
+            const style = btn.getAttribute('data-style');
+
+            if (flow) {
+                state.connFlow = flow;
+                connectionToolbar.querySelectorAll('[data-flow]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+            if (style) {
+                state.connStyle = style;
+                connectionToolbar.querySelectorAll('[data-style]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
             }
         });
     });
@@ -242,15 +334,16 @@ function setupEventListeners() {
         if (e.target !== canvasContainer && e.target !== canvasGrid) return;
         
         if (state.currentTool === 'text' || state.currentTool === 'note') {
+            deselectAll();
+            document.getElementById('tool-pan').click();
+        } else if (state.currentTool === 'connect') {
             const rect = canvasContainer.getBoundingClientRect();
             const x = (e.clientX - state.panX - rect.left) / state.zoom;
             const y = (e.clientY - state.panY - rect.top) / state.zoom;
             
-            const w = state.currentTool === 'note' ? 250 : 200;
-            const h = state.currentTool === 'note' ? 180 : 60;
-            addObject(state.currentTool, x - w/2, y - h/2);
-            // Reset to pan tool
-            document.getElementById('tool-pan').click();
+            // Create a small anchor point when clicking empty canvas in connect mode
+            const pointId = addObject('point', x, y);
+            handleConnectionClick(pointId);
         }
     });
 
@@ -290,12 +383,15 @@ function setupEventListeners() {
             return;
         }
         
-        if (key === 'h' || key === 'v') document.getElementById('tool-pan').click();
+        if (key === 'h') document.getElementById('tool-pan').click();
+        if (key === 'v') document.getElementById('tool-select').click();
         if (key === 't') document.getElementById('tool-text').click();
         if (key === 'i') document.getElementById('tool-image').click();
         if (key === 'n') document.getElementById('tool-note').click();
         if (key === 'delete' || (key === 'backspace' && !isEditing)) {
-            if (state.selectedId) {
+            if (state.selectedIds && state.selectedIds.length > 0) {
+                bulkRemove(state.selectedIds);
+            } else if (state.selectedId) {
                 removeObject(state.selectedId);
             }
         }
@@ -324,7 +420,11 @@ function setupEventListeners() {
             } else if (format) {
                 document.execCommand('formatBlock', false, `<${format}>`);
             } else if (btn.id === 'toolbar-delete') {
-                if (state.selectedId) removeObject(state.selectedId);
+                if (state.selectedIds && state.selectedIds.length > 0) {
+                    bulkRemove(state.selectedIds);
+                } else if (state.selectedId) {
+                    removeObject(state.selectedId);
+                }
             }
         });
     });
@@ -503,15 +603,24 @@ function handleImageFile(file) {
 
 // --- Object Logic ---
 function addObject(type, x, y, content = '') {
-    const id = Date.now().toString();
+    // If coordinates are not provided, use canvas center
+    if (x === undefined || y === undefined) {
+        const center = getCanvasCenter();
+        const w = (type === 'note' ? 250 : 200);
+        const h = (type === 'note' ? 180 : 60);
+        x = center.x - w / 2;
+        y = center.y - h / 2;
+    }
+
+    const id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
     const newObj = {
         id,
         type,
         x,
-        y,
-        content: content || (type === 'text' ? '' : ''),
-        width: type === 'note' ? 250 : (type === 'image' ? 300 : 200),
-        height: type === 'note' ? 180 : 'auto',
+        y: y + 20, // Vertical offset
+        content: content || '',
+        width: type === 'note' ? 250 : (type === 'image' ? 300 : (type === 'point' ? 10 : 200)),
+        height: type === 'note' ? 180 : (type === 'point' ? 10 : 'auto'),
         fontFamily: 'Inter',
         fontSize: '16px',
         color: 'default',
@@ -527,13 +636,117 @@ function addObject(type, x, y, content = '') {
 
 function removeObject(id) {
     state.objects = state.objects.filter(o => o.id !== id);
+    // Also remove related connections
+    state.connections = state.connections.filter(c => c.fromId !== id && c.toId !== id);
+    
     const el = document.getElementById(`obj-${id}`);
     if (el) el.remove();
     state.selectedId = null;
+    renderConnections();
     saveState();
 }
 
+function deselectAll() {
+    state.selectedId = null;
+    state.selectedIds = [];
+    document.querySelectorAll('.canvas-obj').forEach(el => {
+        el.classList.remove('selected', 'multi-selected');
+        el.style.boxShadow = "";
+    });
+    floatingToolbar.classList.remove('active');
+    document.getElementById('connection-toolbar').classList.remove('active');
+}
+
+function hitTestSelection(sx, sy, sw, sh) {
+    state.selectedIds = [];
+    document.querySelectorAll('.canvas-obj').forEach(el => {
+        const rect = el.getBoundingClientRect();
+        const isIn = (
+            rect.left < sx + sw &&
+            rect.left + rect.width > sx &&
+            rect.top < sy + sh &&
+            rect.top + rect.height > sy
+        );
+        
+        if (isIn) {
+            const id = el.id.replace('obj-', '');
+            if (id) {
+                state.selectedIds.push(id);
+                el.classList.add('multi-selected');
+            }
+        } else {
+            el.classList.remove('multi-selected');
+        }
+    });
+}
+
+function bulkRemove(ids) {
+    ids.forEach(id => {
+        state.objects = state.objects.filter(o => o.id !== id);
+        state.connections = state.connections.filter(c => c.fromId !== id && c.toId !== id);
+        const el = document.getElementById(`obj-${id}`);
+        if (el) el.remove();
+    });
+    deselectAll();
+    renderConnections();
+    saveState();
+}
+
+function handleConnectionClick(objId) {
+    // Hide floating toolbar while connecting
+    document.getElementById('floating-toolbar').classList.remove('active');
+
+    if (!state.connectSourceId) {
+        state.connectSourceId = objId;
+        const el = document.getElementById(`obj-${objId}`);
+        if (el) el.style.boxShadow = "0 0 15px var(--accent-color)";
+    } else if (state.connectSourceId !== objId) {
+        const exists = state.connections.some(c => 
+            (c.fromId === state.connectSourceId && c.toId === objId) ||
+            (c.fromId === objId && c.toId === state.connectSourceId)
+        );
+        
+        if (!exists) {
+            state.connections.push({ 
+                fromId: state.connectSourceId, 
+                toId: objId,
+                flow: state.connFlow,
+                style: state.connStyle
+            });
+            saveState();
+        }
+        
+        const sourceEl = document.getElementById(`obj-${state.connectSourceId}`);
+        if (sourceEl) sourceEl.style.boxShadow = "";
+        
+        state.connectSourceId = null;
+        renderConnections();
+    }
+}
+
 function renderObject(obj) {
+    if (obj.type === 'point') {
+        const el = document.createElement('div');
+        el.id = `obj-${obj.id}`;
+        el.className = 'canvas-obj point-anchor';
+        el.style.left = `${obj.x}px`;
+        el.style.top = `${obj.y}px`;
+        el.style.width = '2px';
+        el.style.height = '2px';
+        el.style.background = 'var(--accent-color)';
+        el.style.borderRadius = '50%';
+        el.style.opacity = '0.4';
+        
+        el.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            if (state.currentTool === 'connect') handleConnectionClick(obj.id);
+            else if (state.currentTool === 'pan' || state.currentTool === '') selectObject(obj.id);
+        });
+
+        canvasContent.appendChild(el);
+        return;
+    }
+
     const el = document.createElement('div');
     el.id = `obj-${obj.id}`;
     el.className = `canvas-obj fade-in ${obj.type}-obj`;
@@ -544,18 +757,13 @@ function renderObject(obj) {
 
     if (obj.color && obj.color !== 'default') {
         el.style.background = obj.color;
-        // Auto-fix text visibility if user hasn't set a custom text color
-        if (obj.textColor === 'default') {
-            obj.textColor = '#0f172a'; // Dark blue/black for better contrast on colored notes
-        }
+        if (obj.textColor === 'default') obj.textColor = '#0f172a';
     }
 
-    // Drag Handle
     const handle = document.createElement('div');
     handle.className = 'obj-handle';
     el.appendChild(handle);
 
-    // Resize Handle
     const resizeHandle = document.createElement('div');
     resizeHandle.className = 'resize-handle';
     el.appendChild(resizeHandle);
@@ -572,21 +780,14 @@ function renderObject(obj) {
         editor.innerHTML = obj.content || 'Buraya yazın...';
         editor.style.fontFamily = obj.fontFamily || 'Inter';
         editor.style.fontSize = obj.fontSize || '16px';
-        if (obj.textColor && obj.textColor !== 'default') {
-            editor.style.color = obj.textColor;
-        }
+        if (obj.textColor && obj.textColor !== 'default') editor.style.color = obj.textColor;
         
         editor.addEventListener('input', () => {
             obj.content = editor.innerHTML;
             saveState();
         });
 
-        // Toggle toolbar on focus
-        editor.addEventListener('focus', () => {
-            selectObject(obj.id);
-        });
-
-        // Prevent dragging when typing
+        editor.addEventListener('focus', () => selectObject(obj.id));
         editor.addEventListener('mousedown', e => e.stopPropagation());
         
         el.appendChild(editor);
@@ -600,9 +801,14 @@ function renderObject(obj) {
         }
     }
 
-    // Event Listeners for Object
     el.addEventListener('mousedown', (e) => {
         e.stopPropagation();
+        
+        if (state.currentTool === 'connect') {
+            handleConnectionClick(obj.id);
+            return;
+        }
+
         selectObject(obj.id);
         
         const isHandle = e.target.classList.contains('obj-handle');
@@ -614,22 +820,17 @@ function renderObject(obj) {
             state.dragStartX = e.clientX;
             state.dragStartY = e.clientY;
         } else if (isResize) {
-            state.isDragging = true; // Still using drag logic for resize move
+            state.isDragging = true;
             state.dragTarget = obj.id;
             state.dragStartX = e.clientX;
             state.dragStartY = e.clientY;
             state.isResizing = true;
             state.resizeStartWidth = el.offsetWidth;
             state.resizeStartHeight = el.offsetHeight;
-        } else {
-            // Clicked padding or background
-            const editor = el.querySelector('.note-editor');
-            if (editor) editor.focus();
         }
     });
 
     canvasContent.appendChild(el);
-    lucide.createIcons();
 }
 
 function selectObject(id) {
@@ -645,25 +846,21 @@ function selectObject(id) {
     if (id) {
         const obj = state.objects.find(o => o.id === id);
         if (obj && obj.fontFamily) {
-            // Update custom dropdown label
             const opt = document.querySelector(`.dropdown-opt[data-value="${obj.fontFamily}"]`);
             if (opt) dropdownSelected.textContent = opt.textContent;
         }
-        if (obj && obj.fontSize) {
-            sizeSelected.textContent = obj.fontSize;
-        }
+        if (obj && obj.fontSize) sizeSelected.textContent = obj.fontSize;
 
-        // Update Color Selection UI
         floatingToolbar.querySelectorAll('.color-btn').forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-color') === (obj.color || 'default'));
         });
 
-        // Update Text Color Selection UI
         floatingToolbar.querySelectorAll('.text-color-btn').forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-color') === (obj.textColor || 'default'));
         });
 
         floatingToolbar.classList.add('active');
+        document.getElementById('connection-toolbar').classList.remove('active');
     } else {
         floatingToolbar.classList.remove('active');
     }
@@ -671,7 +868,83 @@ function selectObject(id) {
 
 function renderObjects() {
     canvasContent.innerHTML = '';
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.id = "connection-layer";
+    
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    
+    const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+    marker.setAttribute("id", "arrowhead");
+    marker.setAttribute("markerWidth", "10");
+    marker.setAttribute("markerHeight", "7");
+    marker.setAttribute("refX", "9");
+    marker.setAttribute("refY", "3.5");
+    marker.setAttribute("orient", "auto");
+    marker.setAttribute("markerUnits", "strokeWidth");
+    const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+    polygon.setAttribute("points", "0 0, 10 3.5, 0 7");
+    polygon.setAttribute("fill", "var(--accent-color)");
+    marker.appendChild(polygon);
+    defs.appendChild(marker);
+
+    const markerStart = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+    markerStart.setAttribute("id", "arrowstart");
+    markerStart.setAttribute("markerWidth", "10");
+    markerStart.setAttribute("markerHeight", "7");
+    markerStart.setAttribute("refX", "1");
+    markerStart.setAttribute("refY", "3.5");
+    markerStart.setAttribute("orient", "auto");
+    markerStart.setAttribute("markerUnits", "strokeWidth");
+    const polygonStart = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+    polygonStart.setAttribute("points", "10 0, 0 3.5, 10 7");
+    polygonStart.setAttribute("fill", "var(--accent-color)");
+    markerStart.appendChild(polygonStart);
+    defs.appendChild(markerStart);
+    
+    svg.appendChild(defs);
+    canvasContent.appendChild(svg);
+    
     state.objects.forEach(renderObject);
+    renderConnections();
+}
+
+function renderConnections() {
+    const svg = document.getElementById('connection-layer');
+    if (!svg) return;
+    svg.innerHTML = svg.querySelector('defs').outerHTML; // Keep defs, clear paths
+    
+    state.connections.forEach(conn => {
+        const fromObj = state.objects.find(o => o.id === conn.fromId);
+        const toObj = state.objects.find(o => o.id === conn.toId);
+        const fromEl = document.getElementById(`obj-${conn.fromId}`);
+        const toEl = document.getElementById(`obj-${conn.toId}`);
+        
+        if (fromObj && toObj && fromEl && toEl) {
+            const fw = fromEl.offsetWidth || (fromObj.width === 'auto' ? 200 : fromObj.width);
+            const fh = fromEl.offsetHeight || (fromObj.height === 'auto' ? 100 : fromObj.height);
+            const tw = toEl.offsetWidth || (toObj.width === 'auto' ? 200 : toObj.width);
+            const th = toEl.offsetHeight || (toObj.height === 'auto' ? 100 : toObj.height);
+            
+            const startX = fromObj.x + (fw / 2);
+            const startY = fromObj.y + (fh / 2);
+            const endX = toObj.x + (tw / 2);
+            const endY = toObj.y + (th / 2);
+            
+            const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            
+            let classes = "connection-path";
+            if (conn.style === 'dashed') classes += " dashed";
+            p.setAttribute("class", classes);
+            
+            if (conn.flow === 'forward' || conn.flow === 'both') p.setAttribute("marker-end", "url(#arrowhead)");
+            if (conn.flow === 'both') p.setAttribute("marker-start", "url(#arrowstart)");
+            
+            const dx = Math.abs(endX - startX) * 0.4;
+            const d = `M ${startX} ${startY} C ${startX + dx} ${startY}, ${endX - dx} ${endY}, ${endX} ${endY}`;
+            p.setAttribute("d", d);
+            svg.appendChild(p);
+        }
+    });
 }
 
 function getCanvasCenter() {
