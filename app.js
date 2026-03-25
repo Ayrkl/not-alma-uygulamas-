@@ -106,6 +106,7 @@ const zoomLevelEl = document.getElementById('zoom-level');
 const coordXEl = document.getElementById('coord-x');
 const coordYEl = document.getElementById('coord-y');
 const imageUpload = document.getElementById('image-upload');
+const videoUpload = document.getElementById('video-upload');
 const floatingToolbar = document.getElementById('floating-toolbar');
 
 // --- Initialization ---
@@ -446,7 +447,7 @@ function setupEventListeners() {
                 state.currentTool = toolId;
 
                 // Submenu araçlarından biri seçildiyse group-trigger'ı vurgula
-                const subMenuTools = ['text', 'note', 'image', 'checklist', 'connect'];
+                const subMenuTools = ['text', 'note', 'image', 'checklist', 'connect', 'video'];
                 const groupTrigger = document.getElementById('tool-create');
                 if (subMenuTools.includes(toolId)) {
                     groupTrigger?.classList.add('has-active');
@@ -457,6 +458,10 @@ function setupEventListeners() {
                 // Immediate action for certain tools
                 if (state.currentTool === 'image') {
                     imageUpload.click();
+                } else if (state.currentTool === 'video') {
+                    // Show Video URL Modal instead of direct file picker
+                    const modal = document.getElementById('video-url-modal');
+                    if (modal) modal.classList.remove('hidden');
                 } else if (state.currentTool === 'text' || state.currentTool === 'note' || state.currentTool === 'checklist') {
                     addObject(state.currentTool);
                     document.getElementById('tool-pan').click();
@@ -556,12 +561,15 @@ function setupEventListeners() {
     imageUpload.addEventListener('change', e => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const center = getCanvasCenter();
-                addObject('image', center.x, center.y, event.target.result);
-            };
-            reader.readAsDataURL(file);
+            handleImageFile(file);
+        }
+    });
+
+    // Video Upload
+    videoUpload.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file) {
+            handleVideoFile(file);
         }
     });
 
@@ -608,6 +616,7 @@ function setupEventListeners() {
         if (key === 'v') document.getElementById('tool-select').click();
         if (key === 't') document.getElementById('tool-text').click();
         if (key === 'i') document.getElementById('tool-image').click();
+        if (key === 'm') document.getElementById('tool-video').click();
         if (key === 'n') document.getElementById('tool-note').click();
         
         if (key === 'delete' || (key === 'backspace' && !isEditing)) {
@@ -989,13 +998,22 @@ function handleImageFile(file) {
     reader.readAsDataURL(file);
 }
 
+function handleVideoFile(file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const center = getCanvasCenter();
+        addObject('video', center.x, center.y, event.target.result);
+    };
+    reader.readAsDataURL(file);
+}
+
 // --- Object Logic ---
 function addObject(type, x, y, content = '') {
     // If coordinates are not provided, use canvas center
     if (x === undefined || y === undefined) {
         const center = getCanvasCenter();
-        const w = (type === 'note' || type === 'checklist' ? 250 : 200);
-        const h = (type === 'note' ? 180 : (type === 'checklist' ? 150 : 60));
+        const w = (type === 'note' || type === 'checklist' ? 250 : (type === 'video' ? 400 : 200));
+        const h = (type === 'note' ? 180 : (type === 'checklist' ? 150 : (type === 'video' ? 225 : 60)));
         x = center.x - w / 2;
         y = center.y - h / 2;
     }
@@ -1015,8 +1033,8 @@ function addObject(type, x, y, content = '') {
         x,
         y: y + 20, // Vertical offset
         content: finalContent || '',
-        width: type === 'note' || type === 'checklist' ? 250 : (type === 'image' ? 300 : (type === 'point' ? 8 : 200)),
-        height: type === 'note' ? 180 : (type === 'checklist' ? 'auto' : (type === 'point' ? 8 : 'auto')),
+        width: type === 'note' || type === 'checklist' ? 250 : (type === 'image' ? 300 : (type === 'video' ? 400 : (type === 'point' ? 8 : 200))),
+        height: type === 'note' ? 180 : (type === 'checklist' ? 'auto' : (type === 'video' ? 225 : (type === 'point' ? 8 : 'auto'))),
         fontFamily: 'Inter',
         fontSize: '16px',
         color: 'default',
@@ -1408,6 +1426,30 @@ function renderObject(obj) {
             }, 100);
             delete obj.newlyCreated;
         }
+    } else if (obj.type === 'video') {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'video-wrapper';
+        
+        const url = obj.content || '';
+        const isEmbed = url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com');
+
+        if (isEmbed) {
+            const iframe = document.createElement('iframe');
+            iframe.src = parseVideoUrl(url);
+            iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+            iframe.allowFullscreen = true;
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-forms');
+            wrapper.appendChild(iframe);
+            iframe.style.pointerEvents = 'auto';
+        } else {
+            const video = document.createElement('video');
+            video.src = url;
+            video.controls = true;
+            video.draggable = false;
+            wrapper.appendChild(video);
+        }
+        
+        el.appendChild(wrapper);
     } else {
         const editor = document.createElement('div');
         editor.className = 'note-editor';
@@ -1715,6 +1757,41 @@ function setupExtraListeners() {
 
     if (closePicker) closePicker.addEventListener('click', () => pickerPopup.classList.add('hidden'));
 
+    // Video URL Modal Listeners
+    const videoModal = document.getElementById('video-url-modal');
+    const closeVideoModal = document.getElementById('close-video-modal');
+    const btnAddVideoUrl = document.getElementById('btn-add-video-url');
+    const videoUrlInput = document.getElementById('video-url-input');
+    const btnTriggerUpload = document.getElementById('btn-trigger-video-upload');
+
+    if (closeVideoModal) {
+        closeVideoModal.addEventListener('click', () => videoModal.classList.add('hidden'));
+    }
+
+    if (btnAddVideoUrl) {
+        btnAddVideoUrl.addEventListener('click', () => {
+            const url = videoUrlInput.value.trim();
+            if (url) {
+                const center = getCanvasCenter();
+                addObject('video', center.x, center.y, url);
+                videoUrlInput.value = '';
+                videoModal.classList.add('hidden');
+                document.getElementById('tool-pan').click();
+            }
+        });
+        
+        videoUrlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') btnAddVideoUrl.click();
+        });
+    }
+
+    if (btnTriggerUpload) {
+        btnTriggerUpload.addEventListener('click', () => {
+            videoModal.classList.add('hidden');
+            videoUpload.click();
+        });
+    }
+
     // Sayfa geneli tıklama ile kapatma
     document.addEventListener('click', (e) => {
         if (pickerPopup && !pickerPopup.classList.contains('hidden')) {
@@ -1722,7 +1799,33 @@ function setupExtraListeners() {
                 pickerPopup.classList.add('hidden');
             }
         }
+        if (videoModal && !videoModal.classList.contains('hidden')) {
+            const toolBtn = document.getElementById('tool-video');
+            if (!videoModal.contains(e.target) && !e.target.closest('#tool-video')) {
+                videoModal.classList.add('hidden');
+            }
+        }
     });
+}
+
+function parseVideoUrl(url) {
+    // YouTube
+    let videoId = '';
+    if (url.includes('youtube.com/watch?v=')) {
+        videoId = url.split('v=')[1].split('&')[0];
+        return `https://www.youtube-nocookie.com/embed/${videoId}`;
+    } else if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1].split('?')[0];
+        return `https://www.youtube-nocookie.com/embed/${videoId}`;
+    }
+    
+    // Vimeo
+    if (url.includes('vimeo.com/')) {
+        videoId = url.split('vimeo.com/')[1].split('?')[0];
+        return `https://player.vimeo.com/video/${videoId}`;
+    }
+    
+    return url; // Direct link
 }
 
 async function exportCanvas() {

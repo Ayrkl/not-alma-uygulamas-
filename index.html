@@ -56,6 +56,9 @@
                         <button class="tool-btn" id="tool-checklist" title="Yapılacaklar (C)">
                             <i data-lucide="list-todo"></i>
                         </button>
+                        <button class="tool-btn" id="tool-video" title="Video Ekle (M)">
+                            <i data-lucide="video"></i>
+                        </button>
                         <button class="tool-btn" id="tool-connect" title="Bağlantı Kur (L)">
                             <i data-lucide="share-2"></i>
                         </button>
@@ -218,6 +221,27 @@
             </div>
         </div>
 
+        <!-- Video URL Input Modal -->
+        <div id="video-url-modal" class="glass hidden">
+            <div class="modal-header">
+                <i data-lucide="video" class="modal-type-icon"></i>
+                <span>Video Ekle</span>
+                <button id="close-video-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="url-input-group">
+                    <input type="text" id="video-url-input" placeholder="YouTube, Vimeo veya MP4 linki yapıştırın...">
+                    <button id="btn-add-video-url">Ekle</button>
+                </div>
+                <div class="modal-divider">
+                    <span>VEYA</span>
+                </div>
+                <button id="btn-trigger-video-upload" class="upload-btn">
+                    <i data-lucide="upload"></i> Bilgisayardan Dosya Seç
+                </button>
+            </div>
+        </div>
+
         <!-- Connection Customization Toolbar -->
         <div id="connection-toolbar" class="glass">
             <div class="toolbar-group">
@@ -296,6 +320,8 @@
 
         <!-- Hidden input for images -->
         <input type="file" id="image-upload" accept="image/*" hidden>
+        <!-- Hidden input for videos -->
+        <input type="file" id="video-upload" accept="video/*" hidden>
     </div>
 
     <script src="app.js" type="module"></script>
