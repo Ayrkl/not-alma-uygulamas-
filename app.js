@@ -127,7 +127,8 @@ async function init() {
             savedData = {
                 objects: localData.objects || [],
                 connections: localData.connections || [],
-                cam: localData.cam || { x: 0, y: 0, z: 1 }
+                cam: localData.cam || { x: 0, y: 0, z: 1 },
+                settings: localData.settings
             };
             // Initial save to the file
             await window.electronAPI.saveData(savedData);
@@ -143,6 +144,9 @@ async function init() {
                 state.camX = state.targetX;
                 state.camY = state.targetY;
                 state.camZ = state.targetZ;
+            }
+            if (savedData.settings) {
+                state.settings = { ...state.settings, ...savedData.settings };
             }
         }
 
@@ -167,7 +171,8 @@ async function saveState() {
     const dataToSave = {
         objects: state.objects,
         connections: state.connections,
-        cam: { x: state.targetX, y: state.targetY, z: state.targetZ }
+        cam: { x: state.targetX, y: state.targetY, z: state.targetZ },
+        settings: state.settings
     };
     
     // Save to the persistent JSON file via Electron
@@ -1832,6 +1837,33 @@ function setupSettingsListeners() {
             state.settings.sensitivity = val / 100;
             sensInput.nextElementSibling.innerText = `${(val/10).toFixed(1)}x`;
         });
+    }
+
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+        if (state.settings.theme) {
+            themeSelect.value = state.settings.theme;
+            applyTheme(state.settings.theme);
+        }
+        
+        themeSelect.addEventListener('change', (e) => {
+            const newTheme = e.target.value;
+            state.settings.theme = newTheme;
+            applyTheme(newTheme);
+            saveState();
+        });
+    }
+}
+
+function applyTheme(themeName) {
+    document.body.classList.forEach(className => {
+        if (className.startsWith('theme-')) {
+            document.body.classList.remove(className);
+        }
+    });
+
+    if (themeName && themeName !== 'dark-grid') {
+        document.body.classList.add(`theme-${themeName}`);
     }
 }
 

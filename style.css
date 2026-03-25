@@ -1541,4 +1541,129 @@ body.light-theme .dropdown-options {
 .pin-btn.active i {
     transform: rotate(0deg);
 }
-
+
+/* --- Themes / Arkaplan Stilleri --- */
+body.theme-light-grid {
+    --bg-color: #f8fafc;
+    --fg-color: #0f172a;
+    --grid-color: rgba(0, 0, 0, 0.08);
+}
+body.theme-light-grid .glass {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}
+body.theme-light-grid .tool-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+body.theme-light-grid .search-input-wrapper {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.theme-corkboard {
+    --bg-color: #d4a373;
+    --fg-color: #f8fafc; /* Keep UI text light for contrast against glass */
+    --grid-color: transparent;
+}
+body.theme-corkboard #canvas-container {
+    background-color: #d4a373;
+    background-image: 
+        radial-gradient(#cda581 15%, transparent 16%), 
+        radial-gradient(#d39a66 15%, transparent 16%);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
+}
+body.theme-corkboard #canvas-grid {
+    display: none;
+}
+
+body.theme-dot-grid {
+    --bg-color: #1a1a24;
+    --grid-color: rgba(255, 255, 255, 0.15);
+}
+body.theme-dot-grid #canvas-grid {
+    background-image: radial-gradient(circle, var(--grid-color) 2px, transparent 2.5px);
+    background-size: 30px 30px;
+}
+
+body.theme-chalkboard {
+    --bg-color: #233532;
+    --fg-color: #f1f5f9;
+}
+body.theme-chalkboard #canvas-container {
+    background-color: #233532;
+}
+body.theme-chalkboard #canvas-grid {
+    background-image: 
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), 
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 50px 50px;
+}
+
+/* --- Settings UI Fixes --- */
+.theme-dropdown {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--glass-border);
+    color: var(--fg-color);
+    padding: 10px 12px;
+    border-radius: 8px;
+    outline: none;
+    font-size: 0.9rem;
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    transition: border-color 0.2s;
+}
+
+.theme-dropdown:focus {
+    border-color: var(--accent-color);
+}
+
+.theme-dropdown option {
+    background: #1e293b;
+    color: white;
+}
+
+/* --- Additional Themes (Space & Blueprint) --- */
+body.theme-space {
+    --bg-color: #050510;
+    --fg-color: #e2e8f0;
+    --grid-color: transparent;
+}
+body.theme-space #canvas-container {
+    background-color: #050510;
+    background-image: 
+        radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 40px 70px, rgba(255,255,255,0.8), rgba(0,0,0,0)),
+        radial-gradient(1.5px 1.5px at 90px 40px, rgba(255,255,255,0.6), rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 160px 120px, rgba(255,255,255,0.9), rgba(0,0,0,0)),
+        radial-gradient(1.5px 1.5px at 250px 90px, #fff, rgba(0,0,0,0)),
+        radial-gradient(2.5px 2.5px at 300px 250px, rgba(160, 200, 255, 0.9), rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 350px 350px, rgba(255,255,255,0.5), rgba(0,0,0,0));
+    background-repeat: repeat;
+    background-size: 400px 400px;
+}
+body.theme-space #canvas-grid {
+    display: none;
+}
+
+body.theme-blueprint {
+    --bg-color: #1e3a8a;
+    --fg-color: #f8fafc;
+    --grid-color: rgba(255, 255, 255, 0.2);
+}
+body.theme-blueprint #canvas-container {
+    background-color: #1e3a8a;
+}
+body.theme-blueprint #canvas-grid {
+    background-image: 
+        linear-gradient(var(--grid-color) 1px, transparent 1px), 
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), 
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+}
