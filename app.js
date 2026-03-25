@@ -26,6 +26,7 @@ const state = {
     selectedId: null,
     selectedIds: [],
     selectedConnId: null,
+    selectedConnIds: [],
     connections: [],
     connFlow: 'forward', // forward, backward, both, none
     connStyle: 'curved', // curved, straight, dashed
@@ -92,6 +93,13 @@ function loadState() {
                 state.camY = parsed.cam.y || 0;
                 state.camZ = parsed.cam.z || 1.0;
             }
+            
+            // Migration: Ensure all connections have IDs
+            state.connections.forEach(conn => {
+                if (!conn.id) {
+                    conn.id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+                }
+            });
         } catch (e) {
             console.error("Data Load Error:", e);
         }
@@ -422,11 +430,16 @@ function setupEventListeners() {
         if (key === 't') document.getElementById('tool-text').click();
         if (key === 'i') document.getElementById('tool-image').click();
         if (key === 'n') document.getElementById('tool-note').click();
+        
         if (key === 'delete' || (key === 'backspace' && !isEditing)) {
             if (state.selectedIds && state.selectedIds.length > 0) {
                 bulkRemove(state.selectedIds);
             } else if (state.selectedId) {
                 removeObject(state.selectedId);
+            }
+            
+            if (state.selectedConnIds && state.selectedConnIds.length > 0) {
+                bulkRemoveConnections(state.selectedConnIds);
             } else if (state.selectedConnId) {
                 removeConnection(state.selectedConnId);
             }
@@ -460,6 +473,10 @@ function setupEventListeners() {
                     bulkRemove(state.selectedIds);
                 } else if (state.selectedId) {
                     removeObject(state.selectedId);
+                }
+                
+                if (state.selectedConnIds && state.selectedConnIds.length > 0) {
+                    bulkRemoveConnections(state.selectedConnIds);
                 } else if (state.selectedConnId) {
                     removeConnection(state.selectedConnId);
                 }
@@ -694,6 +711,8 @@ function deselectAll() {
     floatingToolbar.classList.remove('active');
     document.getElementById('connection-toolbar').classList.remove('active');
     state.selectedConnId = null;
+    state.selectedConnIds = [];
+    renderConnections(); // Update UI to remove selection glow
 }
 
 function selectConnection(connId) {
@@ -713,27 +732,92 @@ function removeConnection(connId) {
     saveState();
 }
 
+function bulkRemoveConnections(connIds) {
+    state.connections = state.connections.filter(c => !connIds.includes(c.id));
+    state.selectedConnIds = [];
+    renderConnections();
+    saveState();
+}
+
 function hitTestSelection(sx, sy, sw, sh) {
+    const rect = canvasContainer.getBoundingClientRect();
+    const halfW = rect.width / 2;
+    const halfH = rect.height / 2;
+
+    // 1. Check Objects
     state.selectedIds = [];
-    document.querySelectorAll('.canvas-obj').forEach(el => {
-        const rect = el.getBoundingClientRect();
-        const isIn = (
-            rect.left < sx + sw &&
-            rect.left + rect.width > sx &&
-            rect.top < sy + sh &&
-            rect.top + rect.height > sy
-        );
-        
-        if (isIn) {
-            const id = el.id.replace('obj-', '');
-            if (id) {
-                state.selectedIds.push(id);
-                el.classList.add('multi-selected');
-            }
+    state.objects.forEach(obj => {
+        const objEl = document.getElementById(`obj-${obj.id}`);
+        const objRect = {
+            x: obj.x * state.camZ + halfW - state.camX * state.camZ,
+            y: obj.y * state.camZ + halfH - state.camY * state.camZ,
+            w: (obj.width === 'auto' ? 200 : obj.width) * state.camZ,
+            h: (obj.height === 'auto' ? 100 : obj.height) * state.camZ
+        };
+
+        if (objRect.x < sx + sw && objRect.x + objRect.w > sx &&
+            objRect.y < sy + sh && objRect.y + objRect.h > sy) {
+            state.selectedIds.push(obj.id);
+            if (objEl) objEl.classList.add('selected');
         } else {
-            el.classList.remove('multi-selected');
+            if (objEl) objEl.classList.remove('selected');
         }
     });
+
+    // 2. Check Connections (Check if both endpoints are in the box)
+    state.selectedConnIds = [];
+    state.connections.forEach(conn => {
+        const connEl = document.getElementById(`conn-${conn.id}`);
+        const fromObj = conn.fromId ? state.objects.find(o => o.id === conn.fromId) : null;
+        const toObj = conn.toId ? state.objects.find(o => o.id === conn.toId) : null;
+        const fromEl = conn.fromId ? document.getElementById(`obj-${conn.fromId}`) : null;
+        const toEl = conn.toId ? document.getElementById(`obj-${conn.toId}`) : null;
+
+        let startX, startY, endX, endY;
+
+        if (fromObj && fromEl) {
+            const fw = fromEl.offsetWidth || (fromObj.width === 'auto' ? 200 : fromObj.width);
+            const fh = fromEl.offsetHeight || (fromObj.height === 'auto' ? 100 : fromObj.height);
+            startX = fromObj.x + (fw / 2);
+            startY = fromObj.y + (fh / 2);
+        } else if (conn.fromX !== null) {
+            startX = conn.fromX;
+            startY = conn.fromY;
+        }
+
+        if (toObj && toEl) {
+            const tw = toEl.offsetWidth || (toObj.width === 'auto' ? 200 : toObj.width);
+            const th = toEl.offsetHeight || (toObj.height === 'auto' ? 100 : toObj.height);
+            endX = toObj.x + (tw / 2);
+            endY = toObj.y + (th / 2);
+        } else if (conn.toX !== null) {
+            endX = conn.toX;
+            endY = conn.toY;
+        }
+
+        if (startX !== undefined && endX !== undefined) {
+            // Project world coordinates to screen
+            const sX = startX * state.camZ + halfW - state.camX * state.camZ;
+            const sY = startY * state.camZ + halfH - state.camY * state.camZ;
+            const eX = endX * state.camZ + halfW - state.camX * state.camZ;
+            const eY = endY * state.camZ + halfH - state.camY * state.camZ;
+
+            // If start AND end are inside selection box
+            if (sX > sx && sX < sx + sw && sY > sy && sY < sy + sh &&
+                eX > sx && eX < sx + sw && eY > sy && eY < sy + sh) {
+                state.selectedConnIds.push(conn.id);
+                if (connEl) connEl.classList.add('selected');
+            } else {
+                if (connEl) connEl.classList.remove('selected');
+            }
+        }
+    });
+
+    if (state.selectedIds.length > 0 || state.selectedConnIds.length > 0) {
+        document.getElementById('floating-toolbar').classList.add('active');
+    } else {
+        document.getElementById('floating-toolbar').classList.remove('active');
+    }
 }
 
 function bulkRemove(ids) {
@@ -991,9 +1075,9 @@ function renderConnections() {
     const svg = document.getElementById('connection-layer');
     if (!svg) return;
     
-    // Clear only paths, keep <defs>
-    const existingPaths = svg.querySelectorAll('.connection-path');
-    existingPaths.forEach(p => p.remove());
+    // Tam Temizlik: Hem çizgileri hem de görünmez vuruş alanlarını temizle
+    const paths = svg.querySelectorAll('.connection-path, .connection-hitbox');
+    paths.forEach(p => p.remove());
     
     state.connections.forEach(conn => {
         const fromObj = conn.fromId ? state.objects.find(o => o.id === conn.fromId) : null;
@@ -1026,28 +1110,47 @@ function renderConnections() {
         }
 
         if (startX !== undefined && endX !== undefined) {
-            const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            let classes = "connection-path";
-            if (conn.style === 'dashed') classes += " dashed";
-            if (state.selectedConnId === conn.id) classes += " selected";
-            p.setAttribute("class", classes);
-            
-            p.addEventListener('click', (e) => {
-                e.stopPropagation();
-                selectConnection(conn.id);
-            });
-            
-            if (conn.flow === 'forward' || conn.flow === 'both') p.setAttribute("marker-end", "url(#arrowhead)");
-            if (conn.flow === 'both') p.setAttribute("marker-start", "url(#arrowstart)");
-            
             // Robust Curved Logic (Z-Curve)
             const cpX1 = startX + (endX - startX) * 0.5;
             const cpY1 = startY;
             const cpX2 = startX + (endX - startX) * 0.5;
             const cpY2 = endY;
-            
             const d = `M ${startX} ${startY} C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${endX} ${endY}`;
+
+            // 1. Görünmez Hitbox (Daha geniş tıklama alanı için)
+            const hitbox = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            hitbox.setAttribute("class", "connection-hitbox");
+            hitbox.setAttribute("d", d);
+            hitbox.style.stroke = "transparent";
+            hitbox.style.strokeWidth = "25";
+            hitbox.style.fill = "none";
+            hitbox.style.cursor = "pointer";
+            hitbox.style.pointerEvents = "visibleStroke";
+            
+            // 2. Görünür Çizgi (Estetik kısım)
+            const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            p.id = `conn-${conn.id}`; // Add ID for faster selection lookup
+            let classes = "connection-path";
+            if (conn.style === 'dashed') classes += " dashed";
+            if (state.selectedConnId === conn.id || state.selectedConnIds.includes(conn.id)) classes += " selected";
+            p.setAttribute("class", classes);
             p.setAttribute("d", d);
+            
+            // Oku Seçme Mantığı (Hem hitbox hem çizgi için)
+            [hitbox, p].forEach(el => {
+                el.addEventListener('mousedown', (e) => {
+                    e.stopPropagation(); 
+                });
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectConnection(conn.id);
+                });
+            });
+            
+            if (conn.flow === 'forward' || conn.flow === 'both') p.setAttribute("marker-end", "url(#arrowhead)");
+            if (conn.flow === 'both') p.setAttribute("marker-start", "url(#arrowstart)");
+            
+            svg.appendChild(hitbox);
             svg.appendChild(p);
         }
     });

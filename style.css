@@ -276,7 +276,7 @@ nav.tools,
     left: 0;
     overflow: visible;
     pointer-events: none;
-    z-index: 5;
+    z-index: 25; /* Bring to front for interaction */
 }
 
 .connection-path {
