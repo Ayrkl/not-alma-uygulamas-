@@ -195,8 +195,8 @@ function animationLoop() {
         state.camZ += dZ * (1 - s);
         updateCanvas();
         if (state.connections.length > 0) renderConnections();
-        updateMiniMap();
     }
+    updateMiniMap();
     requestAnimationFrame(animationLoop);
 }
 
