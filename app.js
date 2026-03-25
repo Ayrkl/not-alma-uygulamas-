@@ -589,6 +589,49 @@ function setupEventListeners() {
             }
         });
     });
+
+    // Object Alignment Actions
+    document.getElementById('btn-align-left').addEventListener('click', (e) => {
+        e.stopPropagation();
+        alignSelectedObjects('left');
+    });
+    document.getElementById('btn-align-center').addEventListener('click', (e) => {
+        e.stopPropagation();
+        alignSelectedObjects('center');
+    });
+    document.getElementById('btn-align-top').addEventListener('click', (e) => {
+        e.stopPropagation();
+        alignSelectedObjects('top');
+    });
+
+    function alignSelectedObjects(type) {
+        if (!state.selectedIds || state.selectedIds.length < 2) return;
+        
+        const selectedObjects = state.objects.filter(o => state.selectedIds.includes(o.id));
+        
+        if (type === 'left') {
+            const minX = Math.min(...selectedObjects.map(o => o.x));
+            selectedObjects.forEach(obj => obj.x = minX);
+        } else if (type === 'top') {
+            const minY = Math.min(...selectedObjects.map(o => o.y));
+            selectedObjects.forEach(obj => obj.y = minY);
+        } else if (type === 'center') {
+            const centers = selectedObjects.map(obj => {
+                const el = document.getElementById(`obj-${obj.id}`);
+                const w = el ? el.offsetWidth : (obj.width === 'auto' ? 200 : obj.width);
+                return obj.x + w / 2;
+            });
+            const avgCenter = centers.reduce((a, b) => a + b, 0) / centers.length;
+            selectedObjects.forEach(obj => {
+                const el = document.getElementById(`obj-${obj.id}`);
+                const w = el ? el.offsetWidth : (obj.width === 'auto' ? 200 : obj.width);
+                obj.x = avgCenter - w / 2;
+            });
+        }
+        
+        renderObjects();
+        saveState();
+    }
     
     // Custom Font Dropdown Logic
     const fontDropdown = document.getElementById('font-dropdown');
@@ -919,10 +962,17 @@ function hitTestSelection(sx, sy, sw, sh) {
         }
     });
 
+    const floatingToolbar = document.getElementById('floating-toolbar');
     if (state.selectedIds.length > 0 || state.selectedConnIds.length > 0) {
-        document.getElementById('floating-toolbar').classList.add('active');
+        floatingToolbar.classList.add('active');
+        if (state.selectedIds.length > 1) {
+            floatingToolbar.classList.add('multi-select');
+        } else {
+            floatingToolbar.classList.remove('multi-select');
+        }
     } else {
-        document.getElementById('floating-toolbar').classList.remove('active');
+        floatingToolbar.classList.remove('active');
+        floatingToolbar.classList.remove('multi-select');
     }
 }
 
@@ -1129,6 +1179,11 @@ function selectObject(id) {
         });
 
         floatingToolbar.classList.add('active');
+        floatingToolbar.classList.remove('multi-select'); // Single select mode
+        document.getElementById('connection-toolbar').classList.remove('active');
+    } else if (state.selectedIds.length > 1) {
+        floatingToolbar.classList.add('active');
+        floatingToolbar.classList.add('multi-select'); // Multi-select mode
         document.getElementById('connection-toolbar').classList.remove('active');
     } else {
         floatingToolbar.classList.remove('active');

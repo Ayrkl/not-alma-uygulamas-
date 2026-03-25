@@ -673,6 +673,27 @@ body.light-theme .connection-path.selected {
     pointer-events: auto;
 }
 
+#floating-toolbar.multi-select .selection-only {
+    display: flex !important;
+}
+
+#floating-toolbar:not(.multi-select) .selection-only {
+    display: none !important;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 4px;
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .dashed {
     stroke-dasharray: 8, 8;
     animation: dash-flow 20s linear infinite;
