@@ -360,9 +360,39 @@ function setupEventListeners() {
         });
     });
 
-    // Close dropdown when clicking outside
+    // Custom Font Size Dropdown Logic
+    const sizeDropdown = document.getElementById('size-dropdown');
+    const sizeSelected = sizeDropdown.querySelector('.dropdown-selected');
+    
+    sizeSelected.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sizeDropdown.classList.toggle('open');
+        // Close other dropdowns
+        fontDropdown.classList.remove('open');
+    });
+    
+    sizeDropdown.querySelectorAll('.dropdown-opt').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            const size = opt.getAttribute('data-value');
+            sizeSelected.textContent = size;
+            sizeDropdown.classList.remove('open');
+            
+            if (state.selectedId) {
+                const obj = state.objects.find(o => o.id === state.selectedId);
+                if (obj) {
+                    obj.fontSize = size;
+                    const el = document.querySelector(`#obj-${obj.id} .note-editor`);
+                    if (el) el.style.fontSize = size;
+                    saveState();
+                }
+            }
+        });
+    });
+
+    // Close dropdowns when clicking outside
     window.addEventListener('click', () => {
         fontDropdown.classList.remove('open');
+        sizeDropdown.classList.remove('open');
     });
 
     // Deselect logic when clicking empty canvas
@@ -429,6 +459,7 @@ function addObject(type, x, y, content = '') {
         width: type === 'note' ? 250 : (type === 'image' ? 300 : 200),
         height: type === 'note' ? 180 : 'auto',
         fontFamily: 'Inter',
+        fontSize: '16px',
         newlyCreated: true
     };
     
@@ -476,6 +507,7 @@ function renderObject(obj) {
         editor.contentEditable = 'true';
         editor.innerHTML = obj.content || 'Buraya yazın...';
         editor.style.fontFamily = obj.fontFamily || 'Inter';
+        editor.style.fontSize = obj.fontSize || '16px';
         
         editor.addEventListener('input', () => {
             obj.content = editor.innerHTML;
@@ -537,6 +569,7 @@ function selectObject(id) {
     state.selectedId = id;
     const floatingToolbar = document.getElementById('floating-toolbar');
     const dropdownSelected = document.querySelector('#font-dropdown .dropdown-selected');
+    const sizeSelected = document.querySelector('#size-dropdown .dropdown-selected');
     
     document.querySelectorAll('.canvas-obj').forEach(o => {
         o.classList.toggle('selected', o.id === `obj-${id}`);
@@ -548,6 +581,9 @@ function selectObject(id) {
             // Update custom dropdown label
             const opt = document.querySelector(`.dropdown-opt[data-value="${obj.fontFamily}"]`);
             if (opt) dropdownSelected.textContent = opt.textContent;
+        }
+        if (obj && obj.fontSize) {
+            sizeSelected.textContent = obj.fontSize;
         }
         floatingToolbar.classList.add('active');
     } else {

@@ -35,6 +35,12 @@ body.light-theme {
     --glass-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05);
 }
 
+body.light-theme .custom-dropdown, 
+body.light-theme .toolbar-btn {
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #0f172a;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -145,10 +151,9 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
+    width: calc(100% - 150px); /* Leave space for window controls on the right */
     height: 32px;
     z-index: 998;
-    /* Just below tools if needed */
     -webkit-app-region: drag;
 }
 
@@ -439,6 +444,10 @@ nav.tools,
 .toolbar-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     opacity: 1;
+}
+
+body.light-theme .toolbar-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .toolbar-btn.active {
