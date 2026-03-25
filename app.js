@@ -110,7 +110,8 @@ function animationLoop() {
     const dPanX = state.panXTarget - state.panX;
     const dPanY = state.panYTarget - state.panY;
 
-    if (Math.abs(dZoom) > 0.0001 || Math.abs(dPanX) > 0.01 || Math.abs(dPanY) > 0.01) {
+    // Run updates if zoom/pan is animating OR if user is dragging an object
+    if (Math.abs(dZoom) > 0.0001 || Math.abs(dPanX) > 0.01 || Math.abs(dPanY) > 0.01 || state.isDragging) {
         state.zoom += dZoom * (1 - s);
         state.panX += dPanX * (1 - s);
         state.panY += dPanY * (1 - s);
@@ -152,8 +153,9 @@ function setupEventListeners() {
 
         if (state.currentTool === 'pan' || e.button === 1) {
             state.isPanning = true;
-            state.startPanX = e.clientX - state.panX;
-            state.startPanY = e.clientY - state.panY;
+            // Capture initial target-based offset
+            state.startPanX = e.clientX - state.panXTarget;
+            state.startPanY = e.clientY - state.panYTarget;
             deselectAll();
             canvasContainer.classList.add('panning');
             e.preventDefault();
@@ -174,8 +176,11 @@ function setupEventListeners() {
 
     window.addEventListener('mousemove', e => {
         if (state.isPanning) {
-            state.panX = e.clientX - state.startPanX;
-            state.panY = e.clientY - state.startPanY;
+            // Update BOTH current and target to prevent fighting the animation loop
+            state.panXTarget = e.clientX - state.startPanX;
+            state.panYTarget = e.clientY - state.startPanY;
+            state.panX = state.panXTarget; 
+            state.panY = state.panYTarget;
             updateCanvas();
         } else if (state.isSelecting) {
             const selectionBox = document.getElementById('selection-box');
