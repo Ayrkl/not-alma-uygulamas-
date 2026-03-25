@@ -1373,7 +1373,7 @@ function renderObject(obj) {
                 saveState();
             });
             container.appendChild(addBtn);
-            lucide.createIcons();
+            lucide.createIcons({ root: container });
         };
 
         renderItems();
@@ -1449,6 +1449,7 @@ function renderObject(obj) {
     });
 
     canvasContent.appendChild(el);
+    lucide.createIcons();
 }
 
 function selectObject(id) {
