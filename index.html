@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Roboto:wght@400;700&family=Montserrat:wght@400;700&family=Playfair+Display:wght@400;700&family=Lora:wght@400;700&family=Fira+Code:wght@400;700&family=Poppins:wght@400;600&family=Ubuntu:wght@400;700&family=Merriweather:wght@400;700&family=Oswald:wght@400;600&family=Caveat:wght@400;700&family=Shadows+Into+Light&family=Dancing+Script:wght@400;700&family=Source+Code+Pro:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <div id="app">
@@ -69,6 +70,9 @@
                     </button>
                     <button class="tool-btn" id="save-btn" title="Kaydet">
                         <i data-lucide="save"></i>
+                    </button>
+                    <button class="tool-btn" id="export-btn" title="Görüntü Olarak Dışa Aktar">
+                        <i data-lucide="download"></i>
                     </button>
                 </div>
                 <div class="tool-separator"></div>
@@ -187,7 +191,33 @@
             </div>
             <div class="toolbar-divider"></div>
             <div class="toolbar-group">
+                <button class="toolbar-btn" id="btn-icon-picker" title="İkon / Emoji Ekle">
+                    <i data-lucide="smile"></i>
+                </button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
                 <button class="toolbar-btn" id="toolbar-delete" title="Sil (Del)"><i data-lucide="trash-2"></i></button>
+            </div>
+        </div>
+
+        <!-- Icon Picker Popup -->
+        <div id="icon-picker-popup" class="glass hidden">
+            <div class="picker-header">
+                <span>İkon / Emoji Seç</span>
+                <button id="close-picker"><i data-lucide="x"></i></button>
+            </div>
+            <div class="picker-tabs">
+                <button class="tab-btn active" data-tab="icons">İkonlar</button>
+                <button class="tab-btn" data-tab="emojis">Emojiler</button>
+            </div>
+            <div class="picker-content">
+                <div id="icons-grid" class="picker-grid active">
+                    <!-- Icons will be here -->
+                </div>
+                <div id="emojis-grid" class="picker-grid">
+                    <!-- Emojis will be here -->
+                </div>
             </div>
         </div>
 

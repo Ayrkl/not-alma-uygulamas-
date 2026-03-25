@@ -10,6 +10,8 @@ const state = {
     camY: 0,
     camZ: 1.0,
     
+    isExporting: false,
+    
     // Hedef konum ve derinlik (Pürüzsüz geçiş için)
     targetX: 0,
     targetY: 0,
@@ -97,6 +99,8 @@ const floatingToolbar = document.getElementById('floating-toolbar');
 function init() {
     lucide.createIcons();
     setupSearchListeners();
+    initIconPicker();
+    setupExtraListeners();
     try {
         loadState();
         renderObjects();
@@ -1665,6 +1669,172 @@ function setupSettingsListeners() {
             sensInput.nextElementSibling.innerText = `${(val/10).toFixed(1)}x`;
         });
     }
+}
+
+// --- Extra Features (Export & Icons) ---
+function setupExtraListeners() {
+    const exportBtn = document.getElementById('export-btn');
+    if (exportBtn) exportBtn.addEventListener('click', () => exportCanvas());
+
+    const iconPickerBtn = document.getElementById('btn-icon-picker');
+    const pickerPopup = document.getElementById('icon-picker-popup');
+    const closePicker = document.getElementById('close-picker');
+
+    if (iconPickerBtn && pickerPopup) {
+        iconPickerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rect = iconPickerBtn.getBoundingClientRect();
+            pickerPopup.style.left = `${rect.left}px`;
+            pickerPopup.style.top = `${rect.top - 380}px`; // Pencerenin üstünde aç
+            pickerPopup.classList.toggle('hidden');
+        });
+    }
+
+    if (closePicker) closePicker.addEventListener('click', () => pickerPopup.classList.add('hidden'));
+
+    // Tab Mantığı
+    pickerPopup.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            pickerPopup.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            pickerPopup.querySelectorAll('.picker-grid').forEach(g => g.classList.remove('active'));
+            
+            btn.classList.add('active');
+            const tabId = btn.getAttribute('data-tab');
+            document.getElementById(`${tabId}-grid`).classList.add('active');
+        });
+    });
+
+    // Sayfa geneli tıklama ile kapatma
+    document.addEventListener('click', (e) => {
+        if (pickerPopup && !pickerPopup.classList.contains('hidden')) {
+            if (!pickerPopup.contains(e.target) && e.target !== iconPickerBtn) {
+                pickerPopup.classList.add('hidden');
+            }
+        }
+    });
+}
+
+async function exportCanvas() {
+    if (state.isExporting) return;
+    if (state.objects.length === 0) {
+        alert("Dışa aktarılacak bir nesne bulunamadı.");
+        return;
+    }
+
+    state.isExporting = true;
+    const originalX = state.camX;
+    const originalY = state.camY;
+    const originalZ = state.camZ;
+    
+    const exportBtn = document.getElementById('export-btn');
+    const originalHTML = exportBtn.innerHTML;
+    exportBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i>';
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: exportBtn });
+    
+    // Zoom/Pan resetle
+    state.camX = 0; state.camY = 0; state.camZ = 1.0;
+    state.targetX = 0; state.targetY = 0; state.targetZ = 1.0;
+    
+    canvasGrid.style.display = 'none';
+    const controls = document.getElementById('controls');
+    if (controls) controls.style.opacity = '0';
+    
+    renderObjects();
+    renderConnections();
+    
+    // Alan hesapla (Bounding Box)
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    state.objects.forEach(obj => {
+        const el = document.getElementById(`obj-${obj.id}`);
+        const w = el ? el.offsetWidth : 200;
+        const h = el ? el.offsetHeight : 100;
+        minX = Math.min(minX, obj.x);
+        minY = Math.min(minY, obj.y);
+        maxX = Math.max(maxX, obj.x + w);
+        maxY = Math.max(maxY, obj.y + h);
+    });
+    
+    // Pay bırak
+    const padding = 100;
+    minX -= padding; minY -= padding;
+    const width = (maxX - minX) + padding * 2;
+    const height = (maxY - minY) + padding * 2;
+
+    await new Promise(r => setTimeout(r, 300));
+
+    try {
+        const canvas = await html2canvas(canvasContent, {
+            backgroundColor: '#0f172a',
+            useCORS: true,
+            scale: 2,
+            x: minX + (window.innerWidth / 2), // World to Screen offset
+            y: minY + (window.innerHeight / 2),
+            width: width,
+            height: height
+        });
+        
+        const link = document.createElement('a');
+        link.download = `lumina-export-${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    } catch (err) {
+        console.error('Export Error:', err);
+    } finally {
+        // Restore
+        state.isExporting = false;
+        state.camX = originalX; state.camY = originalY; state.camZ = originalZ;
+        state.targetX = originalX; state.targetY = originalY; state.targetZ = originalZ;
+        
+        canvasGrid.style.display = 'block';
+        if (controls) controls.style.opacity = '1';
+        exportBtn.innerHTML = originalHTML;
+        if (typeof lucide !== 'undefined') lucide.createIcons({ root: exportBtn });
+        
+        renderObjects();
+        renderConnections();
+    }
+}
+
+function initIconPicker() {
+    const iconsGrid = document.getElementById('icons-grid');
+    const emojisGrid = document.getElementById('emojis-grid');
+    const pickerPopup = document.getElementById('icon-picker-popup');
+    
+    const popularIcons = ['star', 'heart', 'flag', 'bookmark', 'alert-circle', 'check-circle', 'zap', 'bell', 'calendar', 'clock', 'cloud', 'coffee', 'gift', 'home', 'layers', 'map', 'moon', 'music', 'package', 'phone', 'play', 'printer', 'shield', 'shopping-cart', 'smile', 'sun', 'target', 'thumbs-up', 'trash-2', 'user', 'video', 'watch', 'wifi', 'camera', 'briefcase'];
+    const popularEmojis = ['😀', '😂', '😍', '🤔', '😎', '🔥', '✨', '🚀', '⭐', '❤️', '✅', '❌', '⚠️', '💡', '📌', '📎', '📅', '📝', '📂', '🎯', '🏆', '🎨', '💻', '📱', '🔒', '🔑', '🛒', '🎁', '🍎', '🍕', '☕', '🏠', '🌍', '✈️', '🚗'];
+
+    if (iconsGrid) iconsGrid.innerHTML = popularIcons.map(icon => `<div class="picker-item" data-icon="${icon}"><i data-lucide="${icon}"></i></div>`).join('');
+    if (emojisGrid) emojisGrid.innerHTML = popularEmojis.map(emoji => `<div class="picker-item" data-emoji="${emoji}">${emoji}</div>`).join('');
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: iconsGrid });
+    
+    pickerPopup.querySelectorAll('.picker-item').forEach(item => {
+        item.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // Focus'u kaybetmemek için kritik
+        });
+        
+        item.addEventListener('click', () => {
+            const icon = item.getAttribute('data-icon');
+            const emoji = item.getAttribute('data-emoji');
+            
+            if (icon) {
+                insertHTMLAtCursor(`<i data-lucide="${icon}" style="display:inline-block; vertical-align:middle; width:1.1em; height:1.1em; margin: 0 2px;"></i> `);
+            } else if (emoji) {
+                insertTextAtCursor(emoji + ' ');
+            }
+            pickerPopup.classList.add('hidden');
+        });
+    });
+}
+
+function insertHTMLAtCursor(html) {
+    document.execCommand('insertHTML', false, html);
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function insertTextAtCursor(text) {
+    document.execCommand('insertText', false, text);
 }
 
 // Initialize the app
