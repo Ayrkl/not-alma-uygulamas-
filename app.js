@@ -45,9 +45,6 @@ const coordXEl = document.getElementById('coord-x');
 const coordYEl = document.getElementById('coord-y');
 const imageUpload = document.getElementById('image-upload');
 
-// Initialize Icons
-lucide.createIcons();
-
 // --- Initialization ---
 function init() {
     try {
@@ -64,6 +61,7 @@ function init() {
         
         updateCanvas();
         lucide.createIcons();
+        setupSearchListeners();
         
         // Start animation loop
         requestAnimationFrame(animationLoop);
@@ -105,6 +103,75 @@ function loadState() {
         }
     }
 }
+
+// --- Search & Navigation Logic ---
+function setupSearchListeners() {
+    const searchInput = document.getElementById('canvas-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            updateSearchResults(e.target.value);
+        });
+        
+        // Clear results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) {
+                document.getElementById('search-results').classList.remove('active');
+            }
+        });
+    }
+}
+
+function updateSearchResults(query) {
+    const resultsEl = document.getElementById('search-results');
+    if (!query.trim()) {
+        resultsEl.innerHTML = '';
+        resultsEl.classList.remove('active');
+        return;
+    }
+
+    const filtered = state.objects.filter(obj => {
+        const content = (obj.content || "").toLowerCase();
+        return content.includes(query.toLowerCase());
+    });
+
+    if (filtered.length === 0) {
+        resultsEl.innerHTML = '<div class="search-result-item" style="cursor:default; opacity:0.5;">Sonuç bulunamadı</div>';
+    } else {
+        resultsEl.innerHTML = filtered.map(obj => `
+            <div class="search-result-item" onclick="window.focusOnCanvasObject('${obj.id}')">
+                <div class="result-title">${obj.content.substring(0, 30)}${obj.content.length > 30 ? '...' : ''}</div>
+                <div class="result-meta">${obj.type}</div>
+            </div>
+        `).join('');
+    }
+    resultsEl.classList.add('active');
+}
+
+// Expose focus function to window for onclick markers
+window.focusOnCanvasObject = (id) => {
+    const obj = state.objects.find(o => o.id === id);
+    if (!obj) return;
+
+    // Teleport camera
+    state.targetX = obj.x + 100; // Offset to center better
+    state.targetY = obj.y + 50;
+    state.targetZ = 1.0; // Zoom in for readability
+
+    // Highlight
+    const el = document.getElementById(`obj-${id}`);
+    if (el) {
+        // Remove previous highlights
+        document.querySelectorAll('.search-highlight').forEach(h => h.classList.remove('search-highlight'));
+        
+        el.classList.add('search-highlight');
+        selectObject(id); // Select it too
+
+        // Auto-remove highlight after 3 seconds
+        setTimeout(() => {
+            el.classList.remove('search-highlight');
+        }, 3000);
+    }
+};
 
 function animationLoop() {
     const s = state.settings.smoothness;
