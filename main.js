@@ -7,6 +7,7 @@ function createWindow() {
         width: 1200,
         height: 800,
         backgroundColor: '#0d0d0f',
+        icon: path.join(__dirname, 'ico.png'),
         titleBarStyle: 'hidden', // Premium look
         titleBarOverlay: {
             color: '#0d0d0f',
