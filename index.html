@@ -191,7 +191,7 @@
             </div>
             <div class="toolbar-divider"></div>
             <div class="toolbar-group">
-                <button class="toolbar-btn" id="btn-icon-picker" title="İkon / Emoji Ekle">
+                <button class="toolbar-btn" id="btn-icon-picker" title="İkon Ekle">
                     <i data-lucide="smile"></i>
                 </button>
             </div>
@@ -204,19 +204,16 @@
         <!-- Icon Picker Popup -->
         <div id="icon-picker-popup" class="glass hidden">
             <div class="picker-header">
-                <span>İkon / Emoji Seç</span>
+                <span>İkon Seç</span>
                 <button id="close-picker"><i data-lucide="x"></i></button>
             </div>
-            <div class="picker-tabs">
-                <button class="tab-btn active" data-tab="icons">İkonlar</button>
-                <button class="tab-btn" data-tab="emojis">Emojiler</button>
+            <div class="picker-search">
+                <i data-lucide="search"></i>
+                <input type="text" id="icon-search" placeholder="İkonlarda ara...">
             </div>
             <div class="picker-content">
                 <div id="icons-grid" class="picker-grid active">
                     <!-- Icons will be here -->
-                </div>
-                <div id="emojis-grid" class="picker-grid">
-                    <!-- Emojis will be here -->
                 </div>
             </div>
         </div>

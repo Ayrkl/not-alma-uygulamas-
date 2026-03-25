@@ -1166,36 +1166,6 @@ body.light-theme .dropdown-options {
     opacity: 1;
 }
 
-.picker-tabs {
-    display: flex;
-    padding: 8px;
-    gap: 4px;
-    background: rgba(0, 0, 0, 0.2);
-}
-
-.tab-btn {
-    flex: 1;
-    padding: 8px;
-    background: none;
-    border: none;
-    color: var(--fg-color);
-    opacity: 0.5;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 500;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-}
-
-.tab-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.tab-btn.active {
-    background: var(--accent-color);
-    color: white;
-    opacity: 1;
-}
 
 .picker-content {
     height: 300px;

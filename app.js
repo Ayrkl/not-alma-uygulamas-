@@ -39,6 +39,19 @@ const state = {
     undoHistory: [] // Geri alma geçmişi
 };
 
+// --- Utils ---
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 // --- Undo (Geri Alma) ---
 const MAX_UNDO_STEPS = 50;
 
@@ -1306,10 +1319,15 @@ function renderObject(obj) {
                 text.contentEditable = 'true';
                 text.spellcheck = false;
                 text.innerText = item.text;
+                const debouncedPush = debounce(() => {
+                    pushHistory();
+                    saveState();
+                }, 800);
+
                 text.addEventListener('input', () => {
                     item.text = text.innerText;
                     obj.content = JSON.stringify(items);
-                    saveState();
+                    debouncedPush();
                 });
                 text.addEventListener('mousedown', e => e.stopPropagation());
                 
@@ -1400,9 +1418,14 @@ function renderObject(obj) {
         editor.style.fontSize = obj.fontSize || '16px';
         if (obj.textColor && obj.textColor !== 'default') editor.style.color = obj.textColor;
         
+        const debouncedPush = debounce(() => {
+            pushHistory();
+            saveState();
+        }, 800);
+
         editor.addEventListener('input', () => {
             obj.content = editor.innerHTML;
-            saveState();
+            debouncedPush();
         });
 
         editor.addEventListener('focus', () => selectObject(obj.id));
@@ -1453,7 +1476,7 @@ function renderObject(obj) {
     });
 
     canvasContent.appendChild(el);
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: el });
 }
 
 function selectObject(id) {
@@ -1692,19 +1715,6 @@ function setupExtraListeners() {
 
     if (closePicker) closePicker.addEventListener('click', () => pickerPopup.classList.add('hidden'));
 
-    // Tab Mantığı
-    pickerPopup.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            pickerPopup.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            pickerPopup.querySelectorAll('.picker-grid').forEach(g => g.classList.remove('active'));
-            
-            btn.classList.add('active');
-            const tabId = btn.getAttribute('data-tab');
-            document.getElementById(`${tabId}-grid`).classList.add('active');
-        });
-    });
-
     // Sayfa geneli tıklama ile kapatma
     document.addEventListener('click', (e) => {
         if (pickerPopup && !pickerPopup.classList.contains('hidden')) {
@@ -1768,10 +1778,16 @@ async function exportCanvas() {
             backgroundColor: '#0f172a',
             useCORS: true,
             scale: 2,
-            x: minX + (window.innerWidth / 2), // World to Screen offset
+            x: minX + (window.innerWidth / 2),
             y: minY + (window.innerHeight / 2),
             width: width,
-            height: height
+            height: height,
+            onclone: (clonedDoc) => {
+                const clonedContent = clonedDoc.getElementById('canvas-content');
+                if (clonedContent && typeof lucide !== 'undefined') {
+                    lucide.createIcons({ root: clonedContent });
+                }
+            }
         });
         
         const link = document.createElement('a');
@@ -1798,39 +1814,86 @@ async function exportCanvas() {
 
 function initIconPicker() {
     const iconsGrid = document.getElementById('icons-grid');
-    const emojisGrid = document.getElementById('emojis-grid');
     const pickerPopup = document.getElementById('icon-picker-popup');
+    const searchInput = document.getElementById('icon-search');
     
-    const popularIcons = ['star', 'heart', 'flag', 'bookmark', 'alert-circle', 'check-circle', 'zap', 'bell', 'calendar', 'clock', 'cloud', 'coffee', 'gift', 'home', 'layers', 'map', 'moon', 'music', 'package', 'phone', 'play', 'printer', 'shield', 'shopping-cart', 'smile', 'sun', 'target', 'thumbs-up', 'trash-2', 'user', 'video', 'watch', 'wifi', 'camera', 'briefcase'];
-    const popularEmojis = ['😀', '😂', '😍', '🤔', '😎', '🔥', '✨', '🚀', '⭐', '❤️', '✅', '❌', '⚠️', '💡', '📌', '📎', '📅', '📝', '📂', '🎯', '🏆', '🎨', '💻', '📱', '🔒', '🔑', '🛒', '🎁', '🍎', '🍕', '☕', '🏠', '🌍', '✈️', '🚗'];
+    const popularIcons = [
+        'star', 'heart', 'flag', 'bookmark', 'alert-circle', 'check-circle', 'zap', 'bell', 'calendar', 'clock', 
+        'cloud', 'coffee', 'gift', 'home', 'layers', 'map', 'moon', 'music', 'package', 'phone', 
+        'play', 'printer', 'shield', 'shopping-cart', 'smile', 'sun', 'target', 'thumbs-up', 'trash-2', 'user', 
+        'video', 'watch', 'wifi', 'camera', 'briefcase', 'database', 'cpu', 'hard-drive', 'mouse', 'keyboard',
+        'headphones', 'monitor', 'smartphone', 'tablet', 'activity', 'anchor', 'archive', 'award', 'bar-chart', 'battery',
+        'book', 'box', 'clipboard', 'compass', 'crosshair', 'download', 'edit', 'external-link', 'eye', 'file',
+        'filter', 'folder', 'globe', 'image', 'info', 'link', 'lock', 'mail', 'menu', 'message-square',
+        'mic', 'minus', 'paperclip', 'pause', 'pie-chart', 'plus', 'power', 'refresh-cw', 'search', 'send',
+        'settings', 'share', 'shuffle', 'sliders', 'stop-circle', 'tag', 'terminal', 'tool', 'truck', 'tv',
+        'type', 'umbrella', 'unlock', 'upload', 'user-plus', 'users', 'volume-2', 'wind', 'x', 'zoom-in'
+    ];
+    
+    const renderGrid = (filter = '') => {
+        if (!iconsGrid) return;
+        const filteredSet = popularIcons.filter(name => name.includes(filter.toLowerCase()));
+        iconsGrid.innerHTML = filteredSet.map(icon => `<div class="picker-item" data-icon="${icon}"><i data-lucide="${icon}"></i></div>`).join('');
+        if (typeof lucide !== 'undefined') lucide.createIcons({ root: iconsGrid });
+        attachItemListeners();
+    };
 
-    if (iconsGrid) iconsGrid.innerHTML = popularIcons.map(icon => `<div class="picker-item" data-icon="${icon}"><i data-lucide="${icon}"></i></div>`).join('');
-    if (emojisGrid) emojisGrid.innerHTML = popularEmojis.map(emoji => `<div class="picker-item" data-emoji="${emoji}">${emoji}</div>`).join('');
-    
-    if (typeof lucide !== 'undefined') lucide.createIcons({ root: iconsGrid });
-    
-    pickerPopup.querySelectorAll('.picker-item').forEach(item => {
-        item.addEventListener('mousedown', (e) => {
-            e.preventDefault(); // Focus'u kaybetmemek için kritik
-        });
-        
-        item.addEventListener('click', () => {
-            const icon = item.getAttribute('data-icon');
-            const emoji = item.getAttribute('data-emoji');
+    const attachItemListeners = () => {
+        pickerPopup.querySelectorAll('.picker-item').forEach(item => {
+            const newItem = item.cloneNode(true);
+            item.parentNode.replaceChild(newItem, item);
             
-            if (icon) {
-                insertHTMLAtCursor(`<i data-lucide="${icon}" style="display:inline-block; vertical-align:middle; width:1.1em; height:1.1em; margin: 0 2px;"></i> `);
-            } else if (emoji) {
-                insertTextAtCursor(emoji + ' ');
-            }
-            pickerPopup.classList.add('hidden');
+            newItem.addEventListener('mousedown', (e) => e.preventDefault());
+            newItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const icon = newItem.getAttribute('data-icon');
+                if (icon) insertAtomicIcon(icon);
+                pickerPopup.classList.add('hidden');
+            });
         });
-    });
+    };
+
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => renderGrid(e.target.value));
+    }
+
+    renderGrid();
 }
 
-function insertHTMLAtCursor(html) {
-    document.execCommand('insertHTML', false, html);
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+function insertAtomicIcon(iconName) {
+    pushHistory();
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
+
+    const wrapper = document.createElement('span');
+    wrapper.className = 'icon-wrapper';
+    wrapper.contentEditable = 'false';
+    wrapper.innerHTML = `<i data-lucide="${iconName}"></i>`;
+    
+    const space = document.createTextNode('\u00A0'); 
+
+    // Insert order (LIFO in terms of range.insertNode): 
+    // We want [wrapper][space], so insert space first, then wrapper.
+    range.insertNode(space);
+    range.insertNode(wrapper);
+
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: wrapper });
+
+    // Move caret after the space
+    const newRange = document.createRange();
+    newRange.setStartAfter(space);
+    newRange.setEndAfter(space);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+
+    const activeEditor = document.activeElement;
+    if (activeEditor && (activeEditor.classList.contains('note-editor') || activeEditor.classList.contains('item-text'))) {
+        const event = new Event('input', { bubbles: true });
+        activeEditor.dispatchEvent(event);
+    }
 }
 
 function insertTextAtCursor(text) {
