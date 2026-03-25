@@ -429,7 +429,7 @@ function setupEventListeners() {
                 state.currentTool = toolId;
 
                 // Submenu araçlarından biri seçildiyse group-trigger'ı vurgula
-                const subMenuTools = ['text', 'note', 'image', 'connect'];
+                const subMenuTools = ['text', 'note', 'image', 'checklist', 'connect'];
                 const groupTrigger = document.getElementById('tool-create');
                 if (subMenuTools.includes(toolId)) {
                     groupTrigger?.classList.add('has-active');
@@ -440,7 +440,7 @@ function setupEventListeners() {
                 // Immediate action for certain tools
                 if (state.currentTool === 'image') {
                     imageUpload.click();
-                } else if (state.currentTool === 'text' || state.currentTool === 'note') {
+                } else if (state.currentTool === 'text' || state.currentTool === 'note' || state.currentTool === 'checklist') {
                     addObject(state.currentTool);
                     document.getElementById('tool-pan').click();
                 } else if (state.currentTool === 'connect') {
@@ -977,29 +977,35 @@ function addObject(type, x, y, content = '') {
     // If coordinates are not provided, use canvas center
     if (x === undefined || y === undefined) {
         const center = getCanvasCenter();
-        const w = (type === 'note' ? 250 : 200);
-        const h = (type === 'note' ? 180 : 60);
+        const w = (type === 'note' || type === 'checklist' ? 250 : 200);
+        const h = (type === 'note' ? 180 : (type === 'checklist' ? 150 : 60));
         x = center.x - w / 2;
         y = center.y - h / 2;
     }
 
+    pushHistory();
     const id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+    
+    // Default content for checklist
+    let finalContent = content;
+    if (type === 'checklist' && !content) {
+        finalContent = JSON.stringify([{ id: 'item-' + Date.now(), text: '', checked: false }]);
+    }
+
     const newObj = {
         id,
         type,
         x,
         y: y + 20, // Vertical offset
-        content: content || '',
-        width: type === 'note' ? 250 : (type === 'image' ? 300 : (type === 'point' ? 8 : 200)),
-        height: type === 'note' ? 180 : (type === 'point' ? 8 : 'auto'),
+        content: finalContent || '',
+        width: type === 'note' || type === 'checklist' ? 250 : (type === 'image' ? 300 : (type === 'point' ? 8 : 200)),
+        height: type === 'note' ? 180 : (type === 'checklist' ? 'auto' : (type === 'point' ? 8 : 'auto')),
         fontFamily: 'Inter',
         fontSize: '16px',
         color: 'default',
         textColor: 'default',
         newlyCreated: true
     };
-    
-    pushHistory();
     state.objects.push(newObj);
     renderObject(newObj);
     saveState();
@@ -1266,10 +1272,125 @@ function renderObject(obj) {
         wrapper.className = 'image-wrapper';
         wrapper.innerHTML = `<img src="${obj.content}" draggable="false">`;
         el.appendChild(wrapper);
+    } else if (obj.type === 'checklist') {
+        const container = document.createElement('div');
+        container.className = 'checklist-container';
+        
+        const items = JSON.parse(obj.content || '[]');
+        
+        const renderItems = () => {
+            container.innerHTML = '';
+            items.forEach((item, index) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = `checklist-item ${item.checked ? 'checked' : ''}`;
+                
+                const check = document.createElement('div');
+                check.className = `check-box ${item.checked ? 'checked' : ''}`;
+                check.innerHTML = '<i data-lucide="check"></i>';
+                check.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    pushHistory();
+                    item.checked = !item.checked;
+                    obj.content = JSON.stringify(items);
+                    itemEl.classList.toggle('checked', item.checked);
+                    check.classList.toggle('checked', item.checked);
+                    saveState();
+                });
+                
+                const text = document.createElement('div');
+                text.className = 'item-text';
+                text.contentEditable = 'true';
+                text.spellcheck = false;
+                text.innerText = item.text;
+                text.addEventListener('input', () => {
+                    item.text = text.innerText;
+                    obj.content = JSON.stringify(items);
+                    saveState();
+                });
+                text.addEventListener('mousedown', e => e.stopPropagation());
+                
+                // Keyboard support
+                text.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        pushHistory();
+                        const newId = 'item-' + Date.now();
+                        items.splice(index + 1, 0, { id: newId, text: '', checked: false });
+                        obj.content = JSON.stringify(items);
+                        renderItems();
+                        setTimeout(() => {
+                            const newText = container.querySelectorAll('.item-text')[index + 1];
+                            if (newText) newText.focus();
+                        }, 0);
+                        saveState();
+                    } else if (e.key === 'Backspace' && text.innerText === '' && items.length > 1) {
+                        e.preventDefault();
+                        pushHistory();
+                        items.splice(index, 1);
+                        obj.content = JSON.stringify(items);
+                        renderItems();
+                        setTimeout(() => {
+                            const prevText = container.querySelectorAll('.item-text')[Math.max(0, index - 1)];
+                            if (prevText) prevText.focus();
+                        }, 0);
+                        saveState();
+                    }
+                });
+
+                const remove = document.createElement('div');
+                remove.className = 'remove-item';
+                remove.innerHTML = '<i data-lucide="x"></i>';
+                remove.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (items.length > 1) {
+                        pushHistory();
+                        items.splice(index, 1);
+                        obj.content = JSON.stringify(items);
+                        renderItems();
+                        saveState();
+                    }
+                });
+                
+                itemEl.appendChild(check);
+                itemEl.appendChild(text);
+                itemEl.appendChild(remove);
+                container.appendChild(itemEl);
+            });
+
+            const addBtn = document.createElement('div');
+            addBtn.className = 'add-item-btn';
+            addBtn.innerHTML = '<i data-lucide="plus"></i> Yeni Madde';
+            addBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                pushHistory();
+                items.push({ id: 'item-' + Date.now(), text: '', checked: false });
+                obj.content = JSON.stringify(items);
+                renderItems();
+                setTimeout(() => {
+                    const lastText = container.querySelectorAll('.item-text')[items.length - 1];
+                    if (lastText) lastText.focus();
+                }, 0);
+                saveState();
+            });
+            container.appendChild(addBtn);
+            lucide.createIcons();
+        };
+
+        renderItems();
+        el.appendChild(container);
+        
+        if (obj.newlyCreated) {
+            setTimeout(() => {
+                const firstText = container.querySelector('.item-text');
+                if (firstText) firstText.focus();
+            }, 100);
+            delete obj.newlyCreated;
+        }
     } else {
         const editor = document.createElement('div');
         editor.className = 'note-editor';
         editor.contentEditable = 'true';
+        editor.spellcheck = false;
         editor.innerHTML = obj.content || 'Buraya yazın...';
         editor.style.fontFamily = obj.fontFamily || 'Inter';
         editor.style.fontSize = obj.fontSize || '16px';

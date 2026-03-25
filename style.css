@@ -1005,3 +1005,114 @@ body.light-theme .dropdown-options {
         transform: scale(1);
     }
 }
+
+/* --- Checklist (Yapılacaklar) Stilleri --- */
+.checklist-obj {
+    min-width: 260px;
+}
+
+.checklist-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 10px;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.checklist-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.check-box {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%; /* Circle for premium look */
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+
+.check-box.checked {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.check-box i {
+    color: white;
+    width: 12px;
+    height: 12px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s ease;
+}
+
+.check-box.checked i {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.item-text {
+    flex: 1;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    outline: none;
+    color: var(--fg-color);
+    opacity: 0.9;
+    min-height: 20px;
+    padding-top: 1px;
+}
+
+.checklist-item.checked .item-text {
+    text-decoration: line-through;
+    opacity: 0.4;
+}
+
+.add-item-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin: 4px 8px;
+    color: var(--accent-color);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.add-item-btn:hover {
+    background: rgba(59, 130, 246, 0.1);
+    opacity: 1;
+}
+
+.remove-item {
+    opacity: 0;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+    padding: 2px;
+}
+
+.checklist-item:hover .remove-item {
+    opacity: 1;
+}
+
+.remove-item:hover {
+    color: #ef4444;
+}
