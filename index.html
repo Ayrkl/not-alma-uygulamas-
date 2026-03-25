@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonsuz Tuval - Notlarım</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Roboto:wght@400;700&family=Montserrat:wght@400;700&family=Playfair+Display:wght@400;700&family=Lora:wght@400;700&family=Fira+Code:wght@400;700&family=Poppins:wght@400;600&family=Ubuntu:wght@400;700&family=Merriweather:wght@400;700&family=Oswald:wght@400;600&family=Caveat:wght@400;700&family=Shadows+Into+Light&family=Dancing+Script:wght@400;700&family=Source+Code+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="dark-theme">
+    <div id="app">
+        <!-- Electron Window Support -->
+        <div class="drag-region"></div>
+        
+        <!-- Dashboard / Sidebar -->
+        <aside id="sidebar" class="glass">
+            <button id="sidebar-toggle"><i data-lucide="chevron-left"></i></button>
+            <div class="logo">
+                <i data-lucide="infinity" class="logo-icon"></i>
+                <span class="logo-text">Lumina</span>
+            </div>
+            
+            <nav class="tools">
+                <button class="tool-btn active" id="tool-pan" title="Kaydır (H)">
+                    <i data-lucide="hand"></i>
+                </button>
+                <button class="tool-btn" id="tool-text" title="Metin Ekle (T)">
+                    <i data-lucide="type"></i>
+                </button>
+                <button class="tool-btn" id="tool-image" title="Resim Ekle (I)">
+                    <i data-lucide="image"></i>
+                </button>
+                <button class="tool-btn" id="tool-note" title="Not Kağıdı (N)">
+                    <i data-lucide="sticky-note"></i>
+                </button>
+            </nav>
+
+            <div class="bottom-tools">
+                <button class="tool-btn" id="save-btn" title="Kaydet">
+                    <i data-lucide="save"></i>
+                </button>
+                <button class="tool-btn" id="theme-toggle">
+                    <i data-lucide="moon"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Floating Formatting Toolbar -->
+        <div id="floating-toolbar" class="glass">
+            <div class="toolbar-group">
+                <button class="toolbar-btn" data-cmd="bold" title="Kalın (Ctrl+B)"><i data-lucide="bold"></i></button>
+                <button class="toolbar-btn" data-cmd="italic" title="İtalik (Ctrl+I)"><i data-lucide="italic"></i></button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
+                <button class="toolbar-btn" data-format="h1">H1</button>
+                <button class="toolbar-btn" data-format="h2">H2</button>
+                <button class="toolbar-btn" data-format="p">P</button>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
+                <div class="custom-dropdown" id="font-dropdown">
+                    <div class="dropdown-selected">Normal (Inter)</div>
+                    <div class="dropdown-options">
+                        <div class="dropdown-opt" data-value="Inter" style="font-family:'Inter'">Normal (Inter)</div>
+                        <div class="dropdown-opt" data-value="Outfit" style="font-family:'Outfit'">Modern (Outfit)</div>
+                        <div class="dropdown-opt" data-value="Poppins" style="font-family:'Poppins'">Yumuşak (Poppins)</div>
+                        <div class="dropdown-opt" data-value="Roboto" style="font-family:'Roboto'">İş (Roboto)</div>
+                        <div class="dropdown-opt" data-value="Montserrat" style="font-family:'Montserrat'">Vurgulu (Montserrat)</div>
+                        <div class="dropdown-opt" data-value="Ubuntu" style="font-family:'Ubuntu'">Keskin (Ubuntu)</div>
+                        <div class="dropdown-opt" data-value="Playfair Display" style="font-family:'Playfair Display'">Zarif (Playfair)</div>
+                        <div class="dropdown-opt" data-value="Lora" style="font-family:'Lora'">Kitap (Lora)</div>
+                        <div class="dropdown-opt" data-value="Merriweather" style="font-family:'Merriweather'">Klasik (Merriweather)</div>
+                        <div class="dropdown-opt" data-value="Oswald" style="font-family:'Oswald'">Sert (Oswald)</div>
+                        <div class="dropdown-opt" data-value="Caveat" style="font-family:'Caveat'">El Yazısı (Caveat)</div>
+                        <div class="dropdown-opt" data-value="Dancing Script" style="font-family:'Dancing Script'">El Yazısı (Dancing)</div>
+                        <div class="dropdown-opt" data-value="Shadows Into Light" style="font-family:'Shadows Into Light'">Not Defteri</div>
+                        <div class="dropdown-opt" data-value="Fira Code" style="font-family:'Fira Code'">Kod (Fira Code)</div>
+                        <div class="dropdown-opt" data-value="Source Code Pro" style="font-family:'Source Code Pro'">Kod (Source)</div>
+                        <div class="dropdown-opt" data-value="monospace" style="font-family:'monospace'">Sistem Kodu</div>
+                    </div>
+                </div>
+            </div>
+            <div class="toolbar-divider"></div>
+            <div class="toolbar-group">
+                <button class="toolbar-btn" id="toolbar-delete" title="Sil (Del)"><i data-lucide="trash-2"></i></button>
+            </div>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <main id="canvas-container">
+            <div id="canvas-grid" class="infinite-bg"></div>
+            <div id="canvas-content">
+                <!-- Objects will be rendered here dynamically -->
+            </div>
+        </main>
+
+        <!-- Controls / Floating UI -->
+        <div id="controls" class="glass">
+            <div class="zoom-controls">
+                <button id="zoom-out"><i data-lucide="minus"></i></button>
+                <span id="zoom-level">100%</span>
+                <button id="zoom-in"><i data-lucide="plus"></i></button>
+            </div>
+            <div class="divider"></div>
+            <div class="coord-info">
+                <span id="coord-x">X: 0</span>
+                <span id="coord-y">Y: 0</span>
+            </div>
+        </div>
+
+        <!-- Hidden input for images -->
+        <input type="file" id="image-upload" accept="image/*" hidden>
+    </div>
+
+    <script src="app.js" type="module"></script>
+</body>
+</html>

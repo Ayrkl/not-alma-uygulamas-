@@ -1,0 +1,20 @@
+{
+  "name": "sonsuz-notlar",
+  "version": "1.0.0",
+  "description": "Infinite Canvas, Infinite Ideas.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "notes",
+    "whiteboard",
+    "infinite"
+  ],
+  "author": "Antigravity",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^30.5.1"
+  }
+}
