@@ -1038,8 +1038,8 @@ function addObject(type, x, y, content = '') {
     // If coordinates are not provided, use canvas center
     if (x === undefined || y === undefined) {
         const center = getCanvasCenter();
-        const w = (type === 'note' || type === 'checklist' ? 250 : (type === 'video' || type === 'pdf' ? 400 : 200));
-        const h = (type === 'note' ? 180 : (type === 'checklist' ? 150 : (type === 'video' ? 225 : (type === 'pdf' ? 600 : 60))));
+        const w = (type === 'note' || type === 'checklist' ? 250 : (type === 'video' || type === 'pdf' || type === 'embed' ? 400 : 200));
+        const h = (type === 'note' ? 180 : (type === 'checklist' ? 150 : (type === 'video' ? 225 : (type === 'pdf' ? 600 : (type === 'embed' ? 350 : 60)))));
         x = center.x - w / 2;
         y = center.y - h / 2;
     }
@@ -1059,8 +1059,8 @@ function addObject(type, x, y, content = '') {
         x,
         y: y + 20, // Vertical offset
         content: finalContent || '',
-        width: type === 'note' || type === 'checklist' ? 250 : (type === 'image' ? 300 : (type === 'video' || type === 'pdf' ? 450 : (type === 'point' ? 8 : 200))),
-        height: type === 'note' ? 180 : (type === 'checklist' ? 'auto' : (type === 'video' ? 225 : (type === 'pdf' ? 630 : (type === 'point' ? 8 : 'auto')))),
+        width: type === 'note' || type === 'checklist' ? 250 : (type === 'image' ? 300 : (type === 'video' || type === 'pdf' || type === 'embed' ? 450 : (type === 'point' ? 8 : 200))),
+        height: type === 'note' ? 180 : (type === 'checklist' ? 'auto' : (type === 'video' ? 225 : (type === 'pdf' ? 630 : (type === 'embed' ? 350 : (type === 'point' ? 8 : 'auto'))))),
         pdfPage: type === 'pdf' ? 1 : undefined,
         fontFamily: 'Inter',
         fontSize: '16px',
@@ -1526,6 +1526,14 @@ function renderObject(obj) {
         };
         
         lucide.createIcons();
+    } else if (obj.type === 'embed') {
+        el.classList.add('embed-obj');
+        const container = document.createElement('iframe');
+        container.className = 'embed-container';
+        container.src = parseEmbedUrl(obj.content);
+        container.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";
+        container.loading = "lazy";
+        el.appendChild(container);
     } else {
         const editor = document.createElement('div');
         editor.className = 'note-editor';
@@ -1593,7 +1601,16 @@ function renderObject(obj) {
         }
     });
 
-    canvasContent.appendChild(el);
+    if (obj.pinned) {
+        el.style.position = 'fixed';
+        el.style.left = `${obj.pinX}px`;
+        el.style.top = `${obj.pinY}px`;
+        el.style.transform = 'none'; // Overrides any camera transform that might be applied by mistake
+        document.getElementById('pinned-layer').appendChild(el);
+    } else {
+        canvasContent.appendChild(el);
+    }
+
     if (typeof lucide !== 'undefined') lucide.createIcons({ root: el });
 }
 
@@ -1622,6 +1639,12 @@ function selectObject(id) {
         floatingToolbar.querySelectorAll('.text-color-btn').forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-color') === (obj.textColor || 'default'));
         });
+
+        const pinBtn = document.getElementById('toolbar-pin');
+        if (pinBtn) {
+            if (obj.pinned) pinBtn.classList.add('active');
+            else pinBtn.classList.remove('active');
+        }
 
         floatingToolbar.classList.add('active');
         floatingToolbar.classList.remove('multi-select'); // Single select mode
@@ -1833,38 +1856,40 @@ function setupExtraListeners() {
 
     if (closePicker) closePicker.addEventListener('click', () => pickerPopup.classList.add('hidden'));
 
-    // Video URL Modal Listeners
-    const videoModal = document.getElementById('video-url-modal');
-    const closeVideoModal = document.getElementById('close-video-modal');
-    const btnAddVideoUrl = document.getElementById('btn-add-video-url');
-    const videoUrlInput = document.getElementById('video-url-input');
-    const btnTriggerUpload = document.getElementById('btn-trigger-video-upload');
+    // Embed URL Modal Listeners
+    const embedModal = document.getElementById('embed-url-modal');
+    const closeEmbedModal = document.getElementById('close-embed-modal');
+    const btnAddEmbedUrl = document.getElementById('btn-add-embed-url');
+    const embedUrlInput = document.getElementById('embed-url-input');
 
-    if (closeVideoModal) {
-        closeVideoModal.addEventListener('click', () => videoModal.classList.add('hidden'));
+    if (closeEmbedModal) {
+        closeEmbedModal.addEventListener('click', () => embedModal.classList.add('hidden'));
     }
 
-    if (btnAddVideoUrl) {
-        btnAddVideoUrl.addEventListener('click', () => {
-            const url = videoUrlInput.value.trim();
+    if (btnAddEmbedUrl) {
+        btnAddEmbedUrl.addEventListener('click', () => {
+            const url = embedUrlInput.value.trim();
             if (url) {
                 const center = getCanvasCenter();
-                addObject('video', center.x, center.y, url);
-                videoUrlInput.value = '';
-                videoModal.classList.add('hidden');
+                addObject('embed', center.x, center.y, url);
+                embedUrlInput.value = '';
+                embedModal.classList.add('hidden');
                 document.getElementById('tool-pan').click();
             }
         });
         
-        videoUrlInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') btnAddVideoUrl.click();
+        embedUrlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') btnAddEmbedUrl.click();
         });
     }
 
-    if (btnTriggerUpload) {
-        btnTriggerUpload.addEventListener('click', () => {
-            videoModal.classList.add('hidden');
-            videoUpload.click();
+    // Pinning Listener
+    const pinBtn = document.getElementById('toolbar-pin');
+    if (pinBtn) {
+        pinBtn.addEventListener('click', () => {
+            if (state.selectedId) {
+                togglePin(state.selectedId);
+            }
         });
     }
 
@@ -1876,12 +1901,93 @@ function setupExtraListeners() {
             }
         }
         if (videoModal && !videoModal.classList.contains('hidden')) {
-            const toolBtn = document.getElementById('tool-video');
             if (!videoModal.contains(e.target) && !e.target.closest('#tool-video')) {
                 videoModal.classList.add('hidden');
             }
         }
+        if (embedModal && !embedModal.classList.contains('hidden')) {
+            if (!embedModal.contains(e.target) && !e.target.closest('#tool-embed')) {
+                embedModal.classList.add('hidden');
+            }
+        }
     });
+
+    // Tool menu listeners for new tools
+    const toolEmbed = document.getElementById('tool-embed');
+    if (toolEmbed) toolEmbed.addEventListener('click', () => {
+        embedModal.classList.remove('hidden');
+        embedUrlInput.focus();
+    });
+}
+
+function parseEmbedUrl(url) {
+    // Spotify
+    if (url.includes('spotify.com/')) {
+        let embedUrl = url;
+        if (url.includes('open.spotify.com/')) {
+            embedUrl = url.replace('open.spotify.com/', 'open.spotify.com/embed/');
+        }
+        return embedUrl;
+    }
+    
+    // Google Maps
+    if (url.includes('google.com/maps') || url.includes('goo.gl/maps')) {
+        // Basic conversion for maps - if it's not already an embed URL
+        if (!url.includes('output=embed')) {
+            const encodedUrl = encodeURIComponent(url);
+            return `https://maps.google.com/maps?q=${encodedUrl}&output=embed`;
+        }
+        return url;
+    }
+
+    // Video conversion fallback
+    return parseVideoUrl(url);
+}
+
+function togglePin(objId) {
+    const obj = state.objects.find(o => o.id === objId);
+    if (!obj) return;
+
+    pushHistory();
+    const el = document.getElementById(`obj-${objId}`);
+    const pinnedLayer = document.getElementById('pinned-layer');
+    const canvasContent = document.getElementById('canvas-content');
+
+    if (!obj.pinned) {
+        // PINNING
+        // Get current screen position
+        const rect = el.getBoundingClientRect();
+        obj.pinned = true;
+        obj.pinX = rect.left;
+        obj.pinY = rect.top;
+
+        // Move to pinned layer
+        pinnedLayer.appendChild(el);
+        el.style.left = `${obj.pinX}px`;
+        el.style.top = `${obj.pinY}px`;
+        
+        document.getElementById('toolbar-pin').classList.add('active');
+    } else {
+        // UNPINNING
+        // Calculate world coordinates from screen position
+        const rect = canvasContainer.getBoundingClientRect();
+        const halfW = rect.width / 2;
+        const halfH = rect.height / 2;
+        
+        // Inverse camera transform: (screenX - halfW) / camZ + camX
+        obj.x = (obj.pinX - halfW) / state.camZ + state.camX;
+        obj.y = (obj.pinY - halfH) / state.camZ + state.camY;
+        obj.pinned = false;
+
+        // Move back to canvas content
+        canvasContent.appendChild(el);
+        el.style.left = `${obj.x}px`;
+        el.style.top = `${obj.y}px`;
+        
+        document.getElementById('toolbar-pin').classList.remove('active');
+    }
+    saveState();
+    renderObjects();
 }
 
 function parseVideoUrl(url) {

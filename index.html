@@ -66,6 +66,9 @@
                         <button class="tool-btn" id="tool-connect" title="Bağlantı Kur (L)">
                             <i data-lucide="share-2"></i>
                         </button>
+                        <button class="tool-btn" id="tool-embed" title="Embed Ekle (E)">
+                            <i data-lucide="code"></i>
+                        </button>
                     </div>
                 </div>
             </nav>
@@ -205,6 +208,9 @@
             <div class="toolbar-divider"></div>
             <div class="toolbar-group">
                 <button class="toolbar-btn" id="toolbar-delete" title="Sil (Del)"><i data-lucide="trash-2"></i></button>
+                <button class="toolbar-btn pin-btn" id="toolbar-pin" title="Ekrana Sabitle">
+                    <i data-lucide="pin"></i>
+                </button>
             </div>
         </div>
 
@@ -243,6 +249,21 @@
                 <button id="btn-trigger-video-upload" class="upload-btn">
                     <i data-lucide="upload"></i> Bilgisayardan Dosya Seç
                 </button>
+            </div>
+        </div>
+        
+        <!-- Embed URL Input Modal -->
+        <div id="embed-url-modal" class="glass hidden">
+            <div class="modal-header">
+                <i data-lucide="link" class="modal-type-icon"></i>
+                <span>Embed Ekle</span>
+                <button id="close-embed-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="url-input-group">
+                    <input type="text" id="embed-url-input" placeholder="Spotify listesi veya Google Harita linki yapıştırın...">
+                    <button id="btn-add-embed-url">Ekle</button>
+                </div>
             </div>
         </div>
 
@@ -321,6 +342,9 @@
                 <span id="coord-y">Y: 0</span>
             </div>
         </div>
+
+        <!-- Pinned / Sticky Layer -->
+        <div id="pinned-layer"></div>
 
         <!-- Hidden input for images -->
         <input type="file" id="image-upload" accept="image/*" hidden>
