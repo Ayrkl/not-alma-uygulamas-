@@ -33,8 +33,55 @@ const state = {
     settings: {
         smoothness: 0.85,
         sensitivity: 0.15
-    }
+    },
+    undoHistory: [] // Geri alma geçmişi
 };
+
+// --- Undo (Geri Alma) ---
+const MAX_UNDO_STEPS = 50;
+
+function pushHistory() {
+    const snapshot = {
+        objects: JSON.parse(JSON.stringify(state.objects)),
+        connections: JSON.parse(JSON.stringify(state.connections))
+    };
+    state.undoHistory.push(snapshot);
+    if (state.undoHistory.length > MAX_UNDO_STEPS) {
+        state.undoHistory.shift();
+    }
+    updateUndoButton();
+}
+
+function undoAction() {
+    if (state.undoHistory.length === 0) return;
+    const snapshot = state.undoHistory.pop();
+    state.objects = snapshot.objects;
+    state.connections = snapshot.connections;
+    deselectAll();
+    renderObjects();
+    renderConnections();
+    saveState();
+    updateUndoButton();
+
+    // Geri al animasyonu
+    const btn = document.getElementById('undo-btn');
+    if (btn) {
+        btn.classList.remove('triggered');
+        void btn.offsetWidth; // reflow — animasyonu sıfırla
+        btn.classList.add('triggered');
+        setTimeout(() => btn.classList.remove('triggered'), 400);
+    }
+}
+
+function updateUndoButton() {
+    const btn = document.getElementById('undo-btn');
+    if (btn) {
+        btn.style.opacity = state.undoHistory.length > 0 ? '1' : '0.3';
+        btn.title = state.undoHistory.length > 0
+            ? `Geri Al (Ctrl+Z) — ${state.undoHistory.length} adım`
+            : 'Geri alınacak bir şey yok';
+    }
+}
 
 // --- DOM Elements ---
 const canvasContainer = document.getElementById('canvas-container');
@@ -487,6 +534,13 @@ function setupEventListeners() {
         sidebar.classList.toggle('collapsed');
     });
 
+    // Undo button
+    const undoBtn = document.getElementById('undo-btn');
+    if (undoBtn) {
+        undoBtn.addEventListener('click', () => undoAction());
+    }
+    updateUndoButton();
+
     // Keyboard Shortcuts
     window.addEventListener('keydown', e => {
         const isEditing = e.target.tagName === 'INPUT' || 
@@ -494,6 +548,15 @@ function setupEventListeners() {
                          e.target.getAttribute('contenteditable') === 'true';
 
         const key = e.key.toLowerCase();
+        
+        // Ctrl+Z çalışmalı, editörde de!
+        if (e.ctrlKey && key === 'z') {
+            // Editör içindeyken tarayıcının kendi geri almasına izin ver
+            if (isEditing) return;
+            e.preventDefault();
+            undoAction();
+            return;
+        }
         
         // If typing, only allow tool shortcuts if Ctrl is pressed or it's not a letter
         if (isEditing) {
@@ -923,6 +986,7 @@ function addObject(type, x, y, content = '') {
         newlyCreated: true
     };
     
+    pushHistory();
     state.objects.push(newObj);
     renderObject(newObj);
     saveState();
@@ -930,6 +994,7 @@ function addObject(type, x, y, content = '') {
 }
 
 function removeObject(id) {
+    pushHistory();
     state.objects = state.objects.filter(o => o.id !== id);
     // Also remove related connections
     state.connections = state.connections.filter(c => c.fromId !== id && c.toId !== id);
@@ -966,6 +1031,7 @@ function selectConnection(connId) {
 }
 
 function removeConnection(connId) {
+    pushHistory();
     state.connections = state.connections.filter(c => c.id !== connId);
     state.selectedConnId = null;
     renderConnections();
@@ -973,6 +1039,7 @@ function removeConnection(connId) {
 }
 
 function bulkRemoveConnections(connIds) {
+    pushHistory();
     state.connections = state.connections.filter(c => !connIds.includes(c.id));
     state.selectedConnIds = [];
     renderConnections();
@@ -1069,6 +1136,7 @@ function hitTestSelection(sx, sy, sw, sh) {
 }
 
 function bulkRemove(ids) {
+    pushHistory();
     ids.forEach(id => {
         state.objects = state.objects.filter(o => o.id !== id);
         state.connections = state.connections.filter(c => c.fromId !== id && c.toId !== id);

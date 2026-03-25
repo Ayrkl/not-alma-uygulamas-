@@ -365,6 +365,24 @@ nav.tools,
     box-shadow: 0 0 15px var(--accent-glow);
 }
 
+/* Undo Button */
+#undo-btn {
+    transition: opacity 0.3s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+#undo-btn:hover:not([style*="opacity: 0.3"]) {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+@keyframes undo-spin {
+    from { transform: rotate(0deg) scale(1.1); }
+    to   { transform: rotate(-360deg) scale(1); }
+}
+
+#undo-btn.triggered i {
+    animation: undo-spin 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Canvas Area */
 #canvas-container {
     flex: 1;
