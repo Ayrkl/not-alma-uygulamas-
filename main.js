@@ -76,6 +76,32 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
+const DATA_PATH = path.join(app.getPath('userData'), 'canvas-data.json');
+
+// IPC communication for auto-saving all canvas data
+ipcMain.handle('save-data', (event, data) => {
+    try {
+        fs.writeFileSync(DATA_PATH, JSON.stringify(data));
+        return true;
+    } catch (e) {
+        console.error('Save error:', e);
+        return false;
+    }
+});
+
+ipcMain.handle('load-data', () => {
+    try {
+        if (fs.existsSync(DATA_PATH)) {
+            const data = fs.readFileSync(DATA_PATH, 'utf-8');
+            return JSON.parse(data);
+        }
+        return null;
+    } catch (e) {
+        console.error('Load error:', e);
+        return null;
+    }
+});
+
 ipcMain.handle('save-file', async (event, data) => {
     const { filePath } = await dialog.showSaveDialog({
         title: 'Notu Kaydet',

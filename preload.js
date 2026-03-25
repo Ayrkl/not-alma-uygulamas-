@@ -2,5 +2,6 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
     saveFile: (data) => ipcRenderer.invoke('save-file', data),
-    // Future: More features
+    saveData: (data) => ipcRenderer.invoke('save-data', data),
+    loadData: () => ipcRenderer.invoke('load-data'),
 });

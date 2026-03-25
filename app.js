@@ -111,22 +111,45 @@ const pdfUpload = document.getElementById('pdf-upload');
 const floatingToolbar = document.getElementById('floating-toolbar');
 
 // --- Initialization ---
-function init() {
+async function init() {
     lucide.createIcons();
     setupSearchListeners();
     initIconPicker();
     setupExtraListeners();
     try {
-        loadState();
+        // Attempt to load from JSON file first
+        let savedData = await window.electronAPI.loadData();
+        
+        // Migration: If no file data exists but localStorage has data, migrate it
+        if (!savedData && localStorage.getItem('lumina_canvas_data')) {
+            console.log('Migrating data from localStorage to JSON file...');
+            const localData = JSON.parse(localStorage.getItem('lumina_canvas_data') || '{}');
+            savedData = {
+                objects: localData.objects || [],
+                connections: localData.connections || [],
+                cam: localData.cam || { x: 0, y: 0, z: 1 }
+            };
+            // Initial save to the file
+            await window.electronAPI.saveData(savedData);
+        }
+
+        if (savedData) {
+            state.objects = savedData.objects || [];
+            state.connections = savedData.connections || [];
+            if (savedData.cam) {
+                state.targetX = savedData.cam.x || 0;
+                state.targetY = savedData.cam.y || 0;
+                state.targetZ = savedData.cam.z || 1.0;
+                state.camX = state.targetX;
+                state.camY = state.targetY;
+                state.camZ = state.targetZ;
+            }
+        }
+
         renderObjects();
         renderConnections();
         setupEventListeners();
         setupSettingsListeners();
-        
-        // Sync camera targets
-        state.targetZ = state.camZ;
-        state.targetX = state.camX;
-        state.targetY = state.camY;
         
         updateCanvas();
         setupMiniMapListeners();
@@ -140,37 +163,19 @@ function init() {
 }
 
 // --- Persistence ---
-function saveState() {
-    localStorage.setItem('lumina_canvas_data', JSON.stringify({
+async function saveState() {
+    const dataToSave = {
         objects: state.objects,
         connections: state.connections,
-        cam: { x: state.camX, y: state.camY, z: state.camZ }
-    }));
+        cam: { x: state.targetX, y: state.targetY, z: state.targetZ }
+    };
+    
+    // Save to the persistent JSON file via Electron
+    await window.electronAPI.saveData(dataToSave);
 }
 
 function loadState() {
-    const data = localStorage.getItem('lumina_canvas_data');
-    if (data) {
-        try {
-            const parsed = JSON.parse(data);
-            state.objects = parsed.objects || [];
-            state.connections = parsed.connections || [];
-            if (parsed.cam) {
-                state.camX = parsed.cam.x || 0;
-                state.camY = parsed.cam.y || 0;
-                state.camZ = parsed.cam.z || 1.0;
-            }
-            
-            // Migration: Ensure all connections have IDs
-            state.connections.forEach(conn => {
-                if (!conn.id) {
-                    conn.id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
-                }
-            });
-        } catch (e) {
-            console.error("Data Load Error:", e);
-        }
-    }
+    // Note: State is now loaded asynchronously in async init()
 }
 
 // --- Search & Navigation Logic ---
