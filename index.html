@@ -69,6 +69,10 @@
                         <button class="tool-btn" id="tool-embed" title="Embed Ekle (E)">
                             <i data-lucide="code"></i>
                         </button>
+                        <div class="tool-separator"></div>
+                        <button class="tool-btn" id="tool-focus" title="Odak Modu">
+                            <i data-lucide="headphones"></i>
+                        </button>
                     </div>
                 </div>
             </nav>
@@ -375,8 +379,46 @@
         <input type="file" id="video-upload" accept="video/*" hidden>
         <!-- Hidden input for PDFs -->
         <input type="file" id="pdf-upload" accept="application/pdf" hidden>
+        <!-- Focus / Pomodoro Widget -->
+        <div id="focus-widget" class="glass hidden draggable-panel">
+            <div class="panel-header" id="focus-drag-handle">
+                <i data-lucide="timer" class="panel-icon"></i>
+                <span>Odak Modu</span>
+                <button id="close-focus" class="panel-close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="focus-body">
+                <div class="timer-display">
+                    <span id="time-left">25:00</span>
+                </div>
+                <div class="timer-controls">
+                    <button class="focus-btn" id="timer-start" title="Başlat"><i data-lucide="play"></i></button>
+                    <button class="focus-btn" id="timer-pause" title="Duraklat"><i data-lucide="pause"></i></button>
+                    <button class="focus-btn" id="timer-reset" title="Sıfırla"><i data-lucide="rotate-ccw"></i></button>
+                </div>
+                <div class="focus-divider"></div>
+                <!-- Ambient Audio Controls -->
+                <div class="ambient-controls">
+                    <button class="ambient-btn" id="audio-rain" data-src="https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg" title="Yağmur Sesi">
+                        <i data-lucide="cloud-rain"></i>
+                    </button>
+                    <button class="ambient-btn" id="audio-coffee" data-src="https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg" title="Kafe Sesleri">
+                        <i data-lucide="coffee"></i>
+                    </button>
+                    <button class="ambient-btn" id="audio-lofi" data-src="https://stream.zeno.fm/f3wvbbqmdg8uv" title="Lo-Fi Radyo">
+                        <i data-lucide="music"></i>
+                    </button>
+                </div>
+                <!-- Volume Slider -->
+                <div class="volume-control">
+                    <i data-lucide="volume-2" style="width: 14px; opacity: 0.6;"></i>
+                    <input type="range" id="ambient-volume" min="0" max="100" value="50" class="volume-slider">
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <script src="app.js" type="module"></script>
+    <!-- Modals ve Scripts -->
+    <script src="app.js"></script>
 </body>
 </html>

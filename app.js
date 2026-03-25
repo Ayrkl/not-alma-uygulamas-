@@ -150,6 +150,7 @@ async function init() {
             }
         }
 
+        initFocusWidget();
         renderObjects();
         renderConnections();
         setupEventListeners();
@@ -1902,6 +1903,137 @@ function setupSettingsListeners() {
             bgSizeInput.nextElementSibling.innerText = `${val}%`;
             updateCanvas(); // Force instant redraw to see density changes
             saveState();
+        });
+    }
+}
+
+// --- Focus Widget & Pomodoro ---
+function makeDraggable(panel, handle) {
+    let isDragging = false, startX, startY, initialX, initialY;
+    handle.addEventListener('mousedown', e => {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = panel.getBoundingClientRect();
+        initialX = rect.left;
+        initialY = rect.top;
+        
+        panel.style.bottom = 'auto';
+        panel.style.right = 'auto';
+        panel.style.left = `${initialX}px`;
+        panel.style.top = `${initialY}px`;
+        panel.style.transform = 'none';
+        
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        panel.style.left = `${initialX + dx}px`;
+        panel.style.top = `${initialY + dy}px`;
+    });
+
+    document.addEventListener('mouseup', () => { isDragging = false; });
+}
+
+let focusTimer = null;
+let focusTimeLeft = 25 * 60; // 25:00
+let isFocusTimerRunning = false;
+
+function updateFocusTimerDisplay() {
+    const timeSpan = document.getElementById('time-left');
+    if (!timeSpan) return;
+    const m = Math.floor(focusTimeLeft / 60).toString().padStart(2, '0');
+    const s = (focusTimeLeft % 60).toString().padStart(2, '0');
+    timeSpan.innerText = `${m}:${s}`;
+}
+
+function initFocusWidget() {
+    const toolFocus = document.getElementById('tool-focus');
+    const focusWidget = document.getElementById('focus-widget');
+    const closeFocus = document.getElementById('close-focus');
+    const dragHandle = document.getElementById('focus-drag-handle');
+    
+    if (toolFocus && focusWidget) {
+        toolFocus.addEventListener('click', () => {
+            focusWidget.classList.toggle('hidden');
+        });
+        closeFocus.addEventListener('click', () => {
+            focusWidget.classList.add('hidden');
+        });
+        makeDraggable(focusWidget, dragHandle);
+    }
+
+    const startBtn = document.getElementById('timer-start');
+    const pauseBtn = document.getElementById('timer-pause');
+    const resetBtn = document.getElementById('timer-reset');
+
+    if (startBtn) {
+        updateFocusTimerDisplay();
+        startBtn.addEventListener('click', () => {
+            if (isFocusTimerRunning) return;
+            isFocusTimerRunning = true;
+            focusTimer = setInterval(() => {
+                if (focusTimeLeft > 0) {
+                    focusTimeLeft--;
+                    updateFocusTimerDisplay();
+                    if (focusTimeLeft === 0) {
+                        clearInterval(focusTimer);
+                        isFocusTimerRunning = false;
+                        new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(e=>console.log(e));
+                    }
+                }
+            }, 1000);
+        });
+        
+        pauseBtn.addEventListener('click', () => {
+            clearInterval(focusTimer);
+            isFocusTimerRunning = false;
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            clearInterval(focusTimer);
+            isFocusTimerRunning = false;
+            focusTimeLeft = 25 * 60;
+            updateFocusTimerDisplay();
+        });
+    }
+
+    // Ambient Audio Logic
+    const ambientBtns = document.querySelectorAll('.ambient-btn');
+    const volSlider = document.getElementById('ambient-volume');
+    const activeAudios = {}; // Müzikleri aynı anda çalabilmek için obje tutuyoruz
+
+    ambientBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const src = btn.getAttribute('data-src');
+            const id = btn.id;
+            
+            if (btn.classList.contains('active')) {
+                if (activeAudios[id]) {
+                    activeAudios[id].pause();
+                    delete activeAudios[id];
+                }
+                btn.classList.remove('active');
+            } else {
+                const audio = new Audio(src);
+                audio.loop = true;
+                audio.volume = volSlider ? (volSlider.value / 100) : 0.5;
+                audio.play().catch(e => console.error("Auto-play engellendi:", e));
+                activeAudios[id] = audio;
+                btn.classList.add('active');
+            }
+        });
+    });
+
+    if (volSlider) {
+        volSlider.addEventListener('input', () => {
+            const vol = volSlider.value / 100;
+            Object.values(activeAudios).forEach(audio => {
+                audio.volume = vol;
+            });
         });
     }
 }

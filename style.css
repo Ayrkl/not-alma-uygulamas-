@@ -1684,4 +1684,197 @@ body.theme-blueprint #canvas-grid {
         calc(var(--bg-grid-size)/5) calc(var(--bg-grid-size)/5), 
         calc(var(--bg-grid-size)/5) calc(var(--bg-grid-size)/5);
     background-position: var(--bg-offset-x) var(--bg-offset-y);
+}
+
+/* --- Focus / Pomodoro Widget --- */
+#focus-widget {
+    position: fixed;
+    top: 80px;
+    right: 40px;
+    width: 280px;
+    z-index: 5000;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+#focus-widget.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-20px) scale(0.95);
+}
+
+.draggable-panel {
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--glass-border);
+    cursor: grab;
+    user-select: none;
+}
+
+.panel-header:active {
+    cursor: grabbing;
+}
+
+.panel-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    color: var(--accent-color);
+}
+
+.panel-header span {
+    font-weight: 600;
+    font-size: 0.85rem;
+    flex: 1;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.panel-close {
+    background: none;
+    border: none;
+    color: var(--fg-color);
+    opacity: 0.5;
+    cursor: pointer;
+    padding: 4px;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.panel-close:hover {
+    opacity: 1;
+}
+
+.focus-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.timer-display {
+    font-family: var(--font-heading);
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    line-height: 1;
+    margin: 10px 0;
+}
+
+.timer-controls {
+    display: flex;
+    gap: 12px;
+}
+
+.focus-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.focus-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+.focus-btn#timer-start {
+    background: var(--accent-color);
+    border-color: var(--accent-glow);
+}
+.focus-btn#timer-start:hover {
+    background: var(--accent-hover);
+}
+
+.focus-divider {
+    width: 100%;
+    height: 1px;
+    background: var(--glass-border);
+    margin: 4px 0;
+}
+
+.ambient-controls {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+    justify-content: center;
+}
+
+.ambient-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--fg-color);
+    opacity: 0.6;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.ambient-btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.ambient-btn.active {
+    opacity: 1;
+    color: var(--accent-color);
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+}
+
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 0 10px;
+}
+
+.volume-slider {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
 }
