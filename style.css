@@ -432,6 +432,8 @@ nav.tools,
     position: relative;
     overflow: hidden;
     cursor: grab;
+    will-change: transform;
+    transform: translateZ(0);
 }
 
 #canvas-container.panning {
@@ -459,6 +461,8 @@ nav.tools,
     z-index: 0;
     pointer-events: none;
     transform-origin: center;
+    will-change: background-position, background-size, opacity;
+    transform: translateZ(0);
 }
 
 #canvas-content {
@@ -469,6 +473,8 @@ nav.tools,
     left: 0;
     z-index: 10;
     transform-origin: 0 0;
+    will-change: transform;
+    transform: translateZ(0);
 }
 
 #connection-layer {
@@ -590,6 +596,8 @@ nav.tools,
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    will-change: transform, left, top;
+    transform: translateZ(0);
 }
 
 /* Fix for Blue Ovals: Small, elegant anchor points */
@@ -1860,6 +1868,7 @@ body.theme-blueprint #canvas-grid {
     flex: 1;
     height: 4px;
     -webkit-appearance: none;
+    appearance: none;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 2px;
     outline: none;

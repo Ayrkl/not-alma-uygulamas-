@@ -110,9 +110,22 @@ const videoUpload = document.getElementById('video-upload');
 const pdfUpload = document.getElementById('pdf-upload');
 const floatingToolbar = document.getElementById('floating-toolbar');
 
+let canvasHalfW = window.innerWidth / 2;
+let canvasHalfH = window.innerHeight / 2;
+
 // --- Initialization ---
 async function init() {
     lucide.createIcons();
+    
+    // Cache canvas dimensions to avoid layout thrashing
+    const ro = new ResizeObserver(entries => {
+        for (let entry of entries) {
+            canvasHalfW = entry.contentRect.width / 2;
+            canvasHalfH = entry.contentRect.height / 2;
+        }
+    });
+    if (canvasContainer) ro.observe(canvasContainer);
+
     setupSearchListeners();
     initIconPicker();
     setupExtraListeners();
@@ -272,20 +285,16 @@ function animationLoop() {
         state.camZ += dZ * (1 - s);
         updateCanvas();
         if (state.connections.length > 0) renderConnections();
+        updateMiniMap();
     }
-    updateMiniMap();
     requestAnimationFrame(animationLoop);
 }
 
 // --- Kamera Kontrolleri ---
 function updateCanvas() {
-    const rect = canvasContainer.getBoundingClientRect();
-    const halfW = rect.width / 2;
-    const halfH = rect.height / 2;
-
     // Kamera Formülü: Dünyayı kameranın bakış açısına göre kilitliyoruz.
-    // Her şey "halfW/halfH" merkezinde zoomlanır.
-    const transform = `translate(${halfW}px, ${halfH}px) scale(${state.camZ}) translate(${-state.camX}px, ${-state.camY}px)`;
+    // Her şey "canvasHalfW/canvasHalfH" merkezinde zoomlanır.
+    const transform = `translate(${canvasHalfW}px, ${canvasHalfH}px) scale(${state.camZ}) translate(${-state.camX}px, ${-state.camY}px)`;
     canvasContent.style.transform = transform;
     
     // Izgara Senkronizasyonu — Tema Tablolarını Dinamik Olarak Yönetiyoruz
@@ -304,8 +313,8 @@ function updateCanvas() {
 
     // CSS Değişkenlerini Güncelle (Artık Grid CSS'i Variables Üzerinden Çalışıyor)
     const gridSize = baseSize * density * state.camZ;
-    const offsetX = halfW - state.camX * state.camZ;
-    const offsetY = halfH - state.camY * state.camZ;
+    const offsetX = canvasHalfW - state.camX * state.camZ;
+    const offsetY = canvasHalfH - state.camY * state.camZ;
     
     canvasGrid.style.setProperty('--bg-grid-size', `${gridSize}px`);
     canvasGrid.style.setProperty('--bg-offset-x', `${offsetX}px`);
@@ -1092,6 +1101,7 @@ function addObject(type, x, y, content = '') {
     };
     state.objects.push(newObj);
     renderObject(newObj);
+    updateMiniMap();
     saveState();
     return id;
 }
@@ -1106,6 +1116,7 @@ function removeObject(id) {
     if (el) el.remove();
     state.selectedId = null;
     renderConnections();
+    updateMiniMap();
     saveState();
 }
 
@@ -1150,9 +1161,8 @@ function bulkRemoveConnections(connIds) {
 }
 
 function hitTestSelection(sx, sy, sw, sh) {
-    const rect = canvasContainer.getBoundingClientRect();
-    const halfW = rect.width / 2;
-    const halfH = rect.height / 2;
+    const halfW = canvasHalfW;
+    const halfH = canvasHalfH;
 
     // 1. Check Objects
     state.selectedIds = [];
@@ -1162,7 +1172,7 @@ function hitTestSelection(sx, sy, sw, sh) {
             x: obj.x * state.camZ + halfW - state.camX * state.camZ,
             y: obj.y * state.camZ + halfH - state.camY * state.camZ,
             w: (obj.width === 'auto' ? 200 : obj.width) * state.camZ,
-            h: (obj.height === 'auto' ? 100 : obj.height) * state.camZ
+            h: (obj.height === 'auto' ? (obj.type === 'note' ? 180 : 100) : obj.height) * state.camZ
         };
 
         if (objRect.x < sx + sw && objRect.x + objRect.w > sx &&
@@ -1180,14 +1190,12 @@ function hitTestSelection(sx, sy, sw, sh) {
         const connEl = document.getElementById(`conn-${conn.id}`);
         const fromObj = conn.fromId ? state.objects.find(o => o.id === conn.fromId) : null;
         const toObj = conn.toId ? state.objects.find(o => o.id === conn.toId) : null;
-        const fromEl = conn.fromId ? document.getElementById(`obj-${conn.fromId}`) : null;
-        const toEl = conn.toId ? document.getElementById(`obj-${conn.toId}`) : null;
 
         let startX, startY, endX, endY;
 
-        if (fromObj && fromEl) {
-            const fw = fromEl.offsetWidth || (fromObj.width === 'auto' ? 200 : fromObj.width);
-            const fh = fromEl.offsetHeight || (fromObj.height === 'auto' ? 100 : fromObj.height);
+        if (fromObj) {
+            const fw = (fromObj.width === 'auto' ? 200 : fromObj.width);
+            const fh = (fromObj.height === 'auto' ? (fromObj.type === 'note' ? 180 : 100) : fromObj.height);
             startX = fromObj.x + (fw / 2);
             startY = fromObj.y + (fh / 2);
         } else if (conn.fromX !== null) {
@@ -1195,9 +1203,9 @@ function hitTestSelection(sx, sy, sw, sh) {
             startY = conn.fromY;
         }
 
-        if (toObj && toEl) {
-            const tw = toEl.offsetWidth || (toObj.width === 'auto' ? 200 : toObj.width);
-            const th = toEl.offsetHeight || (toObj.height === 'auto' ? 100 : toObj.height);
+        if (toObj) {
+            const tw = (toObj.width === 'auto' ? 200 : toObj.width);
+            const th = (toObj.height === 'auto' ? (toObj.type === 'note' ? 180 : 100) : toObj.height);
             endX = toObj.x + (tw / 2);
             endY = toObj.y + (th / 2);
         } else if (conn.toX !== null) {
@@ -1248,6 +1256,7 @@ function bulkRemove(ids) {
     });
     deselectAll();
     renderConnections();
+    updateMiniMap();
     saveState();
 }
 
@@ -1727,22 +1736,31 @@ function renderConnections() {
     const svg = document.getElementById('connection-layer');
     if (!svg) return;
     
-    // Tam Temizlik: Hem çizgileri hem de görünmez vuruş alanlarını temizle
-    const paths = svg.querySelectorAll('.connection-path, .connection-hitbox');
-    paths.forEach(p => p.remove());
+    // Maintain set of active connections
+    const validIds = new Set(state.connections.map(c => c.id));
     
+    // Remove stale paths selectively instead of .innerHTML clearing
+    const existingPaths = svg.querySelectorAll('.connection-path, .connection-hitbox');
+    existingPaths.forEach(p => {
+        let idStr = p.id;
+        if (idStr) {
+            let actualId = idStr.replace('conn-hitbox-', '').replace('conn-', '');
+            if (!validIds.has(actualId)) p.remove();
+        } else {
+            p.remove();
+        }
+    });
+
     state.connections.forEach(conn => {
         const fromObj = conn.fromId ? state.objects.find(o => o.id === conn.fromId) : null;
         const toObj = conn.toId ? state.objects.find(o => o.id === conn.toId) : null;
-        const fromEl = conn.fromId ? document.getElementById(`obj-${conn.fromId}`) : null;
-        const toEl = conn.toId ? document.getElementById(`obj-${conn.toId}`) : null;
         
         let startX, startY, endX, endY;
 
-        // Determine Start Point
-        if (fromObj && fromEl) {
-            const fw = fromEl.offsetWidth || (fromObj.width === 'auto' ? 200 : fromObj.width);
-            const fh = fromEl.offsetHeight || (fromObj.height === 'auto' ? 100 : fromObj.height);
+        // Skip layout reading (.offsetWidth), calculate directly from object state
+        if (fromObj) {
+            const fw = (fromObj.width === 'auto' ? 200 : fromObj.width);
+            const fh = (fromObj.height === 'auto' ? (fromObj.type === 'note' ? 180 : 100) : fromObj.height);
             startX = fromObj.x + (fw / 2);
             startY = fromObj.y + (fh / 2);
         } else if (conn.fromX !== null) {
@@ -1750,10 +1768,9 @@ function renderConnections() {
             startY = conn.fromY;
         }
 
-        // Determine End Point
-        if (toObj && toEl) {
-            const tw = toEl.offsetWidth || (toObj.width === 'auto' ? 200 : toObj.width);
-            const th = toEl.offsetHeight || (toObj.height === 'auto' ? 100 : toObj.height);
+        if (toObj) {
+            const tw = (toObj.width === 'auto' ? 200 : toObj.width);
+            const th = (toObj.height === 'auto' ? (toObj.type === 'note' ? 180 : 100) : toObj.height);
             endX = toObj.x + (tw / 2);
             endY = toObj.y + (th / 2);
         } else if (conn.toX !== null) {
@@ -1762,48 +1779,55 @@ function renderConnections() {
         }
 
         if (startX !== undefined && endX !== undefined) {
-            // Robust Curved Logic (Z-Curve)
             const cpX1 = startX + (endX - startX) * 0.5;
             const cpY1 = startY;
             const cpX2 = startX + (endX - startX) * 0.5;
             const cpY2 = endY;
             const d = `M ${startX} ${startY} C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${endX} ${endY}`;
 
-            // 1. Görünmez Hitbox (Daha geniş tıklama alanı için)
-            const hitbox = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            hitbox.setAttribute("class", "connection-hitbox");
-            hitbox.setAttribute("d", d);
-            hitbox.style.stroke = "transparent";
-            hitbox.style.strokeWidth = "25";
-            hitbox.style.fill = "none";
-            hitbox.style.cursor = "pointer";
-            hitbox.style.pointerEvents = "visibleStroke";
-            
-            // 2. Görünür Çizgi (Estetik kısım)
-            const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            p.id = `conn-${conn.id}`; // Add ID for faster selection lookup
-            let classes = "connection-path";
-            if (conn.style === 'dashed') classes += " dashed";
-            if (state.selectedConnId === conn.id || state.selectedConnIds.includes(conn.id)) classes += " selected";
-            p.setAttribute("class", classes);
-            p.setAttribute("d", d);
-            
-            // Oku Seçme Mantığı (Hem hitbox hem çizgi için)
-            [hitbox, p].forEach(el => {
-                el.addEventListener('mousedown', (e) => {
-                    e.stopPropagation(); 
-                });
-                el.addEventListener('click', (e) => {
+            let hitbox = document.getElementById(`conn-hitbox-${conn.id}`);
+            if (!hitbox) {
+                hitbox = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                hitbox.id = `conn-hitbox-${conn.id}`;
+                hitbox.setAttribute("class", "connection-hitbox");
+                hitbox.style.stroke = "transparent";
+                hitbox.style.strokeWidth = "25";
+                hitbox.style.fill = "none";
+                hitbox.style.cursor = "pointer";
+                hitbox.style.pointerEvents = "visibleStroke";
+                hitbox.addEventListener('mousedown', (e) => e.stopPropagation());
+                hitbox.addEventListener('click', (e) => {
                     e.stopPropagation();
                     selectConnection(conn.id);
                 });
-            });
+                svg.appendChild(hitbox);
+            }
+            hitbox.setAttribute("d", d);
+            
+            let p = document.getElementById(`conn-${conn.id}`);
+            if (!p) {
+                p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                p.id = `conn-${conn.id}`;
+                p.addEventListener('mousedown', (e) => e.stopPropagation());
+                p.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectConnection(conn.id);
+                });
+                svg.appendChild(p);
+            }
+            
+            let classes = "connection-path";
+            if (conn.style === 'dashed') classes += " dashed";
+            if (state.selectedConnId === conn.id || state.selectedConnIds.includes(conn.id)) classes += " selected";
+            
+            p.setAttribute("class", classes);
+            p.setAttribute("d", d);
             
             if (conn.flow === 'forward' || conn.flow === 'both') p.setAttribute("marker-end", "url(#arrowhead)");
-            if (conn.flow === 'both') p.setAttribute("marker-start", "url(#arrowstart)");
+            else p.removeAttribute("marker-end");
             
-            svg.appendChild(hitbox);
-            svg.appendChild(p);
+            if (conn.flow === 'both') p.setAttribute("marker-start", "url(#arrowstart)");
+            else p.removeAttribute("marker-start");
         }
     });
 }
