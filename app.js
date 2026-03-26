@@ -459,8 +459,20 @@ function setupEventListeners() {
         }
     });
 
-    // Sabit Merkezli Z-Kamera Zoom
-    canvasContainer.addEventListener('wheel', e => {
+    // Sabit Merkezli Z-Kamera Zoom - Capture fazında yakalayarak çocuk elemanların (not kağıtları vb.) olayı yutmasını engelliyoruz.
+    document.addEventListener('wheel', e => {
+        // UI Elemanlarını Kontrol Et (Sadece Sidebar ve statik paneller üzerindeyken zoom yapma)
+        const isUI = !!e.target.closest('#sidebar') || 
+                     !!e.target.closest('#settings-panel') ||
+                     !!e.target.closest('#search-panel') ||
+                     !!e.target.closest('#focus-widget') ||
+                     !!e.target.closest('#media-url-modal') ||
+                     !!e.target.closest('#floating-toolbar') ||
+                     !!e.target.closest('#connection-toolbar');
+        
+        if (isUI) return;
+
+        // Tuval üzerindeki herhangi bir yerde (not kağıtları dahil) zoom yapılmasına izin ver
         e.preventDefault();
         
         // Sadece Z (derinlik) hedefini değiştiriyoruz, X ve Y sabit kalıyor.
@@ -468,7 +480,7 @@ function setupEventListeners() {
         const sensitivity = state.settings.sensitivity || 0.15;
         const zoomDelta = Math.pow(1 + sensitivity, -e.deltaY / 120);
         state.targetZ = Math.min(Math.max(state.targetZ * zoomDelta, 0.05), 10.0);
-    }, { passive: false });
+    }, { capture: true, passive: false });
 
     // Tool switching
     document.querySelectorAll('.tool-btn').forEach(btn => {
@@ -729,7 +741,6 @@ function setupEventListeners() {
     }
 
     // Global Floating Toolbar Actions
-    const floatingToolbar = document.getElementById('floating-toolbar');
     floatingToolbar.querySelectorAll('.toolbar-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1143,7 +1154,6 @@ function selectConnection(connId) {
     renderConnections();
     
     // Show the floating toolbar for the connection
-    const floatingToolbar = document.getElementById('floating-toolbar');
     floatingToolbar.classList.add('active');
 }
 
@@ -1550,7 +1560,6 @@ function renderObject(obj) {
                 iframe.allowFullscreen = true;
                 iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-forms');
                 wrapper.appendChild(iframe);
-                iframe.style.pointerEvents = 'auto';
             } else {
                 const video = document.createElement('video');
                 video.src = url;
@@ -1658,6 +1667,9 @@ function renderObject(obj) {
 
             editor.addEventListener('focus', () => selectObject(obj.id));
             editor.addEventListener('mousedown', e => e.stopPropagation());
+            
+            // Zoom'un bu eleman üzerindeyken de çalışması için wheel olayını engellemiyoruz
+            // (Bubbling sayesinde window'daki capturing listener yakalayacak)
             
             el.appendChild(editor);
             

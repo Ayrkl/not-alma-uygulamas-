@@ -53,13 +53,16 @@
 }
 
 body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
     background-color: var(--bg-color);
     color: var(--fg-color);
     font-family: var(--font-body);
-    overflow: hidden;
-    /* Canvas will handle it */
-    height: 100vh;
-    width: 100vw;
+    transition: background-color 0.5s ease;
+    overscroll-behavior: none;
 }
 
 #app {
@@ -598,6 +601,7 @@ nav.tools,
     overflow: hidden;
     will-change: transform, left, top;
     transform: translateZ(0);
+    overscroll-behavior: none;
 }
 
 /* Fix for Blue Ovals: Small, elegant anchor points */
@@ -1558,6 +1562,36 @@ body.light-theme .dropdown-options {
     width: 100%;
     height: 100%;
     border: none;
+    pointer-events: none; /* Disable interaction by default to allow zooming over it */
+    transition: opacity 0.3s ease;
+}
+
+.canvas-obj.selected .embed-container,
+.canvas-obj.selected iframe,
+.canvas-obj.selected .video-wrapper video {
+    pointer-events: auto; /* Enable interaction only when selected */
+}
+
+/* Hide video controls when not selected to ensure zoom works */
+.video-wrapper video {
+    pointer-events: none;
+}
+
+/* Add a subtle indicator when the video is interactive */
+.canvas-obj.selected.embed-obj::after {
+    content: "Etkileşim Aktif";
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--accent-color);
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0.8;
 }
 
 #embed-url-modal {
