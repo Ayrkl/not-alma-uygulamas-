@@ -1325,157 +1325,200 @@ function handleConnectionClick(objId) {
 }
 
 function renderObject(obj) {
-    if (obj.type === 'point') {
-        const el = document.createElement('div');
+    let el = document.getElementById(`obj-${obj.id}`);
+    const isUpdate = !!el;
+
+    if (!el) {
+        el = document.createElement('div');
         el.id = `obj-${obj.id}`;
+    }
+
+    if (obj.type === 'point') {
         el.className = 'canvas-obj point-anchor fade-in';
         el.style.left = `${obj.x}px`;
         el.style.top = `${obj.y}px`;
         
-        el.addEventListener('mousedown', (e) => {
-            e.stopPropagation();
-            if (state.currentTool === 'connect') handleConnectionClick(obj.id);
-            else if (state.currentTool === 'pan' || state.currentTool === 'select' || state.currentTool === '') selectObject(obj.id);
-        });
+        if (!isUpdate) {
+            el.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                if (state.currentTool === 'connect') handleConnectionClick(obj.id);
+                else if (state.currentTool === 'pan' || state.currentTool === 'select' || state.currentTool === '') selectObject(obj.id);
+            });
+        }
 
-        canvasContent.appendChild(el);
+        if (el.parentNode !== canvasContent) {
+            canvasContent.appendChild(el);
+        }
         return;
     }
 
-    const el = document.createElement('div');
-    el.id = `obj-${obj.id}`;
-    el.className = `canvas-obj fade-in ${obj.type}-obj`;
-    el.style.left = `${obj.x}px`;
-    el.style.top = `${obj.y}px`;
+    el.className = `canvas-obj fade-in ${obj.type}-obj ${state.selectedId === obj.id || state.selectedIds.includes(obj.id) ? 'selected' : ''}`;
+    el.style.left = `${obj.pinned ? obj.pinX : obj.x}px`;
+    el.style.top = `${obj.pinned ? obj.pinY : obj.y}px`;
     el.style.width = obj.width === 'auto' ? 'auto' : `${obj.width}px`;
     el.style.height = obj.height === 'auto' ? 'auto' : `${obj.height}px`;
 
     if (obj.color && obj.color !== 'default') {
         el.style.background = obj.color;
-        if (obj.textColor === 'default') obj.textColor = '#0f172a';
+    } else {
+        el.style.background = ''; // Reset to default
     }
 
-    const handle = document.createElement('div');
-    handle.className = 'obj-handle';
-    el.appendChild(handle);
+    if (!isUpdate) {
+        const handle = document.createElement('div');
+        handle.className = 'obj-handle';
+        el.appendChild(handle);
 
-    const resizeHandle = document.createElement('div');
-    resizeHandle.className = 'resize-handle';
-    el.appendChild(resizeHandle);
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'resize-handle';
+        el.appendChild(resizeHandle);
+    }
 
     if (obj.type === 'image') {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'image-wrapper';
-        wrapper.innerHTML = `<img src="${obj.content}" draggable="false">`;
-        el.appendChild(wrapper);
+        if (isUpdate && el.dataset.renderedContent === obj.content) {
+            // Already rendered
+        } else {
+            const oldWrapper = el.querySelector('.image-wrapper');
+            if (oldWrapper) oldWrapper.remove();
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'image-wrapper';
+            wrapper.innerHTML = `<img src="${obj.content}" draggable="false">`;
+            el.appendChild(wrapper);
+            el.dataset.renderedContent = obj.content;
+        }
     } else if (obj.type === 'checklist') {
-        const container = document.createElement('div');
-        container.className = 'checklist-container';
-        
-        const items = JSON.parse(obj.content || '[]');
-        
-        const renderItems = () => {
-            container.innerHTML = '';
-            items.forEach((item, index) => {
-                const itemEl = document.createElement('div');
-                itemEl.className = `checklist-item ${item.checked ? 'checked' : ''}`;
-                
-                const check = document.createElement('div');
-                check.className = `check-box ${item.checked ? 'checked' : ''}`;
-                check.innerHTML = '<i data-lucide="check"></i>';
-                check.addEventListener('click', (e) => {
+        if (isUpdate && el.dataset.renderedContent === obj.content) {
+            // Check if items changed fundamentally, otherwise leave it
+        } else {
+            const oldContainer = el.querySelector('.checklist-container');
+            if (oldContainer) oldContainer.remove();
+
+            const container = document.createElement('div');
+            container.className = 'checklist-container';
+            
+            const items = JSON.parse(obj.content || '[]');
+            
+            const renderItems = () => {
+                container.innerHTML = '';
+                items.forEach((item, index) => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = `checklist-item ${item.checked ? 'checked' : ''}`;
+                    
+                    const check = document.createElement('div');
+                    check.className = `check-box ${item.checked ? 'checked' : ''}`;
+                    check.innerHTML = '<i data-lucide="check"></i>';
+                    check.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        pushHistory();
+                        item.checked = !item.checked;
+                        obj.content = JSON.stringify(items);
+                        el.dataset.renderedContent = obj.content; // Prevent re-rendering
+                        itemEl.classList.toggle('checked', item.checked);
+                        check.classList.toggle('checked', item.checked);
+                        saveState();
+                    });
+                    
+                    const text = document.createElement('div');
+                    text.className = 'item-text';
+                    text.contentEditable = 'true';
+                    text.spellcheck = false;
+                    text.innerText = item.text;
+                    const debouncedPush = debounce(() => {
+                        pushHistory();
+                        saveState();
+                    }, 800);
+
+                    text.addEventListener('input', () => {
+                        item.text = text.innerText;
+                        obj.content = JSON.stringify(items);
+                        el.dataset.renderedContent = obj.content; // Prevent re-rendering
+                        debouncedPush();
+                    });
+                    text.addEventListener('mousedown', e => e.stopPropagation());
+                    
+                    // Keyboard support
+                    text.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            pushHistory();
+                            const newId = 'item-' + Date.now();
+                            items.splice(index + 1, 0, { id: newId, text: '', checked: false });
+                            obj.content = JSON.stringify(items);
+                            el.dataset.renderedContent = ''; // Force re-render grid
+                            renderItems();
+                            setTimeout(() => {
+                                const newText = container.querySelectorAll('.item-text')[index + 1];
+                                if (newText) newText.focus();
+                            }, 0);
+                            saveState();
+                        } else if (e.key === 'Backspace' && text.innerText === '' && items.length > 1) {
+                            e.preventDefault();
+                            pushHistory();
+                            items.splice(index, 1);
+                            obj.content = JSON.stringify(items);
+                            el.dataset.renderedContent = ''; // Force re-render grid
+                            renderItems();
+                            setTimeout(() => {
+                                const prevText = container.querySelectorAll('.item-text')[Math.max(0, index - 1)];
+                                if (prevText) prevText.focus();
+                            }, 0);
+                            saveState();
+                        }
+                    });
+
+                    const remove = document.createElement('div');
+                    remove.className = 'remove-item';
+                    remove.innerHTML = '<i data-lucide="x"></i>';
+                    remove.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (items.length > 1) {
+                            pushHistory();
+                            items.splice(index, 1);
+                            obj.content = JSON.stringify(items);
+                            el.dataset.renderedContent = ''; // Force re-render
+                            renderItems();
+                            saveState();
+                        }
+                    });
+                    
+                    itemEl.appendChild(check);
+                    itemEl.appendChild(text);
+                    itemEl.appendChild(remove);
+                    container.appendChild(itemEl);
+                });
+
+                const addBtn = document.createElement('div');
+                addBtn.className = 'add-item-btn';
+                addBtn.innerHTML = '<i data-lucide="plus"></i> Yeni Madde';
+                addBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     pushHistory();
-                    item.checked = !item.checked;
+                    items.push({ id: 'item-' + Date.now(), text: '', checked: false });
                     obj.content = JSON.stringify(items);
-                    itemEl.classList.toggle('checked', item.checked);
-                    check.classList.toggle('checked', item.checked);
+                    el.dataset.renderedContent = ''; // Force re-render
+                    renderItems();
+                    setTimeout(() => {
+                        const lastText = container.querySelectorAll('.item-text')[items.length - 1];
+                        if (lastText) lastText.focus();
+                    }, 0);
                     saveState();
                 });
-                
-                const text = document.createElement('div');
-                text.className = 'item-text';
-                text.contentEditable = 'true';
-                text.spellcheck = false;
-                text.innerText = item.text;
-                const debouncedPush = debounce(() => {
-                    pushHistory();
-                    saveState();
-                }, 800);
+                container.appendChild(addBtn);
+                if (typeof lucide !== 'undefined') lucide.createIcons({ root: container });
+            };
 
-                text.addEventListener('input', () => {
-                    item.text = text.innerText;
-                    obj.content = JSON.stringify(items);
-                    debouncedPush();
-                });
-                text.addEventListener('mousedown', e => e.stopPropagation());
-                
-                // Keyboard support
-                text.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        pushHistory();
-                        const newId = 'item-' + Date.now();
-                        items.splice(index + 1, 0, { id: newId, text: '', checked: false });
-                        obj.content = JSON.stringify(items);
-                        renderItems();
-                        setTimeout(() => {
-                            const newText = container.querySelectorAll('.item-text')[index + 1];
-                            if (newText) newText.focus();
-                        }, 0);
-                        saveState();
-                    } else if (e.key === 'Backspace' && text.innerText === '' && items.length > 1) {
-                        e.preventDefault();
-                        pushHistory();
-                        items.splice(index, 1);
-                        obj.content = JSON.stringify(items);
-                        renderItems();
-                        setTimeout(() => {
-                            const prevText = container.querySelectorAll('.item-text')[Math.max(0, index - 1)];
-                            if (prevText) prevText.focus();
-                        }, 0);
-                        saveState();
-                    }
-                });
-
-                const remove = document.createElement('div');
-                remove.className = 'remove-item';
-                remove.innerHTML = '<i data-lucide="x"></i>';
-                remove.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (items.length > 1) {
-                        pushHistory();
-                        items.splice(index, 1);
-                        obj.content = JSON.stringify(items);
-                        renderItems();
-                        saveState();
-                    }
-                });
-                
-                itemEl.appendChild(check);
-                itemEl.appendChild(text);
-                itemEl.appendChild(remove);
-                container.appendChild(itemEl);
-            });
-
-            const addBtn = document.createElement('div');
-            addBtn.className = 'add-item-btn';
-            addBtn.innerHTML = '<i data-lucide="plus"></i> Yeni Madde';
-            addBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                pushHistory();
-                items.push({ id: 'item-' + Date.now(), text: '', checked: false });
-                obj.content = JSON.stringify(items);
-                renderItems();
+            renderItems();
+            el.appendChild(container);
+            el.dataset.renderedContent = obj.content;
+            
+            if (obj.newlyCreated && !isUpdate) {
                 setTimeout(() => {
-                    const lastText = container.querySelectorAll('.item-text')[items.length - 1];
-                    if (lastText) lastText.focus();
-                }, 0);
-                saveState();
-            });
-            container.appendChild(addBtn);
-            lucide.createIcons({ root: container });
-        };
+                    const firstText = container.querySelector('.item-text');
+                    if (firstText) firstText.focus();
+                }, 100);
+            }
+        }
 
         renderItems();
         el.appendChild(container);
@@ -1488,117 +1531,159 @@ function renderObject(obj) {
             delete obj.newlyCreated;
         }
     } else if (obj.type === 'video') {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'video-wrapper';
-        
-        const url = obj.content || '';
-        const isEmbed = url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com');
-
-        if (isEmbed) {
-            const iframe = document.createElement('iframe');
-            iframe.src = parseVideoUrl(url);
-            iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
-            iframe.allowFullscreen = true;
-            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-forms');
-            wrapper.appendChild(iframe);
-            iframe.style.pointerEvents = 'auto';
+        if (isUpdate && el.dataset.renderedContent === obj.content) {
+            // Content hasn't changed, don't re-render iframe/video to avoid restart
         } else {
-            const video = document.createElement('video');
-            video.src = url;
-            video.controls = true;
-            video.draggable = false;
-            wrapper.appendChild(video);
+            const oldWrapper = el.querySelector('.video-wrapper');
+            if (oldWrapper) oldWrapper.remove();
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'video-wrapper';
+            
+            const url = obj.content || '';
+            const isEmbed = url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com');
+
+            if (isEmbed) {
+                const iframe = document.createElement('iframe');
+                iframe.src = parseVideoUrl(url);
+                iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+                iframe.allowFullscreen = true;
+                iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-forms');
+                wrapper.appendChild(iframe);
+                iframe.style.pointerEvents = 'auto';
+            } else {
+                const video = document.createElement('video');
+                video.src = url;
+                video.controls = true;
+                video.draggable = false;
+                wrapper.appendChild(video);
+            }
+            
+            el.appendChild(wrapper);
+            el.dataset.renderedContent = obj.content;
         }
-        
-        el.appendChild(wrapper);
     } else if (obj.type === 'pdf') {
-        const container = document.createElement('div');
-        container.className = 'pdf-viewer-container';
-        
-        const canvas = document.createElement('canvas');
-        canvas.className = 'pdf-canvas';
-        container.appendChild(canvas);
-        
-        const controls = document.createElement('div');
-        controls.className = 'pdf-controls';
-        
-        const prevBtn = document.createElement('button');
-        prevBtn.className = 'pdf-nav-btn';
-        prevBtn.innerHTML = '<i data-lucide="chevron-left"></i>';
-        
-        const pageInfo = document.createElement('span');
-        pageInfo.className = 'pdf-page-info';
-        pageInfo.textContent = `Sayfa ${obj.pdfPage || 1}`;
-        
-        const nextBtn = document.createElement('button');
-        nextBtn.className = 'pdf-nav-btn';
-        nextBtn.innerHTML = '<i data-lucide="chevron-right"></i>';
-        
-        controls.appendChild(prevBtn);
-        controls.appendChild(pageInfo);
-        controls.appendChild(nextBtn);
-        container.appendChild(controls);
-        el.appendChild(container);
-        
-        // PDF.js rendering
-        renderPdfPage(obj, canvas, pageInfo);
-        
-        prevBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (obj.pdfPage > 1) {
-                obj.pdfPage--;
+        if (isUpdate && el.dataset.renderedContent === obj.content && el.dataset.renderedPage === String(obj.pdfPage)) {
+            // Already rendered
+        } else {
+            const oldViewer = el.querySelector('.pdf-viewer-container');
+            if (oldViewer) oldViewer.remove();
+
+            const container = document.createElement('div');
+            container.className = 'pdf-viewer-container';
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'pdf-canvas';
+            container.appendChild(canvas);
+            
+            const controls = document.createElement('div');
+            controls.className = 'pdf-controls';
+            
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'pdf-nav-btn';
+            prevBtn.innerHTML = '<i data-lucide="chevron-left"></i>';
+            
+            const pageInfo = document.createElement('span');
+            pageInfo.className = 'pdf-page-info';
+            pageInfo.textContent = `Sayfa ${obj.pdfPage || 1}`;
+            
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'pdf-nav-btn';
+            nextBtn.innerHTML = '<i data-lucide="chevron-right"></i>';
+            
+            controls.appendChild(prevBtn);
+            controls.appendChild(pageInfo);
+            controls.appendChild(nextBtn);
+            container.appendChild(controls);
+            el.appendChild(container);
+            
+            renderPdfPage(obj, canvas, pageInfo);
+            
+            prevBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (obj.pdfPage > 1) {
+                    obj.pdfPage--;
+                    renderPdfPage(obj, canvas, pageInfo);
+                    saveState();
+                }
+            };
+            
+            nextBtn.onclick = (e) => {
+                e.stopPropagation();
+                obj.pdfPage = (obj.pdfPage || 1) + 1;
                 renderPdfPage(obj, canvas, pageInfo);
                 saveState();
-            }
-        };
-        
-        nextBtn.onclick = (e) => {
-            e.stopPropagation();
-            obj.pdfPage = (obj.pdfPage || 1) + 1;
-            renderPdfPage(obj, canvas, pageInfo);
-            saveState();
-        };
-        
-        lucide.createIcons();
+            };
+            
+            el.dataset.renderedContent = obj.content;
+            el.dataset.renderedPage = String(obj.pdfPage);
+            if (typeof lucide !== 'undefined') lucide.createIcons({ root: container });
+        }
     } else if (obj.type === 'embed') {
-        el.classList.add('embed-obj');
-        const container = document.createElement('iframe');
-        container.className = 'embed-container';
-        container.src = parseEmbedUrl(obj.content);
-        container.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";
-        container.loading = "lazy";
-        el.appendChild(container);
+        if (isUpdate && el.dataset.renderedContent === obj.content) {
+            // Already rendered
+        } else {
+            const oldEmbed = el.querySelector('.embed-container');
+            if (oldEmbed) oldEmbed.remove();
+
+            el.classList.add('embed-obj');
+            const container = document.createElement('iframe');
+            container.className = 'embed-container';
+            container.src = parseEmbedUrl(obj.content);
+            container.allow = "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";
+            container.loading = "lazy";
+            el.appendChild(container);
+            el.dataset.renderedContent = obj.content;
+        }
     } else {
-        const editor = document.createElement('div');
-        editor.className = 'note-editor';
-        editor.contentEditable = 'true';
-        editor.spellcheck = false;
-        editor.innerHTML = obj.content || 'Buraya yazın...';
-        editor.style.fontFamily = obj.fontFamily || 'Inter';
-        editor.style.fontSize = obj.fontSize || '16px';
-        if (obj.textColor && obj.textColor !== 'default') editor.style.color = obj.textColor;
-        
-        const debouncedPush = debounce(() => {
-            pushHistory();
-            saveState();
-        }, 800);
+        if (!isUpdate) {
+            const editor = document.createElement('div');
+            editor.className = 'note-editor';
+            editor.contentEditable = 'true';
+            editor.spellcheck = false;
+            editor.innerHTML = obj.content || 'Buraya yazın...';
+            editor.style.fontFamily = obj.fontFamily || 'Inter';
+            editor.style.fontSize = obj.fontSize || '16px';
+            if (obj.textColor && obj.textColor !== 'default') editor.style.color = obj.textColor;
+            
+            const debouncedPush = debounce(() => {
+                pushHistory();
+                saveState();
+            }, 800);
 
-        editor.addEventListener('input', () => {
-            obj.content = editor.innerHTML;
-            debouncedPush();
-        });
+            editor.addEventListener('input', () => {
+                obj.content = editor.innerHTML;
+                debouncedPush();
+            });
 
-        editor.addEventListener('focus', () => selectObject(obj.id));
-        editor.addEventListener('mousedown', e => e.stopPropagation());
-        
-        el.appendChild(editor);
-        
-        if (obj.newlyCreated) {
-            setTimeout(() => {
-                editor.focus();
-                document.execCommand('selectAll', false, null);
-            }, 100);
-            delete obj.newlyCreated;
+            editor.addEventListener('focus', () => selectObject(obj.id));
+            editor.addEventListener('mousedown', e => e.stopPropagation());
+            
+            el.appendChild(editor);
+            
+            if (obj.newlyCreated) {
+                setTimeout(() => {
+                    editor.focus();
+                    document.execCommand('selectAll', false, null);
+                }, 100);
+                delete obj.newlyCreated;
+            }
+        } else {
+            // In update mode, usually we don't want to overwrite the editor contents 
+            // while user is typing. Only for undo/redo situations.
+            const editor = el.querySelector('.note-editor');
+            if (editor && editor.innerHTML !== obj.content) {
+                // Determine if we should force update (e.g. user just hit Ctrl+Z)
+                // If it's not the active element, or if content is significantly different
+                if (document.activeElement !== editor) {
+                    editor.innerHTML = obj.content || '';
+                }
+            }
+            if (editor) {
+                editor.style.fontFamily = obj.fontFamily || 'Inter';
+                editor.style.fontSize = obj.fontSize || '16px';
+                if (obj.textColor && obj.textColor !== 'default') editor.style.color = obj.textColor;
+            }
         }
     }
 
@@ -1640,12 +1725,16 @@ function renderObject(obj) {
         el.style.left = `${obj.pinX}px`;
         el.style.top = `${obj.pinY}px`;
         el.style.transform = 'none'; // Overrides any camera transform that might be applied by mistake
-        document.getElementById('pinned-layer').appendChild(el);
+        if (el.parentNode !== document.getElementById('pinned-layer')) {
+            document.getElementById('pinned-layer').appendChild(el);
+        }
     } else {
-        canvasContent.appendChild(el);
+        if (el.parentNode !== canvasContent) {
+            canvasContent.appendChild(el);
+        }
     }
 
-    if (typeof lucide !== 'undefined') lucide.createIcons({ root: el });
+    if (typeof lucide !== 'undefined' && !isUpdate) lucide.createIcons({ root: el });
 }
 
 function selectObject(id) {
@@ -1694,44 +1783,55 @@ function selectObject(id) {
 
 function renderObjects() {
     updateMiniMap();
-    canvasContent.innerHTML = '';
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.id = "connection-layer";
     
-    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    // 1. Identify valid IDs
+    const validIds = new Set(state.objects.map(o => `obj-${o.id}`));
     
-    const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
-    marker.setAttribute("id", "arrowhead");
-    marker.setAttribute("markerWidth", "10");
-    marker.setAttribute("markerHeight", "7");
-    marker.setAttribute("refX", "9");
-    marker.setAttribute("refY", "3.5");
-    marker.setAttribute("orient", "auto");
-    marker.setAttribute("markerUnits", "strokeWidth");
-    const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    polygon.setAttribute("points", "0 0, 10 3.5, 0 7");
-    polygon.setAttribute("fill", "var(--accent-color)");
-    marker.appendChild(polygon);
-    defs.appendChild(marker);
+    // 2. Remove stale elements from both layers
+    const layers = [canvasContent, document.getElementById('pinned-layer')];
+    layers.forEach(layer => {
+        if (!layer) return;
+        Array.from(layer.children).forEach(child => {
+            if (child.id === 'connection-layer' || child.id === 'selection-box') return;
+            if (child.classList.contains('canvas-obj') && !validIds.has(child.id)) {
+                child.remove();
+            }
+        });
+    });
 
-    const markerStart = document.createElementNS("http://www.w3.org/2000/svg", "marker");
-    markerStart.setAttribute("id", "arrowstart");
-    markerStart.setAttribute("markerWidth", "10");
-    markerStart.setAttribute("markerHeight", "7");
-    markerStart.setAttribute("refX", "1");
-    markerStart.setAttribute("refY", "3.5");
-    markerStart.setAttribute("orient", "auto");
-    markerStart.setAttribute("markerUnits", "strokeWidth");
-    const polygonStart = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    polygonStart.setAttribute("points", "10 0, 0 3.5, 10 7");
-    polygonStart.setAttribute("fill", "var(--accent-color)");
-    markerStart.appendChild(polygonStart);
-    defs.appendChild(markerStart);
-    
-    svg.appendChild(defs);
-    canvasContent.appendChild(svg);
-    
+    // 3. Render or update each object
     state.objects.forEach(renderObject);
+    
+    // 4. Always ensure connection layer exists
+    if (!document.getElementById('connection-layer')) {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.id = "connection-layer";
+        // Definitions for markers (arrows)
+        const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+        const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+        marker.setAttribute("id", "arrowhead");
+        marker.setAttribute("markerWidth", "10"); marker.setAttribute("markerHeight", "7");
+        marker.setAttribute("refX", "9"); marker.setAttribute("refY", "3.5");
+        marker.setAttribute("orient", "auto"); marker.setAttribute("markerUnits", "strokeWidth");
+        const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        poly.setAttribute("points", "0 0, 10 3.5, 0 7");
+        poly.setAttribute("fill", "var(--accent-color)");
+        marker.appendChild(poly); defs.appendChild(marker);
+
+        const markerStart = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+        markerStart.setAttribute("id", "arrowstart");
+        markerStart.setAttribute("markerWidth", "10"); markerStart.setAttribute("markerHeight", "7");
+        markerStart.setAttribute("refX", "1"); markerStart.setAttribute("refY", "3.5");
+        markerStart.setAttribute("orient", "auto"); markerStart.setAttribute("markerUnits", "strokeWidth");
+        const polyStart = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        polyStart.setAttribute("points", "10 0, 0 3.5, 10 7");
+        polyStart.setAttribute("fill", "var(--accent-color)");
+        markerStart.appendChild(polyStart); defs.appendChild(markerStart);
+        
+        svg.appendChild(defs);
+        canvasContent.appendChild(svg);
+    }
+    
     renderConnections();
 }
 
