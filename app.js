@@ -498,7 +498,11 @@ function setupEventListeners() {
                 } else if (state.currentTool === 'video') {
                     // Show Video URL Modal instead of direct file picker
                     const modal = document.getElementById('video-url-modal');
-                    if (modal) modal.classList.remove('hidden');
+                    if (modal) {
+                        modal.classList.remove('hidden');
+                        const input = document.getElementById('video-url-input');
+                        if (input) input.focus();
+                    }
                 } else if (state.currentTool === 'pdf') {
                     pdfUpload.click();
                 } else if (state.currentTool === 'text' || state.currentTool === 'note' || state.currentTool === 'checklist') {
@@ -2103,6 +2107,41 @@ function setupExtraListeners() {
 
     if (closeEmbedModal) {
         closeEmbedModal.addEventListener('click', () => embedModal.classList.add('hidden'));
+    }
+
+    // Video URL Modal Listeners
+    const videoModal = document.getElementById('video-url-modal');
+    const closeVideoModal = document.getElementById('close-video-modal');
+    const btnAddVideoUrl = document.getElementById('btn-add-video-url');
+    const videoUrlInput = document.getElementById('video-url-input');
+    const btnTriggerVideoUpload = document.getElementById('btn-trigger-video-upload');
+
+    if (closeVideoModal) {
+        closeVideoModal.addEventListener('click', () => videoModal.classList.add('hidden'));
+    }
+
+    if (btnAddVideoUrl) {
+        btnAddVideoUrl.addEventListener('click', () => {
+            const url = videoUrlInput.value.trim();
+            if (url) {
+                const center = getCanvasCenter();
+                addObject('video', center.x, center.y, url);
+                videoUrlInput.value = '';
+                videoModal.classList.add('hidden');
+                document.getElementById('tool-pan').click();
+            }
+        });
+        
+        videoUrlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') btnAddVideoUrl.click();
+        });
+    }
+
+    if (btnTriggerVideoUpload) {
+        btnTriggerVideoUpload.addEventListener('click', () => {
+            videoModal.classList.add('hidden');
+            videoUpload.click();
+        });
     }
 
     if (btnAddEmbedUrl) {
