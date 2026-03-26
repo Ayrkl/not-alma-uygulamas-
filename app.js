@@ -495,12 +495,11 @@ function setupEventListeners() {
                 // Immediate action for certain tools
                 if (state.currentTool === 'image') {
                     imageUpload.click();
-                } else if (state.currentTool === 'video') {
-                    // Show Video URL Modal instead of direct file picker
-                    const modal = document.getElementById('video-url-modal');
+                } else if (state.currentTool === 'video' || state.currentTool === 'embed') {
+                    const modal = document.getElementById('media-url-modal');
                     if (modal) {
                         modal.classList.remove('hidden');
-                        const input = document.getElementById('video-url-input');
+                        const input = document.getElementById('media-url-input');
                         if (input) input.focus();
                     }
                 } else if (state.currentTool === 'pdf') {
@@ -2099,65 +2098,43 @@ function setupExtraListeners() {
 
     if (closePicker) closePicker.addEventListener('click', () => pickerPopup.classList.add('hidden'));
 
-    // Embed URL Modal Listeners
-    const embedModal = document.getElementById('embed-url-modal');
-    const closeEmbedModal = document.getElementById('close-embed-modal');
-    const btnAddEmbedUrl = document.getElementById('btn-add-embed-url');
-    const embedUrlInput = document.getElementById('embed-url-input');
+    // Media URL Modal Listeners (Combined Video & Embed)
+    const mediaModal = document.getElementById('media-url-modal');
+    const closeMediaModal = document.getElementById('close-media-modal');
+    const btnAddMediaUrl = document.getElementById('btn-add-media-url');
+    const mediaUrlInput = document.getElementById('media-url-input');
+    const btnTriggerMediaUpload = document.getElementById('btn-trigger-media-upload');
 
-    if (closeEmbedModal) {
-        closeEmbedModal.addEventListener('click', () => embedModal.classList.add('hidden'));
+    if (closeMediaModal) {
+        closeMediaModal.addEventListener('click', () => mediaModal.classList.add('hidden'));
     }
 
-    // Video URL Modal Listeners
-    const videoModal = document.getElementById('video-url-modal');
-    const closeVideoModal = document.getElementById('close-video-modal');
-    const btnAddVideoUrl = document.getElementById('btn-add-video-url');
-    const videoUrlInput = document.getElementById('video-url-input');
-    const btnTriggerVideoUpload = document.getElementById('btn-trigger-video-upload');
-
-    if (closeVideoModal) {
-        closeVideoModal.addEventListener('click', () => videoModal.classList.add('hidden'));
-    }
-
-    if (btnAddVideoUrl) {
-        btnAddVideoUrl.addEventListener('click', () => {
-            const url = videoUrlInput.value.trim();
+    if (btnAddMediaUrl) {
+        btnAddMediaUrl.addEventListener('click', () => {
+            const url = mediaUrlInput.value.trim();
             if (url) {
                 const center = getCanvasCenter();
-                addObject('video', center.x, center.y, url);
-                videoUrlInput.value = '';
-                videoModal.classList.add('hidden');
+                
+                // Smart detection: if it's Spotify or Maps, use 'embed', otherwise 'video'
+                const isEmbedOnly = url.includes('spotify.com') || url.includes('google.com/maps') || url.includes('goo.gl/maps');
+                const type = isEmbedOnly ? 'embed' : 'video';
+                
+                addObject(type, center.x, center.y, url);
+                mediaUrlInput.value = '';
+                mediaModal.classList.add('hidden');
                 document.getElementById('tool-pan').click();
             }
         });
         
-        videoUrlInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') btnAddVideoUrl.click();
+        mediaUrlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') btnAddMediaUrl.click();
         });
     }
 
-    if (btnTriggerVideoUpload) {
-        btnTriggerVideoUpload.addEventListener('click', () => {
-            videoModal.classList.add('hidden');
+    if (btnTriggerMediaUpload) {
+        btnTriggerMediaUpload.addEventListener('click', () => {
+            mediaModal.classList.add('hidden');
             videoUpload.click();
-        });
-    }
-
-    if (btnAddEmbedUrl) {
-        btnAddEmbedUrl.addEventListener('click', () => {
-            const url = embedUrlInput.value.trim();
-            if (url) {
-                const center = getCanvasCenter();
-                addObject('embed', center.x, center.y, url);
-                embedUrlInput.value = '';
-                embedModal.classList.add('hidden');
-                document.getElementById('tool-pan').click();
-            }
-        });
-        
-        embedUrlInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') btnAddEmbedUrl.click();
         });
     }
 
@@ -2178,14 +2155,9 @@ function setupExtraListeners() {
                 pickerPopup.classList.add('hidden');
             }
         }
-        if (videoModal && !videoModal.classList.contains('hidden')) {
-            if (!videoModal.contains(e.target) && !e.target.closest('#tool-video')) {
-                videoModal.classList.add('hidden');
-            }
-        }
-        if (embedModal && !embedModal.classList.contains('hidden')) {
-            if (!embedModal.contains(e.target) && !e.target.closest('#tool-embed')) {
-                embedModal.classList.add('hidden');
+        if (mediaModal && !mediaModal.classList.contains('hidden')) {
+            if (!mediaModal.contains(e.target) && !e.target.closest('#tool-video') && !e.target.closest('#tool-embed')) {
+                mediaModal.classList.add('hidden');
             }
         }
     });
@@ -2193,8 +2165,8 @@ function setupExtraListeners() {
     // Tool menu listeners for new tools
     const toolEmbed = document.getElementById('tool-embed');
     if (toolEmbed) toolEmbed.addEventListener('click', () => {
-        embedModal.classList.remove('hidden');
-        embedUrlInput.focus();
+        mediaModal.classList.remove('hidden');
+        mediaUrlInput.focus();
     });
 }
 

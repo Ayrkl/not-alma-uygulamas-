@@ -70,9 +70,6 @@
                         <button class="tool-btn" id="tool-connect" title="Bağlantı Kur (L)">
                             <i data-lucide="share-2"></i>
                         </button>
-                        <button class="tool-btn" id="tool-embed" title="Embed Ekle (E)">
-                            <i data-lucide="code"></i>
-                        </button>
                         <div class="tool-separator"></div>
                         <button class="tool-btn" id="tool-focus" title="Odak Modu">
                             <i data-lucide="headphones"></i>
@@ -253,40 +250,45 @@
             </div>
         </div>
 
-        <!-- Video URL Input Modal -->
-        <div id="video-url-modal" class="glass hidden">
+        <!-- Media URL Input Modal (Combined Video & Embed) -->
+        <div id="media-url-modal" class="glass hidden">
             <div class="modal-header">
-                <i data-lucide="video" class="modal-type-icon"></i>
-                <span>Video Ekle</span>
-                <button id="close-video-modal"><i data-lucide="x"></i></button>
+                <i data-lucide="plus-square" class="modal-type-icon"></i>
+                <span>Medya Ekle</span>
+                <button id="close-media-modal"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <div class="url-input-group">
-                    <input type="text" id="video-url-input" placeholder="YouTube, Vimeo veya MP4 linki yapıştırın...">
-                    <button id="btn-add-video-url">Ekle</button>
+                <div class="media-info-grid">
+                    <div class="info-item">
+                        <i data-lucide="youtube"></i>
+                        <span class="info-text">YouTube / Vimeo</span>
+                    </div>
+                    <div class="info-item">
+                        <i data-lucide="music"></i>
+                        <span class="info-text">Spotify Listeleri</span>
+                    </div>
+                    <div class="info-item">
+                        <i data-lucide="map-pin"></i>
+                        <span class="info-text">Google Haritalar</span>
+                    </div>
+                    <div class="info-item">
+                        <i data-lucide="file-video"></i>
+                        <span class="info-text">Yerel MP4 Dosyaları</span>
+                    </div>
                 </div>
+
+                <div class="url-input-group">
+                    <input type="text" id="media-url-input" placeholder="URL'yi buraya yapıştırın...">
+                    <button id="btn-add-media-url">Ekle</button>
+                </div>
+
                 <div class="modal-divider">
                     <span>VEYA</span>
                 </div>
-                <button id="btn-trigger-video-upload" class="upload-btn">
-                    <i data-lucide="upload"></i> Bilgisayardan Dosya Seç
-                </button>
-            </div>
-        </div>
 
-        <!-- Embed URL Input Modal -->
-        <div id="embed-url-modal" class="glass hidden">
-            <div class="modal-header">
-                <i data-lucide="link" class="modal-type-icon"></i>
-                <span>Embed Ekle</span>
-                <button id="close-embed-modal"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="url-input-group">
-                    <input type="text" id="embed-url-input"
-                        placeholder="Spotify listesi veya Google Harita linki yapıştırın...">
-                    <button id="btn-add-embed-url">Ekle</button>
-                </div>
+                <button id="btn-trigger-media-upload" class="upload-btn">
+                    <i data-lucide="upload"></i> Bilgisayardan Dosya Seç (MP4/WebM)
+                </button>
             </div>
         </div>
 
