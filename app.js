@@ -2264,6 +2264,9 @@ function initFocusWidget() {
     const accentColorInput = document.getElementById('input-accent-color');
     const fontSelect = document.getElementById('select-timer-font');
     const blurInput = document.getElementById('input-bg-blur');
+    const volRainInput = document.getElementById('volume-rain');
+    const volCoffeeInput = document.getElementById('volume-coffee');
+    const volLofiInput = document.getElementById('volume-lofi');
 
     // Apply Theme Styles
     const applyFocusTheme = (settings) => {
@@ -2303,6 +2306,10 @@ function initFocusWidget() {
             document.getElementById('audio-lofi').setAttribute('data-src', saved.lofi);
             if (lofiInput) lofiInput.value = saved.lofi;
         }
+        // Channel Volumes
+        if (saved.volRain !== undefined && volRainInput) volRainInput.value = saved.volRain;
+        if (saved.volCoffee !== undefined && volCoffeeInput) volCoffeeInput.value = saved.volCoffee;
+        if (saved.volLofi !== undefined && volLofiInput) volLofiInput.value = saved.volLofi;
         // Theme
         if (saved.timerColor && timerColorInput) timerColorInput.value = saved.timerColor;
         if (saved.accentColor && accentColorInput) accentColorInput.value = saved.accentColor;
@@ -2351,7 +2358,10 @@ function initFocusWidget() {
                 bgColor: document.getElementById('input-bg-color').value,
                 breakMinutes: document.getElementById('break-minutes').value,
                 font: fontSelect.value,
-                blur: blurInput.value
+                blur: blurInput.value,
+                volRain: volRainInput?.value || 50,
+                volCoffee: volCoffeeInput?.value || 50,
+                volLofi: volLofiInput?.value || 50
             };
             
             localStorage.setItem('lumina-ambient-urls', JSON.stringify(urls));
@@ -2376,18 +2386,25 @@ function initFocusWidget() {
 
                         // Start new
                         const ytId = getYouTubeId(url);
+                        const channelVol = id === 'audio-rain' ? volRainInput.value : (id === 'audio-coffee' ? volCoffeeInput.value : volLofiInput.value);
+                        
                         if (ytId) {
                             const container = document.getElementById('ambient-yt-container');
                             const iframe = document.createElement('iframe');
-                            iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&loop=1&playlist=${ytId}`;
+                            // enablejsapi=1 for volume control
+                            iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&loop=1&playlist=${ytId}&enablejsapi=1`;
                             iframe.allow = "autoplay";
                             iframe.id = `iframe-${id}`;
                             if (container) container.appendChild(iframe);
                             activeAudios[id] = iframe;
+                            // Set initial volume for YT (needs a slight delay for iframe load)
+                            setTimeout(() => {
+                                iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'setVolume', args: [channelVol]}), '*');
+                            }, 2000);
                         } else {
                             const newAudio = new Audio(url);
                             newAudio.loop = true;
-                            newAudio.volume = volSlider ? (volSlider.value / 100) : 0.5;
+                            newAudio.volume = channelVol / 100;
                             newAudio.play().catch(e => console.error(e));
                             activeAudios[id] = newAudio;
                         }
@@ -2418,20 +2435,25 @@ function initFocusWidget() {
                 btn.classList.remove('active');
             } else {
                 const ytId = getYouTubeId(src);
+                const channelVolInput = id === 'audio-rain' ? volRainInput : (id === 'audio-coffee' ? volCoffeeInput : volLofiInput);
+                const channelVol = channelVolInput ? channelVolInput.value : 50;
+
                 if (ytId) {
                     const container = document.getElementById('ambient-yt-container');
                     const iframe = document.createElement('iframe');
-                    // autoplay=1 and loop=1 (loop needs playlist parameter to work without API)
-                    iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&loop=1&playlist=${ytId}`;
+                    iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&loop=1&playlist=${ytId}&enablejsapi=1`;
                     iframe.allow = "autoplay";
                     iframe.id = `iframe-${id}`;
                     if (container) container.appendChild(iframe);
                     activeAudios[id] = iframe;
                     btn.classList.add('active');
+                    setTimeout(() => {
+                        iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'setVolume', args: [channelVol]}), '*');
+                    }, 2000);
                 } else {
                     const audio = new Audio(src);
                     audio.loop = true;
-                    audio.volume = volSlider ? (volSlider.value / 100) : 0.5;
+                    audio.volume = channelVol / 100;
                     audio.play().catch(e => console.error("Auto-play engellendi:", e));
                     activeAudios[id] = audio;
                     btn.classList.add('active');
@@ -2439,6 +2461,31 @@ function initFocusWidget() {
             }
         });
     });
+
+    const setupMixerListeners = () => {
+        const mixerSliders = [
+            { id: 'audio-rain', slider: volRainInput },
+            { id: 'audio-coffee', slider: volCoffeeInput },
+            { id: 'audio-lofi', slider: volLofiInput }
+        ];
+
+        mixerSliders.forEach(({ id, slider }) => {
+            if (slider) {
+                slider.addEventListener('input', () => {
+                    const vol = slider.value;
+                    const audio = activeAudios[id];
+                    if (audio) {
+                        if (audio instanceof Audio) {
+                            audio.volume = vol / 100;
+                        } else if (audio.tagName === 'IFRAME') {
+                            audio.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'setVolume', args: [vol]}), '*');
+                        }
+                    }
+                });
+            }
+        });
+    };
+    setupMixerListeners();
 
     if (volSlider) {
         volSlider.addEventListener('input', () => {

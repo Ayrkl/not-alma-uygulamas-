@@ -443,14 +443,26 @@
                     <div class="setting-input-group">
                         <label><i data-lucide="cloud-rain"></i> Yağmur URL</label>
                         <input type="text" id="input-rain-url" placeholder="Ses URL'si yapıştırın...">
+                        <div class="mixer-control">
+                            <i data-lucide="volume-2"></i>
+                            <input type="range" id="volume-rain" min="0" max="100" value="50">
+                        </div>
                     </div>
                     <div class="setting-input-group">
                         <label><i data-lucide="coffee"></i> Kafe URL</label>
                         <input type="text" id="input-coffee-url" placeholder="Ses URL'si yapıştırın...">
+                        <div class="mixer-control">
+                            <i data-lucide="volume-2"></i>
+                            <input type="range" id="volume-coffee" min="0" max="100" value="50">
+                        </div>
                     </div>
                     <div class="setting-input-group">
                         <label><i data-lucide="music"></i> Radyo URL</label>
                         <input type="text" id="input-lofi-url" placeholder="Ses URL'si yapıştırın...">
+                        <div class="mixer-control">
+                            <i data-lucide="volume-2"></i>
+                            <input type="range" id="volume-lofi" min="0" max="100" value="50">
+                        </div>
                     </div>
 
                     <div class="setting-row">
@@ -502,6 +514,11 @@
 
                     <button id="save-ambient-settings" class="save-btn">AYARLARI KAYDET</button>
                 </div>
+
+                <!-- Ambient Sound Containers (Hidden) -->
+                <div id="ambient-container-rain" class="hidden"></div>
+                <div id="ambient-container-coffee" class="hidden"></div>
+                <div id="ambient-container-lofi" class="hidden"></div>
 
                 <!-- Hidden YT Container -->
                 <div id="ambient-yt-container" style="display:none;"></div>
