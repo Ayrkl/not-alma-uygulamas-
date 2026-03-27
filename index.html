@@ -406,6 +406,7 @@
                 <button id="close-focus" class="panel-close"><i data-lucide="x"></i></button>
             </div>
             <div class="focus-body">
+                <div id="focus-status">ODAK</div>
                 <div class="timer-settings">
                     <input type="number" id="focus-minutes" value="25" min="1" max="999" title="Odak Süresi (Dakika)">
                     <span class="settings-label">DAKİKA</span>
@@ -450,6 +451,17 @@
                     <div class="setting-input-group">
                         <label><i data-lucide="music"></i> Radyo URL</label>
                         <input type="text" id="input-lofi-url" placeholder="Ses URL'si yapıştırın...">
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-input-group">
+                            <label>Odak (Dk)</label>
+                            <input type="number" id="settings-focus-minutes" value="25" min="1" max="120">
+                        </div>
+                        <div class="setting-input-group">
+                            <label>Mola (Dk)</label>
+                            <input type="number" id="break-minutes" value="5" min="1" max="60">
+                        </div>
                     </div>
 
                     <div class="focus-settings-divider">GÖRÜNÜM</div>

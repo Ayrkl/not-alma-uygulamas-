@@ -2092,6 +2092,7 @@ function makeDraggable(panel, handle) {
 let focusTimer = null;
 let focusTimeLeft = 25 * 60; // 25:00
 let isFocusTimerRunning = false;
+let isBreakMode = false;
 
 function updateFocusTimerDisplay() {
     const timeSpan = document.getElementById('time-left');
@@ -2099,6 +2100,18 @@ function updateFocusTimerDisplay() {
     const m = Math.floor(focusTimeLeft / 60).toString().padStart(2, '0');
     const s = (focusTimeLeft % 60).toString().padStart(2, '0');
     timeSpan.innerText = `${m}:${s}`;
+}
+
+function getContrastColor(hexcolor) {
+    if (!hexcolor) return '#ffffff';
+    // If it's rgba or similar from CSS vars, we'll try to extract hex or just return white
+    if (!hexcolor.startsWith('#')) return '#ffffff';
+    
+    const r = parseInt(hexcolor.slice(1, 3), 16);
+    const g = parseInt(hexcolor.slice(3, 5), 16);
+    const b = parseInt(hexcolor.slice(5, 7), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return (yiq >= 128) ? '#000000' : '#ffffff';
 }
 
 function initFocusWidget() {
@@ -2137,6 +2150,44 @@ function initFocusWidget() {
         });
     }
 
+    const playNotification = () => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.connect(g);
+            g.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            g.gain.setValueAtTime(0, ctx.currentTime);
+            g.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.1);
+            g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 1);
+        } catch(e) { console.error(e); }
+    };
+
+    const switchFocusMode = () => {
+        isBreakMode = !isBreakMode;
+        const statusLabel = document.getElementById('focus-status');
+        const widget = document.getElementById('focus-widget');
+        const breakInput = document.getElementById('break-minutes');
+        const workInput = document.getElementById('focus-minutes');
+
+        if (isBreakMode) {
+            statusLabel.innerText = 'MOLA';
+            widget.classList.add('break-mode');
+            focusTimeLeft = parseInt(breakInput ? breakInput.value : 5) * 60;
+        } else {
+            statusLabel.innerText = 'ODAK';
+            widget.classList.remove('break-mode');
+            focusTimeLeft = parseInt(workInput ? workInput.value : 25) * 60;
+        }
+        
+        updateFocusTimerDisplay();
+        playNotification();
+    };
+
     if (startBtn) {
         startBtn.addEventListener('click', () => {
             if (isFocusTimerRunning) {
@@ -2150,8 +2201,9 @@ function initFocusWidget() {
             }
             
             // START LOGIC
-            if (focusTimeLeft <= 0 && minutesInput) {
-                focusTimeLeft = parseInt(minutesInput.value || 25) * 60;
+            if (focusTimeLeft <= 0) {
+                const input = isBreakMode ? document.getElementById('break-minutes') : document.getElementById('focus-minutes');
+                focusTimeLeft = parseInt(input ? input.value : 25) * 60;
             }
 
             isFocusTimerRunning = true;
@@ -2164,26 +2216,7 @@ function initFocusWidget() {
                     focusTimeLeft--;
                     updateFocusTimerDisplay();
                     if (focusTimeLeft === 0) {
-                        clearInterval(focusTimer);
-                        isFocusTimerRunning = false;
-                        startBtn.classList.remove('active');
-                        startBtn.innerHTML = '<i data-lucide="play"></i>';
-                        if (typeof lucide !== 'undefined') lucide.createIcons({ root: startBtn });
-                        // Play notification sound
-                        try {
-                            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                            const osc = ctx.createOscillator();
-                            const g = ctx.createGain();
-                            osc.connect(g);
-                            g.connect(ctx.destination);
-                            osc.type = 'sine';
-                            osc.frequency.setValueAtTime(880, ctx.currentTime);
-                            g.gain.setValueAtTime(0, ctx.currentTime);
-                            g.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.1);
-                            g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
-                            osc.start(ctx.currentTime);
-                            osc.stop(ctx.currentTime + 1);
-                        } catch(e) { console.error(e); }
+                        switchFocusMode();
                     }
                 }
             }, 1000);
@@ -2192,6 +2225,13 @@ function initFocusWidget() {
         resetBtn.addEventListener('click', () => {
             clearInterval(focusTimer);
             isFocusTimerRunning = false;
+            isBreakMode = false;
+            
+            const statusLabel = document.getElementById('focus-status');
+            const widget = document.getElementById('focus-widget');
+            if (statusLabel) statusLabel.innerText = 'ODAK';
+            if (widget) widget.classList.remove('break-mode');
+
             startBtn.classList.remove('active');
             startBtn.innerHTML = '<i data-lucide="play"></i>';
             if (typeof lucide !== 'undefined') lucide.createIcons({ root: startBtn });
@@ -2229,7 +2269,10 @@ function initFocusWidget() {
     const applyFocusTheme = (settings) => {
         const root = document.documentElement;
         if (settings.timerColor) root.style.setProperty('--focus-timer-color', settings.timerColor);
-        if (settings.accentColor) root.style.setProperty('--focus-accent-color', settings.accentColor);
+        if (settings.accentColor) {
+            root.style.setProperty('--focus-accent-color', settings.accentColor);
+            root.style.setProperty('--focus-accent-contrast', getContrastColor(settings.accentColor));
+        }
         if (settings.bgColor) {
             // Apply hex color with transparency (b3 = 70%)
             root.style.setProperty('--focus-bg', settings.bgColor + 'b3');
@@ -2265,6 +2308,9 @@ function initFocusWidget() {
         if (saved.accentColor && accentColorInput) accentColorInput.value = saved.accentColor;
         if (saved.bgColor && document.getElementById('input-bg-color')) {
             document.getElementById('input-bg-color').value = saved.bgColor;
+        }
+        if (saved.breakMinutes && document.getElementById('break-minutes')) {
+            document.getElementById('break-minutes').value = saved.breakMinutes;
         }
         if (saved.font && fontSelect) fontSelect.value = saved.font;
         if (saved.blur && blurInput) blurInput.value = saved.blur;
@@ -2303,6 +2349,7 @@ function initFocusWidget() {
                 timerColor: timerColorInput.value,
                 accentColor: accentColorInput.value,
                 bgColor: document.getElementById('input-bg-color').value,
+                breakMinutes: document.getElementById('break-minutes').value,
                 font: fontSelect.value,
                 blur: blurInput.value
             };

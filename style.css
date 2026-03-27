@@ -2042,21 +2042,23 @@ body.theme-blueprint #canvas-grid {
 }
 
 .save-btn {
-    background: var(--accent-color);
-    color: white;
+    width: 100%;
+    padding: 10px;
+    background: var(--focus-accent-color, var(--accent-color));
+    color: var(--focus-accent-contrast, white);
     border: none;
-    border-radius: 6px;
-    padding: 8px;
+    border-radius: 8px;
+    font-family: var(--font-heading);
     font-size: 0.7rem;
     font-weight: 800;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
     margin-top: 4px;
     letter-spacing: 0.1em;
 }
 
 .save-btn:hover {
-    background: var(--accent-hover);
+    filter: brightness(1.1);
 }
 
 .focus-settings-divider {
@@ -2124,6 +2126,50 @@ body.theme-blueprint #canvas-grid {
     backdrop-filter: blur(var(--focus-blur, 20px)) !important;
     -webkit-backdrop-filter: blur(var(--focus-blur, 20px)) !important;
     -webkit-app-region: no-drag !important;
+    transition: background 0.5s ease-in-out, border-color 0.5s ease;
+}
+
+#focus-status {
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 0.25em;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--focus-accent-color, var(--accent-color));
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    transition: all 0.5s ease;
+}
+
+#focus-widget.break-mode {
+    --focus-bg: rgba(16, 44, 16, 0.7); /* Soft Green Dark */
+    --focus-accent-color: #4ade80;     /* Vibrant Green */
+    --focus-accent-contrast: #000000;  /* Break mode green usually needs dark text */
+    border-color: rgba(74, 222, 128, 0.3) !important;
+}
+
+#focus-widget.break-mode #focus-status {
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+}
+
+#focus-widget.break-mode .focus-btn#timer-start {
+    background: var(--focus-accent-color) !important;
+    border-color: var(--focus-accent-color) !important;
+    color: var(--focus-accent-contrast) !important;
+}
+
+#focus-widget.break-mode .focus-btn.active {
+    background: var(--focus-accent-color) !important;
+    border-color: var(--focus-accent-color) !important;
+    color: var(--focus-accent-contrast) !important;
+    box-shadow: 0 0 15px var(--focus-accent-color) !important;
+}
+
+#focus-widget.break-mode .save-btn {
+    background: var(--focus-accent-color) !important;
+    color: var(--focus-accent-contrast) !important;
 }
 
 .timer-display {
@@ -2137,6 +2183,7 @@ body.theme-blueprint #canvas-grid {
 .focus-btn#timer-start {
     background: var(--focus-accent-color, var(--accent-color)) !important;
     border-color: var(--focus-accent-color, var(--accent-color)) !important;
+    color: var(--focus-accent-contrast, white) !important;
 }
 
 .ambient-btn-settings, .ambient-btn.active, .focus-settings-divider {
@@ -2145,6 +2192,7 @@ body.theme-blueprint #canvas-grid {
 
 .save-btn {
     background: var(--focus-accent-color, var(--accent-color)) !important;
+    color: var(--focus-accent-contrast, white) !important;
 }
 
 #ambient-settings-panel {
