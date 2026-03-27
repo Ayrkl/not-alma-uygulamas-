@@ -2157,7 +2157,21 @@ function initFocusWidget() {
                         startBtn.classList.remove('active');
                         startBtn.innerHTML = '<i data-lucide="play"></i>';
                         if (typeof lucide !== 'undefined') lucide.createIcons({ root: startBtn });
-                        new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(e=>console.log(e));
+                        // Play notification sound
+                        try {
+                            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                            const osc = ctx.createOscillator();
+                            const g = ctx.createGain();
+                            osc.connect(g);
+                            g.connect(ctx.destination);
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(880, ctx.currentTime);
+                            g.gain.setValueAtTime(0, ctx.currentTime);
+                            g.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.1);
+                            g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+                            osc.start(ctx.currentTime);
+                            osc.stop(ctx.currentTime + 1);
+                        } catch(e) { console.error(e); }
                     }
                 }
             }, 1000);
