@@ -794,6 +794,22 @@ nav.tools,
     display: none !important;
 }
 
+.focus-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.05);
+    margin: 8px 0;
+}
+
+.focus-settings-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.05);
+    margin: 8px 0;
+}
+
+.save-btn {
+    padding: 8px 16px;
+}
+
 .toolbar-divider {
     width: 1px;
     height: 20px;
@@ -1844,12 +1860,20 @@ body.theme-blueprint #canvas-grid {
 
 .timer-settings {
     display: flex;
+    gap: 8px;
     align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.03);
-    padding: 8px 16px;
-    border-radius: 12px;
-    border: 1px solid var(--glass-border);
+}
+
+.timer-settings input {
+    width: 45px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 4px;
+    text-align: center;
+    color: white;
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
 }
 
 #focus-minutes {
@@ -1984,16 +2008,12 @@ body.theme-blueprint #canvas-grid {
 }
 
 #ambient-settings-panel {
-    width: 100%;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--glass-border);
+    background: rgba(15, 15, 20, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: -4px;
-    animation: fadeInSlide 0.3s ease-out;
+    margin-top: 10px;
 }
 
 #ambient-settings-panel.hidden {
@@ -2006,19 +2026,19 @@ body.theme-blueprint #canvas-grid {
 }
 
 .setting-input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    margin-bottom: 8px;
 }
 
 .setting-input-group label {
-    font-size: 0.65rem;
-    font-weight: 700;
-    opacity: 0.5;
     display: flex;
     align-items: center;
     gap: 6px;
-    text-transform: uppercase;
+    font-size: 0.6rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--focus-timer-color, white);
+    opacity: 0.8;
+    letter-spacing: 0.1em;
 }
 
 .setting-input-group label i {
@@ -2037,19 +2057,30 @@ body.theme-blueprint #canvas-grid {
     transition: border-color 0.2s;
 }
 
+.setting-input-group input[type="text"] {
+    width: 100%;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: white;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+}
+
 .setting-input-group input:focus {
     border-color: var(--accent-color);
 }
 
 .save-btn {
     width: 100%;
-    padding: 10px;
+    padding: 8px;
     background: var(--focus-accent-color, var(--accent-color));
     color: var(--focus-accent-contrast, white);
     border: none;
     border-radius: 8px;
     font-family: var(--font-heading);
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 800;
     cursor: pointer;
     transition: all 0.2s;
@@ -2091,24 +2122,24 @@ body.theme-blueprint #canvas-grid {
 .mixer-control {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-top: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    padding: 6px 12px;
-    border-radius: 8px;
+    gap: 8px;
+    margin-top: 5px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 4px 10px;
+    border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .mixer-control i {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     opacity: 0.6;
     color: var(--focus-accent-color, var(--accent-color));
 }
 
 .mixer-control input[type="range"] {
     flex: 1;
-    height: 4px;
+    height: 3px;
     -webkit-appearance: none;
     appearance: none;
     background: rgba(255, 255, 255, 0.1);
@@ -2118,12 +2149,12 @@ body.theme-blueprint #canvas-grid {
 
 .mixer-control input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     background: var(--focus-accent-color, var(--accent-color));
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 0 10px var(--focus-accent-color, var(--accent-color));
+    box-shadow: 0 0 8px var(--focus-accent-color, var(--accent-color));
     transition: transform 0.2s;
 }
 
