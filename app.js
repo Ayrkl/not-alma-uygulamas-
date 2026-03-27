@@ -2230,6 +2230,10 @@ function initFocusWidget() {
         const root = document.documentElement;
         if (settings.timerColor) root.style.setProperty('--focus-timer-color', settings.timerColor);
         if (settings.accentColor) root.style.setProperty('--focus-accent-color', settings.accentColor);
+        if (settings.bgColor) {
+            // Apply hex color with transparency (b3 = 70%)
+            root.style.setProperty('--focus-bg', settings.bgColor + 'b3');
+        }
         if (settings.blur !== undefined) root.style.setProperty('--focus-blur', `${settings.blur}px`);
         
         // Font - Apply to the whole widget
@@ -2259,6 +2263,9 @@ function initFocusWidget() {
         // Theme
         if (saved.timerColor && timerColorInput) timerColorInput.value = saved.timerColor;
         if (saved.accentColor && accentColorInput) accentColorInput.value = saved.accentColor;
+        if (saved.bgColor && document.getElementById('input-bg-color')) {
+            document.getElementById('input-bg-color').value = saved.bgColor;
+        }
         if (saved.font && fontSelect) fontSelect.value = saved.font;
         if (saved.blur && blurInput) blurInput.value = saved.blur;
         
@@ -2268,11 +2275,12 @@ function initFocusWidget() {
     const getCurrentThemeSettings = () => ({
         timerColor: timerColorInput?.value,
         accentColor: accentColorInput?.value,
+        bgColor: document.getElementById('input-bg-color')?.value,
         font: fontSelect?.value,
         blur: blurInput?.value
     });
 
-    [timerColorInput, accentColorInput, fontSelect, blurInput].forEach(el => {
+    [timerColorInput, accentColorInput, document.getElementById('input-bg-color'), fontSelect, blurInput].forEach(el => {
         if (el) {
             el.addEventListener('input', () => {
                 applyFocusTheme(getCurrentThemeSettings());
@@ -2294,6 +2302,7 @@ function initFocusWidget() {
                 lofi: lofiInput.value.trim(),
                 timerColor: timerColorInput.value,
                 accentColor: accentColorInput.value,
+                bgColor: document.getElementById('input-bg-color').value,
                 font: fontSelect.value,
                 blur: blurInput.value
             };
