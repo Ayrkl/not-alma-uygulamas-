@@ -2127,15 +2127,25 @@ function initFocusWidget() {
 
     if (startBtn) {
         startBtn.addEventListener('click', () => {
-            if (isFocusTimerRunning) return;
+            if (isFocusTimerRunning) {
+                // STOP LOGIC
+                clearInterval(focusTimer);
+                isFocusTimerRunning = false;
+                startBtn.classList.remove('active');
+                startBtn.innerHTML = '<i data-lucide="play"></i>';
+                if (typeof lucide !== 'undefined') lucide.createIcons({ root: startBtn });
+                return;
+            }
             
-            // Eğer süre bittiyse ve tekrar başlata basıldıysa inputtan tekrar çek
+            // START LOGIC
             if (focusTimeLeft <= 0 && minutesInput) {
                 focusTimeLeft = parseInt(minutesInput.value || 25) * 60;
             }
 
             isFocusTimerRunning = true;
-            startBtn.classList.add('active'); // Visual feedback 
+            startBtn.classList.add('active'); 
+            startBtn.innerHTML = '<i data-lucide="pause"></i>';
+            if (typeof lucide !== 'undefined') lucide.createIcons({ root: startBtn });
             
             focusTimer = setInterval(() => {
                 if (focusTimeLeft > 0) {
@@ -2145,22 +2155,21 @@ function initFocusWidget() {
                         clearInterval(focusTimer);
                         isFocusTimerRunning = false;
                         startBtn.classList.remove('active');
+                        startBtn.innerHTML = '<i data-lucide="play"></i>';
+                        if (typeof lucide !== 'undefined') lucide.createIcons({ root: startBtn });
                         new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(e=>console.log(e));
                     }
                 }
             }, 1000);
         });
         
-        pauseBtn.addEventListener('click', () => {
-            clearInterval(focusTimer);
-            isFocusTimerRunning = false;
-            startBtn.classList.remove('active');
-        });
-        
         resetBtn.addEventListener('click', () => {
             clearInterval(focusTimer);
             isFocusTimerRunning = false;
             startBtn.classList.remove('active');
+            startBtn.innerHTML = '<i data-lucide="play"></i>';
+            if (typeof lucide !== 'undefined') lucide.createIcons({ root: startBtn });
+            
             focusTimeLeft = parseInt(minutesInput ? minutesInput.value : 25) * 60;
             updateFocusTimerDisplay();
         });
