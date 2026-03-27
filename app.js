@@ -2070,8 +2070,20 @@ function makeDraggable(panel, handle) {
         if (!isDragging) return;
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
-        panel.style.left = `${initialX + dx}px`;
-        panel.style.top = `${initialY + dy}px`;
+        
+        let newX = initialX + dx;
+        let newY = initialY + dy;
+        
+        // Boundaries
+        const topLimit = 40; // Title bar height + padding
+        newY = Math.max(topLimit, newY);
+        
+        // Optional: Keep inside window
+        newX = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, newX));
+        newY = Math.min(window.innerHeight - panel.offsetHeight, newY);
+
+        panel.style.left = `${newX}px`;
+        panel.style.top = `${newY}px`;
     });
 
     document.addEventListener('mouseup', () => { isDragging = false; });

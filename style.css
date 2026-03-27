@@ -2112,6 +2112,7 @@ body.theme-blueprint #canvas-grid {
     background: var(--focus-bg, rgba(15, 15, 20, 0.7)) !important;
     backdrop-filter: blur(var(--focus-blur, 20px)) !important;
     -webkit-backdrop-filter: blur(var(--focus-blur, 20px)) !important;
+    -webkit-app-region: no-drag !important;
 }
 
 .timer-display {
