@@ -2087,39 +2087,41 @@ body.theme-blueprint #canvas-grid {
 }
 
 /* Font Families */
-.font-modern { font-family: 'Inter', sans-serif !important; }
-.font-classic { font-family: 'Georgia', serif !important; }
-.font-mono { font-family: 'JetBrains Mono', 'Courier New', monospace !important; }
-.font-retro { font-family: 'Impact', fantasy !important; letter-spacing: 2px; }
+#focus-widget.font-modern, #focus-widget.font-modern * { font-family: 'Inter', sans-serif !important; }
+#focus-widget.font-classic, #focus-widget.font-classic * { font-family: 'Georgia', serif !important; }
+#focus-widget.font-mono, #focus-widget.font-mono * { font-family: 'JetBrains Mono', 'Courier New', monospace !important; }
+#focus-widget.font-retro, #focus-widget.font-retro * { font-family: 'Impact', fantasy !important; letter-spacing: 1px; }
 
 /* Theme Bindings */
 #focus-widget {
-    background: var(--focus-bg, rgba(15, 15, 20, 0.7));
-    backdrop-filter: blur(var(--focus-blur, 20px));
+    background: var(--focus-bg, rgba(15, 15, 20, 0.7)) !important;
+    backdrop-filter: blur(var(--focus-blur, 20px)) !important;
+    -webkit-backdrop-filter: blur(var(--focus-blur, 20px)) !important;
 }
 
 .timer-display {
     color: var(--focus-timer-color, #ffffff) !important;
 }
 
-#focus-minutes {
+#focus-minutes, .settings-label {
     color: var(--focus-accent-color, var(--accent-color)) !important;
 }
 
 .focus-btn#timer-start {
     background: var(--focus-accent-color, var(--accent-color)) !important;
+    border-color: var(--focus-accent-color, var(--accent-color)) !important;
 }
 
-.ambient-btn-settings {
-    color: var(--focus-accent-color, var(--accent-color));
-}
-
-.focus-settings-divider {
-    color: var(--focus-accent-color, var(--accent-color));
+.ambient-btn-settings, .ambient-btn.active, .focus-settings-divider {
+    color: var(--focus-accent-color, var(--accent-color)) !important;
 }
 
 .save-btn {
-    background: var(--focus-accent-color, var(--accent-color));
+    background: var(--focus-accent-color, var(--accent-color)) !important;
+}
+
+#ambient-settings-panel {
+    border-color: var(--focus-accent-color, rgba(255,255,255,0.1)) !important;
 }
 
 .volume-slider {

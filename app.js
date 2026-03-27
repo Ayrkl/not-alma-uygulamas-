@@ -2218,13 +2218,13 @@ function initFocusWidget() {
         const root = document.documentElement;
         if (settings.timerColor) root.style.setProperty('--focus-timer-color', settings.timerColor);
         if (settings.accentColor) root.style.setProperty('--focus-accent-color', settings.accentColor);
-        if (settings.blur) root.style.setProperty('--focus-blur', `${settings.blur}px`);
+        if (settings.blur !== undefined) root.style.setProperty('--focus-blur', `${settings.blur}px`);
         
-        // Font
-        const display = document.querySelector('.timer-display');
-        if (display && settings.font) {
-            display.classList.remove('font-modern', 'font-classic', 'font-mono', 'font-retro');
-            display.classList.add(`font-${settings.font}`);
+        // Font - Apply to the whole widget
+        const widget = document.getElementById('focus-widget');
+        if (widget && settings.font) {
+            widget.classList.remove('font-modern', 'font-classic', 'font-mono', 'font-retro');
+            widget.classList.add(`font-${settings.font}`);
         }
     };
 
@@ -2252,6 +2252,21 @@ function initFocusWidget() {
         
         applyFocusTheme(saved);
     };
+
+    const getCurrentThemeSettings = () => ({
+        timerColor: timerColorInput?.value,
+        accentColor: accentColorInput?.value,
+        font: fontSelect?.value,
+        blur: blurInput?.value
+    });
+
+    [timerColorInput, accentColorInput, fontSelect, blurInput].forEach(el => {
+        if (el) {
+            el.addEventListener('input', () => {
+                applyFocusTheme(getCurrentThemeSettings());
+            });
+        }
+    });
 
     if (toggleSettingsBtn && settingsPanel) {
         toggleSettingsBtn.addEventListener('click', () => {
