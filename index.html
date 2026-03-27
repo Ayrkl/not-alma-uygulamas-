@@ -432,7 +432,31 @@
                         title="Lo-Fi Radyo">
                         <i data-lucide="music"></i>
                     </button>
+                    <button class="ambient-btn-settings" id="toggle-ambient-settings" title="Sesleri Özelleştir">
+                        <i data-lucide="settings-2"></i>
+                    </button>
                 </div>
+
+                <!-- Ambient Settings Panel (Hidden by default) -->
+                <div id="ambient-settings-panel" class="hidden">
+                    <div class="setting-input-group">
+                        <label><i data-lucide="cloud-rain"></i> Yağmur URL</label>
+                        <input type="text" id="input-rain-url" placeholder="Ses URL'si yapıştırın...">
+                    </div>
+                    <div class="setting-input-group">
+                        <label><i data-lucide="coffee"></i> Kafe URL</label>
+                        <input type="text" id="input-coffee-url" placeholder="Ses URL'si yapıştırın...">
+                    </div>
+                    <div class="setting-input-group">
+                        <label><i data-lucide="music"></i> Radyo URL</label>
+                        <input type="text" id="input-lofi-url" placeholder="Ses URL'si yapıştırın...">
+                    </div>
+                    <button id="save-ambient-settings" class="save-btn">KAYDET</button>
+                </div>
+
+                <!-- Hidden YT Container -->
+                <div id="ambient-yt-container" style="display:none;"></div>
+
                 <!-- Volume Slider -->
                 <div class="volume-control">
                     <i data-lucide="volume-2" style="width: 14px; opacity: 0.6;"></i>

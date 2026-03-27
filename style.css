@@ -1962,6 +1962,103 @@ body.theme-blueprint #canvas-grid {
     box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
 }
 
+.ambient-btn-settings {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--fg-color);
+    opacity: 0.4;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-left: 4px;
+}
+
+.ambient-btn-settings:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+#ambient-settings-panel {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: -4px;
+    animation: fadeInSlide 0.3s ease-out;
+}
+
+#ambient-settings-panel.hidden {
+    display: none;
+}
+
+@keyframes fadeInSlide {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.setting-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.setting-input-group label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    opacity: 0.5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+}
+
+.setting-input-group label i {
+    width: 10px;
+    height: 10px;
+}
+
+.setting-input-group input {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--glass-border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: white;
+    font-size: 0.75rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.setting-input-group input:focus {
+    border-color: var(--accent-color);
+}
+
+.save-btn {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 4px;
+    letter-spacing: 0.1em;
+}
+
+.save-btn:hover {
+    background: var(--accent-hover);
+}
+
 .volume-control {
     display: flex;
     align-items: center;

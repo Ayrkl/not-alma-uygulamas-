@@ -2192,7 +2192,99 @@ function initFocusWidget() {
     // Ambient Audio Logic
     const ambientBtns = document.querySelectorAll('.ambient-btn');
     const volSlider = document.getElementById('ambient-volume');
-    const activeAudios = {}; // Müzikleri aynı anda çalabilmek için obje tutuyoruz
+    const activeAudios = {}; 
+
+    // YouTube Helper
+    const getYouTubeId = (url) => {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
+    // Customization Logic Variables
+    const toggleSettingsBtn = document.getElementById('toggle-ambient-settings');
+    const settingsPanel = document.getElementById('ambient-settings-panel');
+    const saveBtn = document.getElementById('save-ambient-settings');
+    const rainInput = document.getElementById('input-rain-url');
+    const coffeeInput = document.getElementById('input-coffee-url');
+    const lofiInput = document.getElementById('input-lofi-url');
+
+    // Load from localStorage
+    const loadAmbientSettings = () => {
+        const saved = JSON.parse(localStorage.getItem('lumina-ambient-urls') || '{}');
+        if (saved.rain) {
+            document.getElementById('audio-rain').setAttribute('data-src', saved.rain);
+            if (rainInput) rainInput.value = saved.rain;
+        }
+        if (saved.coffee) {
+            document.getElementById('audio-coffee').setAttribute('data-src', saved.coffee);
+            if (coffeeInput) coffeeInput.value = saved.coffee;
+        }
+        if (saved.lofi) {
+            document.getElementById('audio-lofi').setAttribute('data-src', saved.lofi);
+            if (lofiInput) lofiInput.value = saved.lofi;
+        }
+    };
+
+    if (toggleSettingsBtn && settingsPanel) {
+        toggleSettingsBtn.addEventListener('click', () => {
+            settingsPanel.classList.toggle('hidden');
+        });
+    }
+
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            const urls = {
+                rain: rainInput.value.trim(),
+                coffee: coffeeInput.value.trim(),
+                lofi: lofiInput.value.trim()
+            };
+            
+            localStorage.setItem('lumina-ambient-urls', JSON.stringify(urls));
+            
+            // Update button attributes and restart if playing
+            const mapping = { 'audio-rain': urls.rain, 'audio-coffee': urls.coffee, 'audio-lofi': urls.lofi };
+            Object.entries(mapping).forEach(([id, url]) => {
+                if (url) {
+                    const btn = document.getElementById(id);
+                    btn.setAttribute('data-src', url);
+                    
+                    // If playing, restart with new source
+                    if (activeAudios[id]) {
+                        // Stop current (Audio or Iframe)
+                        if (activeAudios[id] instanceof Audio) {
+                            activeAudios[id].pause();
+                        } else if (activeAudios[id].tagName === 'IFRAME') {
+                            activeAudios[id].remove();
+                        }
+                        delete activeAudios[id];
+
+                        // Start new
+                        const ytId = getYouTubeId(url);
+                        if (ytId) {
+                            const container = document.getElementById('ambient-yt-container');
+                            const iframe = document.createElement('iframe');
+                            iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&loop=1&playlist=${ytId}`;
+                            iframe.allow = "autoplay";
+                            iframe.id = `iframe-${id}`;
+                            if (container) container.appendChild(iframe);
+                            activeAudios[id] = iframe;
+                        } else {
+                            const newAudio = new Audio(url);
+                            newAudio.loop = true;
+                            newAudio.volume = volSlider ? (volSlider.value / 100) : 0.5;
+                            newAudio.play().catch(e => console.error(e));
+                            activeAudios[id] = newAudio;
+                        }
+                    }
+                }
+            });
+            
+            settingsPanel.classList.add('hidden');
+        });
+    }
+
+    loadAmbientSettings();
 
     ambientBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -2201,17 +2293,34 @@ function initFocusWidget() {
             
             if (btn.classList.contains('active')) {
                 if (activeAudios[id]) {
-                    activeAudios[id].pause();
+                    if (activeAudios[id] instanceof Audio) {
+                        activeAudios[id].pause();
+                    } else {
+                        activeAudios[id].remove();
+                    }
                     delete activeAudios[id];
                 }
                 btn.classList.remove('active');
             } else {
-                const audio = new Audio(src);
-                audio.loop = true;
-                audio.volume = volSlider ? (volSlider.value / 100) : 0.5;
-                audio.play().catch(e => console.error("Auto-play engellendi:", e));
-                activeAudios[id] = audio;
-                btn.classList.add('active');
+                const ytId = getYouTubeId(src);
+                if (ytId) {
+                    const container = document.getElementById('ambient-yt-container');
+                    const iframe = document.createElement('iframe');
+                    // autoplay=1 and loop=1 (loop needs playlist parameter to work without API)
+                    iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&loop=1&playlist=${ytId}`;
+                    iframe.allow = "autoplay";
+                    iframe.id = `iframe-${id}`;
+                    if (container) container.appendChild(iframe);
+                    activeAudios[id] = iframe;
+                    btn.classList.add('active');
+                } else {
+                    const audio = new Audio(src);
+                    audio.loop = true;
+                    audio.volume = volSlider ? (volSlider.value / 100) : 0.5;
+                    audio.play().catch(e => console.error("Auto-play engellendi:", e));
+                    activeAudios[id] = audio;
+                    btn.classList.add('active');
+                }
             }
         });
     });
