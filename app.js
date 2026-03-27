@@ -2108,12 +2108,35 @@ function initFocusWidget() {
     const startBtn = document.getElementById('timer-start');
     const pauseBtn = document.getElementById('timer-pause');
     const resetBtn = document.getElementById('timer-reset');
+    const minutesInput = document.getElementById('focus-minutes');
+
+    if (minutesInput) {
+        // Initialize based on input
+        focusTimeLeft = parseInt(minutesInput.value || 25) * 60;
+        updateFocusTimerDisplay();
+
+        minutesInput.addEventListener('change', () => {
+            if (isFocusTimerRunning) {
+                clearInterval(focusTimer);
+                isFocusTimerRunning = false;
+            }
+            focusTimeLeft = parseInt(minutesInput.value || 25) * 60;
+            updateFocusTimerDisplay();
+        });
+    }
 
     if (startBtn) {
-        updateFocusTimerDisplay();
         startBtn.addEventListener('click', () => {
             if (isFocusTimerRunning) return;
+            
+            // Eğer süre bittiyse ve tekrar başlata basıldıysa inputtan tekrar çek
+            if (focusTimeLeft <= 0 && minutesInput) {
+                focusTimeLeft = parseInt(minutesInput.value || 25) * 60;
+            }
+
             isFocusTimerRunning = true;
+            startBtn.classList.add('active'); // Visual feedback 
+            
             focusTimer = setInterval(() => {
                 if (focusTimeLeft > 0) {
                     focusTimeLeft--;
@@ -2121,6 +2144,7 @@ function initFocusWidget() {
                     if (focusTimeLeft === 0) {
                         clearInterval(focusTimer);
                         isFocusTimerRunning = false;
+                        startBtn.classList.remove('active');
                         new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(e=>console.log(e));
                     }
                 }
@@ -2130,12 +2154,14 @@ function initFocusWidget() {
         pauseBtn.addEventListener('click', () => {
             clearInterval(focusTimer);
             isFocusTimerRunning = false;
+            startBtn.classList.remove('active');
         });
         
         resetBtn.addEventListener('click', () => {
             clearInterval(focusTimer);
             isFocusTimerRunning = false;
-            focusTimeLeft = 25 * 60;
+            startBtn.classList.remove('active');
+            focusTimeLeft = parseInt(minutesInput ? minutesInput.value : 25) * 60;
             updateFocusTimerDisplay();
         });
     }

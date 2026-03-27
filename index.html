@@ -406,12 +406,16 @@
                 <button id="close-focus" class="panel-close"><i data-lucide="x"></i></button>
             </div>
             <div class="focus-body">
+                <div class="timer-settings">
+                    <input type="number" id="focus-minutes" value="25" min="1" max="999" title="Odak Süresi (Dakika)">
+                    <span class="settings-label">DAKİKA</span>
+                </div>
                 <div class="timer-display">
                     <span id="time-left">25:00</span>
                 </div>
                 <div class="timer-controls">
                     <button class="focus-btn" id="timer-start" title="Başlat"><i data-lucide="play"></i></button>
-                    <button class="focus-btn" id="timer-pause" title="Duraklat"><i data-lucide="pause"></i></button>
+                    <button class="focus-btn" id="timer-pause" title="Durdur"><i data-lucide="pause"></i></button>
                     <button class="focus-btn" id="timer-reset" title="Sıfırla"><i data-lucide="rotate-ccw"></i></button>
                 </div>
                 <div class="focus-divider"></div>
