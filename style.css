@@ -2059,12 +2059,67 @@ body.theme-blueprint #canvas-grid {
     background: var(--accent-hover);
 }
 
-.volume-control {
-    display: flex;
-    align-items: center;
+.focus-settings-divider {
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: var(--accent-color);
+    letter-spacing: 0.2em;
+    padding: 10px 0 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 5px;
+}
+
+.setting-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
-    width: 100%;
-    padding: 0 10px;
+}
+
+#ambient-settings-panel select {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--glass-border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: white;
+    font-size: 0.75rem;
+    outline: none;
+    cursor: pointer;
+}
+
+/* Font Families */
+.font-modern { font-family: 'Inter', sans-serif !important; }
+.font-classic { font-family: 'Georgia', serif !important; }
+.font-mono { font-family: 'JetBrains Mono', 'Courier New', monospace !important; }
+.font-retro { font-family: 'Impact', fantasy !important; letter-spacing: 2px; }
+
+/* Theme Bindings */
+#focus-widget {
+    background: var(--focus-bg, rgba(15, 15, 20, 0.7));
+    backdrop-filter: blur(var(--focus-blur, 20px));
+}
+
+.timer-display {
+    color: var(--focus-timer-color, #ffffff) !important;
+}
+
+#focus-minutes {
+    color: var(--focus-accent-color, var(--accent-color)) !important;
+}
+
+.focus-btn#timer-start {
+    background: var(--focus-accent-color, var(--accent-color)) !important;
+}
+
+.ambient-btn-settings {
+    color: var(--focus-accent-color, var(--accent-color));
+}
+
+.focus-settings-divider {
+    color: var(--focus-accent-color, var(--accent-color));
+}
+
+.save-btn {
+    background: var(--focus-accent-color, var(--accent-color));
 }
 
 .volume-slider {

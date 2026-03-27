@@ -451,7 +451,36 @@
                         <label><i data-lucide="music"></i> Radyo URL</label>
                         <input type="text" id="input-lofi-url" placeholder="Ses URL'si yapıştırın...">
                     </div>
-                    <button id="save-ambient-settings" class="save-btn">KAYDET</button>
+
+                    <div class="focus-settings-divider">GÖRÜNÜM</div>
+
+                    <div class="setting-row">
+                        <div class="setting-input-group">
+                            <label>Metin Rengi</label>
+                            <input type="color" id="input-timer-color" value="#ffffff">
+                        </div>
+                        <div class="setting-input-group">
+                            <label>Vurgu Rengi</label>
+                            <input type="color" id="input-accent-color" value="#3b82f6">
+                        </div>
+                    </div>
+
+                    <div class="setting-input-group">
+                        <label>Yazı Tipi</label>
+                        <select id="select-timer-font">
+                            <option value="modern">Modern (Sans)</option>
+                            <option value="classic">Klasik (Serif)</option>
+                            <option value="mono">Yazılım (Mono)</option>
+                            <option value="retro">Retro (Display)</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-input-group">
+                        <label>Arka Plan Bulanıklığı</label>
+                        <input type="range" id="input-bg-blur" min="0" max="40" value="20">
+                    </div>
+
+                    <button id="save-ambient-settings" class="save-btn">AYARLARI KAYDET</button>
                 </div>
 
                 <!-- Hidden YT Container -->

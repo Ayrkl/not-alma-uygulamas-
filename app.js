@@ -2208,10 +2208,30 @@ function initFocusWidget() {
     const rainInput = document.getElementById('input-rain-url');
     const coffeeInput = document.getElementById('input-coffee-url');
     const lofiInput = document.getElementById('input-lofi-url');
+    const timerColorInput = document.getElementById('input-timer-color');
+    const accentColorInput = document.getElementById('input-accent-color');
+    const fontSelect = document.getElementById('select-timer-font');
+    const blurInput = document.getElementById('input-bg-blur');
+
+    // Apply Theme Styles
+    const applyFocusTheme = (settings) => {
+        const root = document.documentElement;
+        if (settings.timerColor) root.style.setProperty('--focus-timer-color', settings.timerColor);
+        if (settings.accentColor) root.style.setProperty('--focus-accent-color', settings.accentColor);
+        if (settings.blur) root.style.setProperty('--focus-blur', `${settings.blur}px`);
+        
+        // Font
+        const display = document.querySelector('.timer-display');
+        if (display && settings.font) {
+            display.classList.remove('font-modern', 'font-classic', 'font-mono', 'font-retro');
+            display.classList.add(`font-${settings.font}`);
+        }
+    };
 
     // Load from localStorage
     const loadAmbientSettings = () => {
         const saved = JSON.parse(localStorage.getItem('lumina-ambient-urls') || '{}');
+        // Audio URLs
         if (saved.rain) {
             document.getElementById('audio-rain').setAttribute('data-src', saved.rain);
             if (rainInput) rainInput.value = saved.rain;
@@ -2224,6 +2244,13 @@ function initFocusWidget() {
             document.getElementById('audio-lofi').setAttribute('data-src', saved.lofi);
             if (lofiInput) lofiInput.value = saved.lofi;
         }
+        // Theme
+        if (saved.timerColor && timerColorInput) timerColorInput.value = saved.timerColor;
+        if (saved.accentColor && accentColorInput) accentColorInput.value = saved.accentColor;
+        if (saved.font && fontSelect) fontSelect.value = saved.font;
+        if (saved.blur && blurInput) blurInput.value = saved.blur;
+        
+        applyFocusTheme(saved);
     };
 
     if (toggleSettingsBtn && settingsPanel) {
@@ -2237,10 +2264,15 @@ function initFocusWidget() {
             const urls = {
                 rain: rainInput.value.trim(),
                 coffee: coffeeInput.value.trim(),
-                lofi: lofiInput.value.trim()
+                lofi: lofiInput.value.trim(),
+                timerColor: timerColorInput.value,
+                accentColor: accentColorInput.value,
+                font: fontSelect.value,
+                blur: blurInput.value
             };
             
             localStorage.setItem('lumina-ambient-urls', JSON.stringify(urls));
+            applyFocusTheme(urls);
             
             // Update button attributes and restart if playing
             const mapping = { 'audio-rain': urls.rain, 'audio-coffee': urls.coffee, 'audio-lofi': urls.lofi };
