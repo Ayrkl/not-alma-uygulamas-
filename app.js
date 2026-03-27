@@ -2223,7 +2223,7 @@ function initFocusWidget() {
         // Font - Apply to the whole widget
         const widget = document.getElementById('focus-widget');
         if (widget && settings.font) {
-            widget.classList.remove('font-modern', 'font-classic', 'font-mono', 'font-retro');
+            widget.classList.remove('font-modern', 'font-classic', 'font-mono', 'font-retro', 'font-elegant', 'font-digital', 'font-handwriting', 'font-fira');
             widget.classList.add(`font-${settings.font}`);
         }
     };
