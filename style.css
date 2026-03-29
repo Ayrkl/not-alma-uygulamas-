@@ -27,6 +27,10 @@
     --focus-text-glow: 5px;
 }
 
+.hidden {
+    display: none !important;
+}
+
 * {
     margin: 0;
     padding: 0;
