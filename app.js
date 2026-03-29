@@ -2140,14 +2140,26 @@ function initFocusWidget() {
         focusTimeLeft = parseInt(minutesInput.value || 25) * 60;
         updateFocusTimerDisplay();
 
-        minutesInput.addEventListener('change', () => {
+        const updateTimerOnInputChange = (input, isBreak) => {
             if (isFocusTimerRunning) {
                 clearInterval(focusTimer);
                 isFocusTimerRunning = false;
+                startBtn.classList.remove('active');
+                startBtn.innerHTML = '<i data-lucide="play"></i>';
+                if (typeof lucide !== 'undefined') lucide.createIcons({ root: startBtn });
             }
-            focusTimeLeft = parseInt(minutesInput.value || 25) * 60;
-            updateFocusTimerDisplay();
-        });
+            if (isBreakMode === isBreak) {
+                focusTimeLeft = parseInt(input.value || (isBreak ? 5 : 25)) * 60;
+                updateFocusTimerDisplay();
+            }
+        };
+
+        minutesInput.addEventListener('change', () => updateTimerOnInputChange(minutesInput, false));
+        
+        const breakInput = document.getElementById('break-minutes');
+        if (breakInput) {
+            breakInput.addEventListener('change', () => updateTimerOnInputChange(breakInput, true));
+        }
     }
 
     const playNotification = () => {
@@ -2264,6 +2276,7 @@ function initFocusWidget() {
     const accentColorInput = document.getElementById('input-accent-color');
     const fontSelect = document.getElementById('select-timer-font');
     const blurInput = document.getElementById('input-bg-blur');
+    const glowInput = document.getElementById('input-text-glow');
     const volRainInput = document.getElementById('volume-rain');
     const volCoffeeInput = document.getElementById('volume-coffee');
     const volLofiInput = document.getElementById('volume-lofi');
@@ -2281,6 +2294,7 @@ function initFocusWidget() {
             root.style.setProperty('--focus-bg', settings.bgColor + 'b3');
         }
         if (settings.blur !== undefined) root.style.setProperty('--focus-blur', `${settings.blur}px`);
+        if (settings.textGlow !== undefined) root.style.setProperty('--focus-text-glow', `${settings.textGlow}px`);
         
         // Font - Apply to the whole widget
         const widget = document.getElementById('focus-widget');
@@ -2321,6 +2335,7 @@ function initFocusWidget() {
         }
         if (saved.font && fontSelect) fontSelect.value = saved.font;
         if (saved.blur && blurInput) blurInput.value = saved.blur;
+        if (saved.textGlow && glowInput) glowInput.value = saved.textGlow;
         
         applyFocusTheme(saved);
     };
@@ -2330,10 +2345,11 @@ function initFocusWidget() {
         accentColor: accentColorInput?.value,
         bgColor: document.getElementById('input-bg-color')?.value,
         font: fontSelect?.value,
-        blur: blurInput?.value
+        blur: blurInput?.value,
+        textGlow: glowInput?.value
     });
 
-    [timerColorInput, accentColorInput, document.getElementById('input-bg-color'), fontSelect, blurInput].forEach(el => {
+    [timerColorInput, accentColorInput, document.getElementById('input-bg-color'), fontSelect, blurInput, glowInput].forEach(el => {
         if (el) {
             el.addEventListener('input', () => {
                 applyFocusTheme(getCurrentThemeSettings());
@@ -2359,6 +2375,7 @@ function initFocusWidget() {
                 breakMinutes: document.getElementById('break-minutes').value,
                 font: fontSelect.value,
                 blur: blurInput.value,
+                textGlow: glowInput.value,
                 volRain: volRainInput?.value || 50,
                 volCoffee: volCoffeeInput?.value || 50,
                 volLofi: volLofiInput?.value || 50

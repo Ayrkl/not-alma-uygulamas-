@@ -22,6 +22,9 @@
     /* UI Dimensions */
     --sidebar-width: 68px;
     --sidebar-gap: 20px;
+
+    /* Focus Mode Defaults */
+    --focus-text-glow: 5px;
 }
 
 * {
@@ -1878,16 +1881,26 @@ body.theme-blueprint #canvas-grid {
 
 #focus-minutes, #break-minutes {
     width: 60px;
-    background: transparent;
-    border: none;
-    color: var(--focus-timer-color, #ffffff); /* Fixed from blue to white/theme color */
+    background: rgba(255, 255, 255, 0.03); /* Subtle backdrop */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    color: var(--focus-timer-color, #ffffff);
     font-family: var(--font-heading);
-    font-size: 1.25rem;
+    font-size: 1.4rem;
     font-weight: 700;
     text-align: center;
     outline: none;
-    padding: 10px 0; /* Added padding to prevent glow clipping */
-    margin: -10px 0; /* Compensation for padding */
+    padding: 8px 0;
+    margin: 0;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 var(--focus-text-glow, 5px) var(--focus-accent-color);
+}
+
+#focus-minutes:hover, #break-minutes:hover,
+#focus-minutes:focus, #break-minutes:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--focus-accent-color);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
 }
 
 #focus-minutes::-webkit-inner-spin-button, 
@@ -1911,9 +1924,9 @@ body.theme-blueprint #canvas-grid {
     font-size: 3.5rem;
     font-weight: 700;
     color: white;
-    text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    text-shadow: 0 0 var(--focus-text-glow, 5px) var(--focus-accent-color), 0 4px 12px rgba(0,0,0,0.5);
     line-height: 1;
-    margin: 20px 0; /* Increased margin from 10px to 20px */
+    margin: 20px 0;
 }
 
 .timer-controls {
@@ -2061,6 +2074,7 @@ body.theme-blueprint #canvas-grid {
     color: var(--focus-timer-color, white);
     opacity: 0.8;
     letter-spacing: 0.1em;
+    text-shadow: 0 0 var(--focus-text-glow, 0px) var(--focus-accent-color);
 }
 
 .setting-input-group label i {
@@ -2214,7 +2228,7 @@ body.theme-blueprint #canvas-grid {
 #focus-widget.font-elegant, #focus-widget.font-elegant * { font-family: 'Playfair Display', 'Times New Roman', serif !important; font-style: italic; }
 #focus-widget.font-digital, #focus-widget.font-digital * { 
     font-family: 'Courier New', monospace !important; 
-    text-shadow: 0 0 5px var(--focus-accent-color); /* Reduced blur radius from 10px to 5px */
+    text-shadow: 0 0 var(--focus-text-glow, 5px) var(--focus-accent-color);
     letter-spacing: 2px; 
 }
 #focus-widget.font-handwriting, #focus-widget.font-handwriting * { font-family: 'Brush Script MT', cursive !important; font-size: 1.1em; }
