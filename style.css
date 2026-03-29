@@ -1876,7 +1876,7 @@ body.theme-blueprint #canvas-grid {
     font-size: 0.7rem;
 }
 
-#focus-minutes {
+#focus-minutes, #break-minutes {
     width: 60px;
     background: transparent;
     border: none;
@@ -1889,7 +1889,9 @@ body.theme-blueprint #canvas-grid {
 }
 
 #focus-minutes::-webkit-inner-spin-button, 
-#focus-minutes::-webkit-outer-spin-button { 
+#focus-minutes::-webkit-outer-spin-button,
+#break-minutes::-webkit-inner-spin-button,
+#break-minutes::-webkit-outer-spin-button { 
     -webkit-appearance: none; 
     margin: 0; 
 }
@@ -2014,6 +2016,24 @@ body.theme-blueprint #canvas-grid {
     border-radius: 12px;
     padding: 12px;
     margin-top: 10px;
+    max-height: 350px;
+    overflow-y: auto;
+    padding-right: 8px; /* Room for scrollbar */
+}
+
+/* Custom Scrollbar for Ambient Settings Panel */
+#ambient-settings-panel::-webkit-scrollbar {
+    width: 4px;
+}
+
+#ambient-settings-panel::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+#ambient-settings-panel::-webkit-scrollbar-thumb {
+    background: var(--focus-accent-color, var(--accent-color));
+    border-radius: 4px;
+    opacity: 0.5;
 }
 
 #ambient-settings-panel.hidden {
@@ -2026,7 +2046,7 @@ body.theme-blueprint #canvas-grid {
 }
 
 .setting-input-group {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .setting-input-group label {
@@ -2084,7 +2104,7 @@ body.theme-blueprint #canvas-grid {
     font-weight: 800;
     cursor: pointer;
     transition: all 0.2s;
-    margin-top: 4px;
+    margin-top: 8px; /* Increased from 4px to clearly separate from last item */
     letter-spacing: 0.1em;
 }
 
@@ -2105,8 +2125,8 @@ body.theme-blueprint #canvas-grid {
 .setting-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-bottom: 5px;
+    gap: 10px; /* Reduced from 15px */
+    margin-bottom: 2px;
 }
 
 #ambient-settings-panel input[type="color"] {
@@ -2123,9 +2143,9 @@ body.theme-blueprint #canvas-grid {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 5px;
+    margin-top: 2px; /* Reduced from 5px */
     background: rgba(255, 255, 255, 0.02);
-    padding: 4px 10px;
+    padding: 2px 10px; /* Reduced vertical padding */
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
