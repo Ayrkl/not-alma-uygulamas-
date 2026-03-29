@@ -1928,7 +1928,9 @@ body.theme-blueprint #canvas-grid {
     font-size: 3.5rem;
     font-weight: 700;
     color: white;
-    text-shadow: 0 0 var(--focus-text-glow, 5px) var(--focus-accent-color), 0 4px 12px rgba(0,0,0,0.5);
+    text-shadow: 
+        0 0 var(--focus-text-glow, 5px) var(--focus-accent-color), 
+        0 1px 4px rgba(0,0,0,0.8); /* Fixed legibility shadow */
     line-height: 1;
     margin: 20px 0;
 }
@@ -2081,7 +2083,9 @@ body.theme-blueprint #canvas-grid {
     color: var(--focus-timer-color, white);
     opacity: 0.9;
     letter-spacing: 0.1em;
-    text-shadow: 0 0 var(--focus-text-glow, 0px) var(--focus-accent-color);
+    text-shadow: 
+        0 0 var(--focus-text-glow, 0px) var(--focus-accent-color),
+        0 1px 2px rgba(0,0,0,0.8); /* Fixed legibility shadow */
 }
 
 .setting-input-group label i {
@@ -2287,7 +2291,9 @@ body.theme-blueprint #canvas-grid {
 #focus-widget.font-elegant, #focus-widget.font-elegant * { font-family: 'Playfair Display', 'Times New Roman', serif !important; font-style: italic; }
 #focus-widget.font-digital, #focus-widget.font-digital * { 
     font-family: 'Courier New', monospace !important; 
-    text-shadow: 0 0 var(--focus-text-glow, 5px) var(--focus-accent-color);
+    text-shadow: 
+        0 0 var(--focus-text-glow, 5px) var(--focus-accent-color),
+        0 1px 1px rgba(0,0,0,0.5); /* Fixed legibility shadow */
     letter-spacing: 2px; 
 }
 #focus-widget.font-handwriting, #focus-widget.font-handwriting * { font-family: 'Brush Script MT', cursive !important; font-size: 1.1em; }
