@@ -1880,12 +1880,14 @@ body.theme-blueprint #canvas-grid {
     width: 60px;
     background: transparent;
     border: none;
-    color: var(--accent-color);
+    color: var(--focus-timer-color, #ffffff); /* Fixed from blue to white/theme color */
     font-family: var(--font-heading);
     font-size: 1.25rem;
     font-weight: 700;
     text-align: center;
     outline: none;
+    padding: 10px 0; /* Added padding to prevent glow clipping */
+    margin: -10px 0; /* Compensation for padding */
 }
 
 #focus-minutes::-webkit-inner-spin-button, 
@@ -1911,7 +1913,7 @@ body.theme-blueprint #canvas-grid {
     color: white;
     text-shadow: 0 4px 12px rgba(0,0,0,0.5);
     line-height: 1;
-    margin: 10px 0;
+    margin: 20px 0; /* Increased margin from 10px to 20px */
 }
 
 .timer-controls {
@@ -2210,7 +2212,11 @@ body.theme-blueprint #canvas-grid {
 #focus-widget.font-mono, #focus-widget.font-mono * { font-family: 'JetBrains Mono', 'Courier New', monospace !important; }
 #focus-widget.font-retro, #focus-widget.font-retro * { font-family: 'Impact', fantasy !important; letter-spacing: 1px; }
 #focus-widget.font-elegant, #focus-widget.font-elegant * { font-family: 'Playfair Display', 'Times New Roman', serif !important; font-style: italic; }
-#focus-widget.font-digital, #focus-widget.font-digital * { font-family: 'Courier New', monospace !important; text-shadow: 0 0 10px var(--focus-accent-color); letter-spacing: 2px; }
+#focus-widget.font-digital, #focus-widget.font-digital * { 
+    font-family: 'Courier New', monospace !important; 
+    text-shadow: 0 0 5px var(--focus-accent-color); /* Reduced blur radius from 10px to 5px */
+    letter-spacing: 2px; 
+}
 #focus-widget.font-handwriting, #focus-widget.font-handwriting * { font-family: 'Brush Script MT', cursive !important; font-size: 1.1em; }
 #focus-widget.font-fira, #focus-widget.font-fira * { font-family: 'Fira Code', 'Consolas', monospace !important; }
 
@@ -2270,8 +2276,8 @@ body.theme-blueprint #canvas-grid {
     color: var(--focus-timer-color, #ffffff) !important;
 }
 
-#focus-minutes, .settings-label {
-    color: var(--focus-accent-color, var(--accent-color)) !important;
+#focus-minutes, #break-minutes, .settings-label {
+    color: var(--focus-timer-color, #ffffff) !important;
 }
 
 .focus-btn#timer-start {
