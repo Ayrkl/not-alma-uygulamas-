@@ -3164,6 +3164,11 @@ async function exportCanvas() {
         };
         const p1 = getPt(fromObj, conn.fromOffX, conn.fromOffY, conn.fromX, conn.fromY);
         const p2 = getPt(toObj, conn.toOffX, conn.toOffY, conn.toX, conn.toY);
+
+        // GEÇERSİZ BAĞLANTI KONTROLÜ: Boyut hesaplarken yarım kalmış bağları atla
+        if (!p1 || !p2 || p1.x === null || p1.y === null || p2.x === null || p2.y === null) return;
+        if (isNaN(p1.x) || isNaN(p1.y) || isNaN(p2.x) || isNaN(p2.y)) return;
+
         updateBounds(p1.x, p1.y);
         updateBounds(p2.x, p2.y);
     });
@@ -3226,6 +3231,10 @@ async function exportCanvas() {
         };
         const p1 = getPt(fromObj, conn.fromOffX, conn.fromOffY, conn.fromX, conn.fromY);
         const p2 = getPt(toObj, conn.toOffX, conn.toOffY, conn.toX, conn.toY);
+
+        // GEÇERSİZ BAĞLANTI KONTROLÜ: Eğer bir uç boşsa veya geçersizse bu oku atla
+        if (!p1 || !p2 || p1.x === null || p1.y === null || p2.x === null || p2.y === null) return;
+        if (isNaN(p1.x) || isNaN(p1.y) || isNaN(p2.x) || isNaN(p2.y)) return;
 
         // Yeni koordinatlar (Kırpılmış alana göre)
         const sx = p1.x - minX + padding, sy = p1.y - minY + padding;
