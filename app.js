@@ -3128,159 +3128,169 @@ async function exportCanvas() {
     }
 
     state.isExporting = true;
-    const originalX = state.camX;
-    const originalY = state.camY;
-    const originalZ = state.camZ;
-    
     const exportBtn = document.getElementById('export-btn');
     const originalHTML = exportBtn.innerHTML;
     exportBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i>';
     if (typeof lucide !== 'undefined') lucide.createIcons({ root: exportBtn });
-    
-    // Zoom/Pan resetle (1.0 zoomda ve 0,0 merkezde dondur)
-    state.camX = 0; state.camY = 0; state.camZ = 1.0;
-    state.targetX = 0; state.targetY = 0; state.targetZ = 1.0;
-    
-    const canvasGrid = document.getElementById('canvas-grid');
-    if (canvasGrid) canvasGrid.style.display = 'none';
-    const controls = document.getElementById('controls');
-    if (controls) controls.style.opacity = '0';
-    
-    // UI öğelerini ve tutaçları gizlemek için sınıf ekle
-    document.body.classList.add('is-exporting');
-    
-    renderObjects();
-    renderConnections();
-    
-    // 1. Alan hesapla (Bounding Box) - Tüm objeleri ve bağlantı uçlarını kapsa
+
+    // 1. Alan hesapla (Bounding Box)
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     
-    const updateBounds = (x, y) => {
+    const updateBounds = (x, y, w = 0, h = 0) => {
         if (x === null || x === undefined || isNaN(x)) return;
         minX = Math.min(minX, x);
         minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x);
-        maxY = Math.max(maxY, y);
+        maxX = Math.max(maxX, x + w);
+        maxY = Math.max(maxY, y + h);
     };
 
     state.objects.forEach(obj => {
         const el = document.getElementById(`obj-${obj.id}`);
         const w = (obj.width === 'auto' ? (el ? el.offsetWidth : 200) : obj.width);
         const h = (obj.height === 'auto' ? (el ? el.offsetHeight : 180) : obj.height);
-        updateBounds(obj.x, obj.y);
-        updateBounds(obj.x + w, obj.y + h);
+        updateBounds(obj.x, obj.y, w, h);
     });
-    
+
     state.connections.forEach(conn => {
         const fromObj = conn.fromId ? state.objects.find(o => o.id === conn.fromId) : null;
         const toObj = conn.toId ? state.objects.find(o => o.id === conn.toId) : null;
+        const getPt = (obj, ox, oy, px, py) => {
+            if (obj) {
+                const w = (obj.width === 'auto' ? 200 : obj.width);
+                const h = (obj.height === 'auto' ? 180 : obj.height);
+                return { x: obj.x + (ox !== undefined ? ox : w/2), y: obj.y + (oy !== undefined ? oy : h/2) };
+            }
+            return { x: px, y: py };
+        };
+        const p1 = getPt(fromObj, conn.fromOffX, conn.fromOffY, conn.fromX, conn.fromY);
+        const p2 = getPt(toObj, conn.toOffX, conn.toOffY, conn.toX, conn.toY);
+        updateBounds(p1.x, p1.y);
+        updateBounds(p2.x, p2.y);
+    });
 
-        if (fromObj) {
-            const fw = (fromObj.width === 'auto' ? 200 : fromObj.width);
-            const fh = (fromObj.height === 'auto' ? (fromObj.type === 'note' ? 180 : 100) : fromObj.height);
-            updateBounds(fromObj.x + (conn.fromOffX || fw/2), fromObj.y + (conn.fromOffY || fh/2));
-        } else {
-            updateBounds(conn.fromX, conn.fromY);
+    const padding = 100;
+    const width = maxX - minX + padding * 2;
+    const height = maxY - minY + padding * 2;
+
+    // 2. Geçici Export Elementi Oluştur (Off-screen)
+    const tempExport = document.createElement('div');
+    tempExport.id = 'temp-export-container';
+    // Mevcut döküman stillerini ve değişkenlerini miras alması için body'nin bir kopyası gibi davranmalı
+    tempExport.style.cssText = `
+        position: absolute; left: -9999px; top: -9999px;
+        width: ${width}px; height: ${height}px;
+        background: #0f172a;
+        overflow: hidden;
+        z-index: -1000;
+    `;
+    
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#60a5fa';
+    
+    // Arka plan ızgarası (Grid) ekle
+    tempExport.style.setProperty('--accent-color', accentColor);
+    tempExport.style.backgroundImage = `
+        radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0)
+    `;
+    tempExport.style.backgroundSize = '40px 40px';
+    
+    document.body.appendChild(tempExport);
+
+    // 3. İçerikleri Klonla ve Yeniden Konumlandır
+    state.objects.forEach(obj => {
+        const originalEl = document.getElementById(`obj-${obj.id}`);
+        if (!originalEl) return;
+        const clone = originalEl.cloneNode(true);
+        // Yeni (0,0) noktası minX, minY olacak şekilde ötele
+        clone.style.left = (obj.x - minX + padding) + 'px';
+        clone.style.top = (obj.y - minY + padding) + 'px';
+        clone.style.transform = 'none';
+        clone.classList.remove('selected', 'active'); // Temiz kopya
+        tempExport.appendChild(clone);
+    });
+
+    // 4. Bağlantıları Klonla (SVG Layer)
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.style.cssText = `position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none;`;
+    tempExport.appendChild(svg);
+
+    state.connections.forEach(conn => {
+        const fromObj = conn.fromId ? state.objects.find(o => o.id === conn.fromId) : null;
+        const toObj = conn.toId ? state.objects.find(o => o.id === conn.toId) : null;
+        const getPt = (obj, ox, oy, px, py) => {
+            if (obj) {
+                const w = (obj.width === 'auto' ? 200 : obj.width);
+                const h = (obj.height === 'auto' ? 180 : obj.height);
+                return { x: obj.x + (ox !== undefined ? ox : w/2), y: obj.y + (oy !== undefined ? oy : h/2) };
+            }
+            return { x: px, y: py };
+        };
+        const p1 = getPt(fromObj, conn.fromOffX, conn.fromOffY, conn.fromX, conn.fromY);
+        const p2 = getPt(toObj, conn.toOffX, conn.toOffY, conn.toX, conn.toY);
+
+        // Yeni koordinatlar (Kırpılmış alana göre)
+        const sx = p1.x - minX + padding, sy = p1.y - minY + padding;
+        const ex = p2.x - minX + padding, ey = p2.y - minY + padding;
+
+        const cpX1 = sx + (ex - sx) * 0.5, cpY1 = sy;
+        const cpX2 = sx + (ex - sx) * 0.5, cpY2 = ey;
+        const d = `M ${sx} ${sy} C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${ex} ${ey}`;
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", d);
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", accentColor);
+        path.setAttribute("stroke-width", "3");
+        if (conn.style === 'dashed') path.setAttribute("stroke-dasharray", "8,8");
+        svg.appendChild(path);
+
+        // BAKE MARKERS: Ok uçlarını manuel çiz (html2canvas desteği için)
+        const rotateP = (px, py, angle) => ({
+            x: px * Math.cos(angle) - py * Math.sin(angle),
+            y: px * Math.sin(angle) + py * Math.cos(angle)
+        });
+
+        if (conn.flow === 'forward' || conn.flow === 'both') {
+            const angle = Math.atan2(ey - cpY2, ex - cpX2);
+            const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            const tp1 = rotateP(0, -6, angle), tp2 = rotateP(14, 0, angle), tp3 = rotateP(0, 6, angle);
+            poly.setAttribute("points", `${ex+tp1.x},${ey+tp1.y} ${ex+tp2.x},${ey+tp2.y} ${ex+tp3.x},${ey+tp3.y}`);
+            poly.setAttribute("fill", accentColor);
+            svg.appendChild(poly);
         }
-
-        if (toObj) {
-            const tw = (toObj.width === 'auto' ? 200 : toObj.width);
-            const th = (toObj.height === 'auto' ? (toObj.type === 'note' ? 180 : 100) : toObj.height);
-            updateBounds(toObj.x + (conn.toOffX || tw/2), toObj.y + (conn.toOffY || th/2));
-        } else {
-            updateBounds(conn.toX, conn.toY);
+        if (conn.flow === 'both') {
+            const angle = Math.atan2(sy - cpY1, sx - cpX1);
+            const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            const tp1 = rotateP(0, -6, angle), tp2 = rotateP(-14, 0, angle), tp3 = rotateP(0, 6, angle);
+            poly.setAttribute("points", `${sx+tp1.x},${sy+tp1.y} ${sx+tp2.x},${sy+tp2.y} ${sx+tp3.x},${sy+tp3.y}`);
+            poly.setAttribute("fill", accentColor);
+            svg.appendChild(poly);
         }
     });
 
-    // Boş kanvas kontrolü
-    if (minX === Infinity) { minX = -500; minY = -500; maxX = 500; maxY = 500; }
-
-    const padding = 150;
-    minX -= padding; minY -= padding;
-    maxX += padding; maxY += padding;
-    const width = maxX - minX;
-    const height = maxY - minY;
-
-    await new Promise(r => setTimeout(r, 800));
+    // 5. Fotografla ve İndir
+    await new Promise(r => setTimeout(r, 1000)); // Render için bekle
 
     try {
-        const canvas = await html2canvas(canvasContent, {
+        const canvas = await html2canvas(tempExport, {
             backgroundColor: '#0f172a',
             useCORS: true,
             allowTaint: true,
             scale: 2,
-            x: minX + (window.innerWidth / 2),
-            y: minY + (window.innerHeight / 2),
             width: width,
-            height: height,
-            onclone: (clonedDoc) => {
-                const clonedContent = clonedDoc.getElementById('canvas-content');
-                const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#60a5fa';
-
-                // --- SVG Marker Fix: Okları manuel çiz ---
-                const paths = clonedContent.querySelectorAll('path.connection-path');
-                paths.forEach(path => {
-                    const d = path.getAttribute('d');
-                    if (!d) return;
-                    
-                    const parts = d.replace(/[MC,]/g, ' ').split(/\s+/).filter(x => x.length > 0).map(Number);
-                    if (parts.length < 8) return;
-
-                    const x1 = parts[0], y1 = parts[1];
-                    const cx1 = parts[2], cy1 = parts[3];
-                    const cx2 = parts[4], cy2 = parts[5];
-                    const x2 = parts[6], y2 = parts[7];
-                    const svg = path.closest('svg');
-
-                    const rotateP = (px, py, angle) => ({
-                        x: px * Math.cos(angle) - py * Math.sin(angle),
-                        y: px * Math.sin(angle) + py * Math.cos(angle)
-                    });
-
-                    // Arrow End
-                    if (path.getAttribute('marker-end')) {
-                        const angle = Math.atan2(y2 - cy2, x2 - cx2);
-                        const poly = clonedDoc.createElementNS("http://www.w3.org/2000/svg", "polygon");
-                        const p1 = rotateP(0, -5, angle), p2 = rotateP(12, 0, angle), p3 = rotateP(0, 5, angle);
-                        poly.setAttribute("points", `${x2+p1.x},${y2+p1.y} ${x2+p2.x},${y2+p2.y} ${x2+p3.x},${y2+p3.y}`);
-                        poly.setAttribute("fill", accentColor);
-                        svg.appendChild(poly);
-                        path.removeAttribute('marker-end');
-                    }
-                    // Arrow Start
-                    if (path.getAttribute('marker-start')) {
-                        const angle = Math.atan2(y1 - cy1, x1 - cx1);
-                        const poly = clonedDoc.createElementNS("http://www.w3.org/2000/svg", "polygon");
-                        const p1 = rotateP(0, -5, angle), p2 = rotateP(-12, 0, angle), p3 = rotateP(0, 5, angle);
-                        poly.setAttribute("points", `${x1+p1.x},${y1+p1.y} ${x1+p2.x},${y1+p2.y} ${x1+p3.x},${y1+p3.y}`);
-                        poly.setAttribute("fill", accentColor);
-                        svg.appendChild(poly);
-                        path.removeAttribute('marker-start');
-                    }
-                    path.style.stroke = accentColor;
-                });
-                
-                if (typeof lucide !== 'undefined') lucide.createIcons({ root: clonedContent });
-            }
+            height: height
         });
         
         const link = document.createElement('a');
-        link.download = `lumina-notlar-${Date.now()}.png`;
+        link.download = `lumina-export-${Date.now()}.png`;
         link.href = canvas.toDataURL('image/png', 1.0);
         link.click();
     } catch (err) {
         console.error('Export Error:', err);
     } finally {
+        tempExport.remove();
         state.isExporting = false;
-        document.body.classList.remove('is-exporting');
-        state.camX = originalX; state.camY = originalY; state.camZ = originalZ;
-        state.targetX = originalX; state.targetY = originalY; state.targetZ = originalZ;
-        if (canvasGrid) canvasGrid.style.display = 'block';
-        if (controls) controls.style.opacity = '1';
         exportBtn.innerHTML = originalHTML;
         if (typeof lucide !== 'undefined') lucide.createIcons({ root: exportBtn });
-        renderObjects();
-        renderConnections();
     }
 }
 
