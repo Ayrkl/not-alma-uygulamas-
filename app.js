@@ -336,6 +336,55 @@ window.deleteWorkspace = function(event, id) {
     }
 };
 
+window.startRenameWorkspace = function(event, id, element) {
+    event.stopPropagation();
+    
+    element.contentEditable = "true";
+    element.focus();
+    
+    // Select all text
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    
+    const finishRename = () => {
+        element.contentEditable = "false";
+        element.removeEventListener('blur', finishRename);
+        element.removeEventListener('keydown', keydownHandler);
+        
+        const newName = element.innerText.trim();
+        if (newName) {
+            const ws = state.workspaces.find(w => w.id === id);
+            if (ws) {
+                ws.name = newName;
+                saveState();
+            }
+        }
+        renderWorkspacesList();
+    };
+    
+    const keydownHandler = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            finishRename();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            const ws = state.workspaces.find(w => w.id === id);
+            if (ws) {
+                element.innerText = ws.name;
+            }
+            element.contentEditable = "false";
+            element.removeEventListener('blur', finishRename);
+            element.removeEventListener('keydown', keydownHandler);
+        }
+    };
+    
+    element.addEventListener('blur', finishRename);
+    element.addEventListener('keydown', keydownHandler);
+};
+
 window.switchWorkspace = switchWorkspace;
 
 function renderWorkspacesList() {
@@ -344,8 +393,11 @@ function renderWorkspacesList() {
     
     listEl.innerHTML = state.workspaces.map(ws => `
         <div class="workspace-item ${ws.id === state.activeWorkspaceId ? 'active-workspace' : ''}" onclick="window.switchWorkspace('${ws.id}')">
-            <div class="workspace-name" title="${ws.name}">${ws.name}</div>
+            <div class="workspace-name" title="İsim değiştirmek için çift tıkla" ondblclick="window.startRenameWorkspace(event, '${ws.id}', this)" style="outline: none;">${ws.name}</div>
             <div class="workspace-actions" onclick="event.stopPropagation();">
+                <button class="workspace-action-btn edit-btn" onclick="window.startRenameWorkspace(event, '${ws.id}', this.parentElement.previousElementSibling)" title="Yeniden Adlandır">
+                    <i data-lucide="edit-2"></i>
+                </button>
                 <button class="workspace-action-btn delete-btn" onclick="window.deleteWorkspace(event, '${ws.id}')" title="Sil">
                     <i data-lucide="trash-2"></i>
                 </button>
