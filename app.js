@@ -300,8 +300,8 @@ function switchWorkspace(id) {
 }
 
 function createWorkspace(nameStr = null) {
-    const name = nameStr || prompt("Yeni kanvas adı:", "Yeni Kanvas");
-    if (!name) return;
+    // Electron'da prompt() bazen çalışmaz/kaldırılmıştır. Bu yüzden otomatik isim veriyoruz.
+    const name = nameStr || `Yeni Kanvas ${state.workspaces.length}`;
     
     const newId = 'ws-' + Date.now();
     state.workspaces.push({
