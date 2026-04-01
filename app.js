@@ -729,13 +729,23 @@ function setupEventListeners() {
                         el.style.height = `${obj.height}px`;
                     }
                 } else {
-                    obj.x += dx;
-                    obj.y += dy;
-                    const el = document.getElementById(`obj-${obj.id}`);
-                    if (el) {
-                        el.style.left = `${obj.x}px`;
-                        el.style.top = `${obj.y}px`;
-                    }
+                    // Update movement for all selected objects if the target is part of a multi-selection
+                    const isMultiDrag = state.selectedIds.includes(state.dragTarget);
+                    const targets = isMultiDrag ? state.selectedIds : [state.dragTarget];
+                    
+                    targets.forEach(id => {
+                        const o = state.objects.find(obj => obj.id === id);
+                        if (o) {
+                            o.x += dx;
+                            o.y += dy;
+                            const el = document.getElementById(`obj-${o.id}`);
+                            if (el) {
+                                el.style.left = `${o.x}px`;
+                                el.style.top = `${o.y}px`;
+                            }
+                        }
+                    });
+
                     state.dragStartX = e.clientX;
                     state.dragStartY = e.clientY;
                     
@@ -2048,7 +2058,10 @@ function renderObject(obj) {
             return;
         }
 
-        selectObject(obj.id);
+        // Only reset selection if the clicked object wasn't already selected
+        if (!state.selectedIds.includes(obj.id)) {
+            selectObject(obj.id);
+        }
         
         const isHandle = e.target.classList.contains('obj-handle');
         const isResize = e.target.classList.contains('resize-handle');
