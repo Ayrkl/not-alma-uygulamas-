@@ -3147,7 +3147,7 @@ async function exportCanvas() {
     state.objects.forEach(obj => {
         const el = document.getElementById(`obj-${obj.id}`);
         const w = (obj.width === 'auto' ? (el ? el.offsetWidth : 200) : obj.width);
-        const h = (obj.height === 'auto' ? (el ? el.offsetHeight : 180) : obj.height);
+        const h = (obj.height === 'auto' ? (el ? el.offsetHeight : (obj.type === 'note' ? 180 : 100)) : obj.height);
         updateBounds(obj.x, obj.y, w, h);
     });
 
@@ -3157,7 +3157,7 @@ async function exportCanvas() {
         const getPt = (obj, ox, oy, px, py) => {
             if (obj) {
                 const w = (obj.width === 'auto' ? 200 : obj.width);
-                const h = (obj.height === 'auto' ? 180 : obj.height);
+                const h = (obj.height === 'auto' ? (obj.type === 'note' ? 180 : 100) : obj.height);
                 return { x: obj.x + (ox !== undefined ? ox : w/2), y: obj.y + (oy !== undefined ? oy : h/2) };
             }
             return { x: px, y: py };
@@ -3219,7 +3219,7 @@ async function exportCanvas() {
         const getPt = (obj, ox, oy, px, py) => {
             if (obj) {
                 const w = (obj.width === 'auto' ? 200 : obj.width);
-                const h = (obj.height === 'auto' ? 180 : obj.height);
+                const h = (obj.height === 'auto' ? (obj.type === 'note' ? 180 : 100) : obj.height);
                 return { x: obj.x + (ox !== undefined ? ox : w/2), y: obj.y + (oy !== undefined ? oy : h/2) };
             }
             return { x: px, y: py };
