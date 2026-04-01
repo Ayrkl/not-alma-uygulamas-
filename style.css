@@ -641,14 +641,13 @@ nav.tools,
     stroke: var(--accent-color);
     stroke-width: 2;
     cursor: grab;
-    transition: transform 0.2s, stroke-width 0.2s;
+    transition: stroke-width 0.2s, fill 0.2s;
     pointer-events: auto;
     filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
 }
 
 .connection-handle:hover {
-    transform: scale(1.3);
-    stroke-width: 3;
+    stroke-width: 4;
     fill: var(--accent-color);
 }
 

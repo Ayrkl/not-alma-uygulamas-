@@ -755,11 +755,18 @@ function setupEventListeners() {
             
             if (conn) {
                 if (targetObj) {
+                    const offX = worldCoords.x - targetObj.x;
+                    const offY = worldCoords.y - targetObj.y;
+                    
                     if (state.dragConnEndType === 'from') {
                         conn.fromId = targetObj.id;
+                        conn.fromOffX = offX;
+                        conn.fromOffY = offY;
                         conn.fromX = null; conn.fromY = null;
                     } else {
                         conn.toId = targetObj.id;
+                        conn.toOffX = offX;
+                        conn.toOffY = offY;
                         conn.toX = null; conn.toY = null;
                     }
                 }
@@ -2226,8 +2233,14 @@ function renderConnections() {
         if (fromObj) {
             const fw = (fromObj.width === 'auto' ? 200 : fromObj.width);
             const fh = (fromObj.height === 'auto' ? (fromObj.type === 'note' ? 180 : 100) : fromObj.height);
-            startX = fromObj.x + (fw / 2);
-            startY = fromObj.y + (fh / 2);
+            
+            if (conn.fromOffX !== undefined && conn.fromOffY !== undefined) {
+                startX = fromObj.x + conn.fromOffX;
+                startY = fromObj.y + conn.fromOffY;
+            } else {
+                startX = fromObj.x + (fw / 2);
+                startY = fromObj.y + (fh / 2);
+            }
         } else if (conn.fromX !== null) {
             startX = conn.fromX;
             startY = conn.fromY;
@@ -2236,8 +2249,14 @@ function renderConnections() {
         if (toObj) {
             const tw = (toObj.width === 'auto' ? 200 : toObj.width);
             const th = (toObj.height === 'auto' ? (toObj.type === 'note' ? 180 : 100) : toObj.height);
-            endX = toObj.x + (tw / 2);
-            endY = toObj.y + (th / 2);
+            
+            if (conn.toOffX !== undefined && conn.toOffY !== undefined) {
+                endX = toObj.x + conn.toOffX;
+                endY = toObj.y + conn.toOffY;
+            } else {
+                endX = toObj.x + (tw / 2);
+                endY = toObj.y + (th / 2);
+            }
         } else if (conn.toX !== null) {
             endX = conn.toX;
             endY = conn.toY;
