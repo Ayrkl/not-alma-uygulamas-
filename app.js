@@ -1393,6 +1393,7 @@ function handleImageFile(file) {
     reader.onload = (event) => {
         const center = getCanvasCenter();
         addObject('image', center.x, center.y, event.target.result);
+        document.getElementById('tool-pan').click();
     };
     reader.readAsDataURL(file);
 }
@@ -1402,6 +1403,7 @@ function handleVideoFile(file) {
     reader.onload = (event) => {
         const center = getCanvasCenter();
         addObject('video', center.x, center.y, event.target.result);
+        document.getElementById('tool-pan').click();
     };
     reader.readAsDataURL(file);
 }
@@ -1411,6 +1413,7 @@ function handlePdfFile(file) {
     reader.onload = (event) => {
         const center = getCanvasCenter();
         addObject('pdf', center.x, center.y, event.target.result);
+        document.getElementById('tool-pan').click();
     };
     reader.readAsDataURL(file);
 }
@@ -1668,6 +1671,7 @@ function handleConnectionClick(objId) {
         
         state.connectSourceId = null;
         renderConnections();
+        document.getElementById('tool-pan').click();
     }
 }
 
