@@ -36,7 +36,11 @@ const state = {
         smoothness: 0.85,
         sensitivity: 0.15
     },
-    undoHistory: [] // Geri alma geçmişi
+    undoHistory: [], // Geri alma geçmişi
+
+    // Multi-canvas
+    workspaces: [],
+    activeWorkspaceId: null
 };
 
 // --- Utils ---
@@ -148,20 +152,58 @@ async function init() {
         }
 
         if (savedData) {
-            state.objects = savedData.objects || [];
-            state.connections = savedData.connections || [];
-            if (savedData.cam) {
-                state.targetX = savedData.cam.x || 0;
-                state.targetY = savedData.cam.y || 0;
-                state.targetZ = savedData.cam.z || 1.0;
+            // MULTI CANVAS MIGRATION
+            if (!savedData.version || savedData.version < 2) {
+                console.log('Migrating single canvas to multi-canvas format...');
+                savedData = {
+                    version: 2,
+                    activeWorkspaceId: 'default',
+                    workspaces: [
+                        {
+                            id: 'default',
+                            name: 'Ana Kanvas',
+                            data: {
+                                objects: savedData.objects || [],
+                                connections: savedData.connections || [],
+                                cam: savedData.cam || { x: 0, y: 0, z: 1.0 },
+                                settings: savedData.settings || {}
+                            }
+                        }
+                    ]
+                };
+                await window.electronAPI.saveData(savedData);
+            }
+
+            state.workspaces = savedData.workspaces || [];
+            state.activeWorkspaceId = savedData.activeWorkspaceId || (state.workspaces[0] ? state.workspaces[0].id : null);
+
+            const activeWs = state.workspaces.find(w => w.id === state.activeWorkspaceId) || state.workspaces[0];
+            const activeData = activeWs ? activeWs.data : {};
+
+            state.objects = activeData.objects || [];
+            state.connections = activeData.connections || [];
+            if (activeData.cam) {
+                state.targetX = activeData.cam.x || 0;
+                state.targetY = activeData.cam.y || 0;
+                state.targetZ = activeData.cam.z || 1.0;
                 state.camX = state.targetX;
                 state.camY = state.targetY;
                 state.camZ = state.targetZ;
             }
-            if (savedData.settings) {
-                state.settings = { ...state.settings, ...savedData.settings };
+            if (activeData.settings) {
+                state.settings = { ...state.settings, ...activeData.settings };
             }
+        } else {
+            // First run
+            state.workspaces = [{
+                id: 'default',
+                name: 'Ana Kanvas',
+                data: { objects: [], connections: [], cam: {x:0, y:0, z:1.0}, settings: state.settings }
+            }];
+            state.activeWorkspaceId = 'default';
         }
+
+        setupWorkspacesUI();
 
         initFocusWidget();
         renderObjects();
@@ -182,19 +224,185 @@ async function init() {
 
 // --- Persistence ---
 async function saveState() {
+    if (state.activeWorkspaceId) {
+        const activeWs = state.workspaces.find(w => w.id === state.activeWorkspaceId);
+        if (activeWs) {
+            activeWs.data = {
+                objects: state.objects,
+                connections: state.connections,
+                cam: { x: state.targetX, y: state.targetY, z: state.targetZ },
+                settings: state.settings
+            };
+        }
+    }
+
     const dataToSave = {
-        objects: state.objects,
-        connections: state.connections,
-        cam: { x: state.targetX, y: state.targetY, z: state.targetZ },
-        settings: state.settings
+        version: 2,
+        activeWorkspaceId: state.activeWorkspaceId,
+        workspaces: state.workspaces
     };
     
     // Save to the persistent JSON file via Electron
     await window.electronAPI.saveData(dataToSave);
 }
 
-function loadState() {
-    // Note: State is now loaded asynchronously in async init()
+// --- Multi-Workspace Logic ---
+function switchWorkspace(id) {
+    if (state.activeWorkspaceId === id) return;
+    
+    saveState().then(() => {
+        state.activeWorkspaceId = id;
+        const activeWs = state.workspaces.find(w => w.id === id);
+        if (activeWs && activeWs.data) {
+            state.objects = activeWs.data.objects || [];
+            state.connections = activeWs.data.connections || [];
+            state.targetX = activeWs.data.cam?.x || 0;
+            state.targetY = activeWs.data.cam?.y || 0;
+            state.targetZ = activeWs.data.cam?.z || 1.0;
+            state.settings = { ...state.settings, ...activeWs.data.settings };
+        } else {
+            state.objects = [];
+            state.connections = [];
+            state.targetX = 0; state.targetY = 0; state.targetZ = 1.0;
+        }
+        
+        state.camX = state.targetX;
+        state.camY = state.targetY;
+        state.camZ = state.targetZ;
+        state.undoHistory = [];
+        
+        deselectAll();
+        
+        // Temizle ve yeniden çiz
+        const contentEl = document.getElementById('canvas-content');
+        if (contentEl) {
+            contentEl.innerHTML = `
+                <svg id="connection-layer">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="var(--accent-color)" />
+                        </marker>
+                        <marker id="arrowstart" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto">
+                            <polygon points="10 0, 0 3.5, 10 7" fill="var(--accent-color)" />
+                        </marker>
+                    </defs>
+                </svg>
+            `;
+        }
+        
+        renderObjects();
+        renderConnections();
+        updateCanvas();
+        updateMiniMap();
+        saveState();
+        renderWorkspacesList();
+    });
+}
+
+function createWorkspace(nameStr = null) {
+    const name = nameStr || prompt("Yeni kanvas adı:", "Yeni Kanvas");
+    if (!name) return;
+    
+    const newId = 'ws-' + Date.now();
+    state.workspaces.push({
+        id: newId,
+        name: name,
+        data: {
+            objects: [],
+            connections: [],
+            cam: { x: 0, y: 0, z: 1.0 },
+            settings: { ...state.settings }
+        }
+    });
+
+    switchWorkspace(newId);
+}
+
+window.deleteWorkspace = function(event, id) {
+    event.stopPropagation();
+    if (state.workspaces.length <= 1) {
+        alert("Tek kanvas varken silinemez.");
+        return;
+    }
+    
+    if (confirm("Bu kanvası silmek istediğinize emin misiniz?")) {
+        state.workspaces = state.workspaces.filter(w => w.id !== id);
+        if (state.activeWorkspaceId === id) {
+            switchWorkspace(state.workspaces[0].id);
+        } else {
+            saveState();
+            renderWorkspacesList();
+        }
+    }
+};
+
+window.switchWorkspace = switchWorkspace;
+
+function renderWorkspacesList() {
+    const listEl = document.getElementById('workspaces-list');
+    if (!listEl) return;
+    
+    listEl.innerHTML = state.workspaces.map(ws => `
+        <div class="workspace-item ${ws.id === state.activeWorkspaceId ? 'active-workspace' : ''}" onclick="window.switchWorkspace('${ws.id}')">
+            <div class="workspace-name" title="${ws.name}">${ws.name}</div>
+            <div class="workspace-actions" onclick="event.stopPropagation();">
+                <button class="workspace-action-btn delete-btn" onclick="window.deleteWorkspace(event, '${ws.id}')" title="Sil">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+}
+
+function setupWorkspacesUI() {
+    renderWorkspacesList();
+
+    const workspacesBtn = document.getElementById('tool-workspaces');
+    const workspacesPanel = document.getElementById('workspaces-panel');
+    const newWorkspaceBtn = document.getElementById('btn-new-workspace');
+    
+    if (workspacesBtn && workspacesPanel) {
+        workspacesBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isActive = workspacesPanel.classList.toggle('active');
+            if (isActive) {
+                const searchPanel = document.getElementById('search-panel');
+                if (searchPanel) searchPanel.classList.remove('active');
+            }
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'w' && !e.ctrlKey && !e.metaKey && 
+                document.activeElement.tagName !== 'INPUT' && 
+                document.activeElement.tagName !== 'TEXTAREA' &&
+                document.activeElement.getAttribute('contenteditable') !== 'true') {
+                e.preventDefault();
+                workspacesPanel.classList.add('active');
+                const searchPanel = document.getElementById('search-panel');
+                if (searchPanel) searchPanel.classList.remove('active');
+            }
+            if (e.key === 'Escape') {
+                workspacesPanel.classList.remove('active');
+            }
+        });
+        
+        const canvasContainer = document.getElementById('canvas-container');
+        if (canvasContainer) {
+            canvasContainer.addEventListener('mousedown', () => {
+                workspacesPanel.classList.remove('active');
+            });
+        }
+    }
+
+    if (newWorkspaceBtn) {
+        newWorkspaceBtn.addEventListener('click', () => {
+            createWorkspace();
+        });
+    }
 }
 
 // --- Search & Navigation Logic ---

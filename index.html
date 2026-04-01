@@ -33,6 +33,9 @@
                 <button class="tool-btn" id="tool-search" title="Ara (F)">
                     <i data-lucide="search"></i>
                 </button>
+                <button class="tool-btn" id="tool-workspaces" title="Kanvaslar (W)">
+                    <i data-lucide="layers"></i>
+                </button>
                 <div class="tool-separator"></div>
                 <button class="tool-btn active" id="tool-pan" title="Kaydır (H)">
                     <i data-lucide="hand"></i>
@@ -107,6 +110,17 @@
                 <input type="text" id="canvas-search" placeholder="Notlarda ara...">
             </div>
             <div id="search-results" class="search-results-list"></div>
+        </div>
+
+        <!-- Workspaces Panel (Slide-out) -->
+        <div id="workspaces-panel" class="glass">
+            <div class="workspaces-header">
+                <h3>Kanvaslar</h3>
+                <button id="btn-new-workspace" class="tool-btn" title="Yeni Kanvas"><i data-lucide="plus"></i></button>
+            </div>
+            <div id="workspaces-list" class="workspaces-results-list">
+                <!-- Kanvas listesi buraya gelecek -->
+            </div>
         </div>
 
         <!-- Floating Formatting Toolbar -->
