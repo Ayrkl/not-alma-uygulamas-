@@ -1,5 +1,5 @@
 :root {
-    /* Color Palette - Deep & Premium (Default Dark) */
+    /* Theme Tokens - Default (Dark) */
     --bg-color: #0d0d0f;
     --fg-color: #f8fafc;
     --accent-color: #3b82f6;
@@ -25,6 +25,21 @@
 
     /* Focus Mode Defaults */
     --focus-text-glow: 5px;
+}
+
+/* Light Theme Overrides */
+body.theme-light {
+    --bg-color: #f1f5f9;
+    --fg-color: #0f172a;
+    --accent-color: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-glow: rgba(37, 99, 235, 0.2);
+
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(15, 23, 42, 0.08);
+    --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.1);
+
+    --grid-color: rgba(15, 23, 42, 0.05);
 }
 
 .hidden {
@@ -586,8 +601,59 @@ nav.tools,
     z-index: 0;
     pointer-events: none;
     transform-origin: center;
-    will-change: background-position, background-size, opacity;
+    will-change: background-position, background-size, opacity, transform;
     transform: translateZ(0);
+}
+
+/* User Background Image Mode */
+#canvas-grid.custom-bg {
+    background-image: var(--bg-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: var(--bg-opacity, 1);
+}
+
+/* Space Theme — Dynamic Moving Stars */
+body.theme-space #canvas-grid {
+    background: radial-gradient(circle at 50% 50%, #020617 0%, #000 100%);
+    opacity: 1;
+}
+
+body.theme-space #canvas-grid::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%; width: 200%; height: 200%;
+    background-image: 
+        radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 160px 120px, #ddd, rgba(0,0,0,0));
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    animation: stars-move 100s linear infinite;
+    opacity: 0.3;
+}
+
+@keyframes stars-move {
+    from { transform: translate(0, 0); }
+    to { transform: translate(-100px, -100px); }
+}
+
+/* Blueprint Theme */
+body.theme-blueprint #canvas-grid {
+    background-color: #1e40af;
+    background-image: linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+    background-size: var(--bg-grid-size) var(--bg-grid-size);
+}
+
+/* Chalkboard Theme */
+body.theme-chalkboard #canvas-grid {
+    background-color: #163020;
+    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
 }
 
 #canvas-content {
@@ -749,9 +815,42 @@ body.is-exporting .selection-box {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    will-change: transform, left, top;
+    transform-origin: center;
+    will-change: transform, left, top, opacity, filter;
     transform: translateZ(0);
     overscroll-behavior: none;
+    animation: obj-entrance 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+@keyframes obj-entrance {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateZ(0);
+        filter: blur(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateZ(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes obj-exit {
+    from {
+        opacity: 1;
+        transform: scale(1) translateZ(0);
+        filter: blur(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95) translateZ(0);
+        filter: blur(10px);
+    }
+}
+
+.canvas-obj.exiting {
+    animation: obj-exit 0.3s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+    pointer-events: none;
 }
 
 /* Fix for Blue Ovals: Small, elegant anchor points */

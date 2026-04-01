@@ -612,6 +612,14 @@ function updateCanvas() {
     canvasGrid.style.setProperty('--bg-offset-x', `${offsetX}px`);
     canvasGrid.style.setProperty('--bg-offset-y', `${offsetY}px`);
     
+    // Parallax logic: Shifting the background slightly slower than the foreground
+    const pStrength = (state.settings.parallaxStrength || 20) / 100; // Default 20%
+    const parallaxX = -state.camX * state.camZ * pStrength;
+    const parallaxY = -state.camY * state.camZ * pStrength;
+    
+    // Combine base transformation with parallax offset
+    canvasGrid.style.transform = `translate(${parallaxX}px, ${parallaxY}px)`;
+    
     // UI Güncelleme
     zoomLevelEl.innerText = `${Math.round(state.camZ * 100)}%`;
     coordXEl.innerText = `X: ${Math.round(state.camX)}`;
@@ -1471,14 +1479,33 @@ function addObject(type, x, y, content = '') {
 }
 
 function removeObject(id) {
+    const el = document.getElementById(`obj-${id}`);
+    if (el) {
+        el.classList.add('exiting');
+        el.addEventListener('animationend', () => {
+            finishRemoval(id);
+        }, { once: true });
+        
+        // Fallback for safety
+        setTimeout(() => {
+            if (document.getElementById(`obj-${id}`)) finishRemoval(id);
+        }, 400);
+    } else {
+        finishRemoval(id);
+    }
+}
+
+function finishRemoval(id) {
     pushHistory();
     state.objects = state.objects.filter(o => o.id !== id);
-    // Also remove related connections
     state.connections = state.connections.filter(c => c.fromId !== id && c.toId !== id);
     
     const el = document.getElementById(`obj-${id}`);
     if (el) el.remove();
-    state.selectedId = null;
+    
+    if (state.selectedId === id) state.selectedId = null;
+    state.selectedIds = state.selectedIds.filter(sid => sid !== id);
+    
     renderConnections();
     updateMiniMap();
     saveState();
@@ -1610,13 +1637,39 @@ function hitTestSelection(sx, sy, sw, sh) {
 }
 
 function bulkRemove(ids) {
+    if (!ids || ids.length === 0) return;
     pushHistory();
+    
+    let count = 0;
+    const total = ids.length;
+    
     ids.forEach(id => {
-        state.objects = state.objects.filter(o => o.id !== id);
-        state.connections = state.connections.filter(c => c.fromId !== id && c.toId !== id);
         const el = document.getElementById(`obj-${id}`);
-        if (el) el.remove();
+        if (el) {
+            el.classList.add('exiting');
+            el.addEventListener('animationend', () => {
+                state.objects = state.objects.filter(o => o.id !== id);
+                state.connections = state.connections.filter(c => c.fromId !== id && c.toId !== id);
+                el.remove();
+                
+                count++;
+                if (count === total) finalizeBulkRemove();
+            }, { once: true });
+        } else {
+            state.objects = state.objects.filter(o => o.id !== id);
+            state.connections = state.connections.filter(c => c.fromId !== id && c.toId !== id);
+            count++;
+            if (count === total) finalizeBulkRemove();
+        }
     });
+
+    // Fallback in case animations get stuck
+    setTimeout(() => {
+        if (count < total) finalizeBulkRemove();
+    }, 500);
+}
+
+function finalizeBulkRemove() {
     deselectAll();
     renderConnections();
     updateMiniMap();
@@ -2392,6 +2445,23 @@ function setupSettingsListeners() {
         });
     }
 
+    const appThemeSelect = document.getElementById('app-theme-select');
+    if (appThemeSelect) {
+        if (state.settings.appTheme) {
+            appThemeSelect.value = state.settings.appTheme;
+            applyAppTheme(state.settings.appTheme);
+        } else {
+            applyAppTheme('dark');
+        }
+        
+        appThemeSelect.addEventListener('change', (e) => {
+            const newTheme = e.target.value;
+            state.settings.appTheme = newTheme;
+            applyAppTheme(newTheme);
+            saveState();
+        });
+    }
+
     const themeSelect = document.getElementById('theme-select');
     if (themeSelect) {
         if (state.settings.theme) {
@@ -2440,6 +2510,59 @@ function setupSettingsListeners() {
             updateCanvas(); // Force instant redraw to see density changes
             saveState();
         });
+    }
+
+    // Parallax Strength
+    const parallaxInput = document.getElementById('parallax-strength');
+    if (parallaxInput) {
+        if (state.settings.parallaxStrength !== undefined) {
+            parallaxInput.value = state.settings.parallaxStrength;
+            parallaxInput.nextElementSibling.innerText = `${state.settings.parallaxStrength}%`;
+        }
+        parallaxInput.addEventListener('input', () => {
+            const val = parseInt(parallaxInput.value);
+            state.settings.parallaxStrength = val;
+            parallaxInput.nextElementSibling.innerText = `${val}%`;
+            updateCanvas();
+            saveState();
+        });
+    }
+
+    // Background Image Upload
+    const bgUploadInput = document.getElementById('bg-upload');
+    const btnUploadBg = document.getElementById('btn-upload-bg');
+    const btnClearBg = document.getElementById('btn-clear-bg');
+
+    if (btnUploadBg && bgUploadInput) {
+        btnUploadBg.addEventListener('click', () => bgUploadInput.click());
+        bgUploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const dataUrl = event.target.result;
+                    state.settings.customBg = dataUrl;
+                    updateBackgroundVisibility(state.settings.theme); 
+                    saveState();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    if (btnClearBg) {
+        btnClearBg.addEventListener('click', () => {
+            state.settings.customBg = null;
+            canvasGrid.classList.remove('custom-bg');
+            canvasGrid.style.removeProperty('--bg-image');
+            saveState();
+        });
+    }
+
+    // Initialize custom background if exists
+    if (state.settings.customBg) {
+        canvasGrid.classList.add('custom-bg');
+        canvasGrid.style.setProperty('--bg-image', `url(${state.settings.customBg})`);
     }
 }
 
@@ -2911,15 +3034,47 @@ function initFocusWidget() {
     }
 }
 
+function applyAppTheme(theme) {
+    document.body.classList.remove('theme-light', 'theme-dark');
+    
+    let target = theme;
+    if (theme === 'system') {
+        target = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    
+    if (target === 'light') {
+        document.body.classList.add('theme-light');
+    }
+    // theme-dark is default via CSS variables, but we can add the class for clarity
+    else {
+        document.body.classList.add('theme-dark');
+    }
+}
+
 function applyTheme(themeName) {
     document.body.classList.forEach(className => {
-        if (className.startsWith('theme-')) {
+        if (className.startsWith('theme-') && className !== 'theme-light' && className !== 'theme-dark') {
             document.body.classList.remove(className);
         }
     });
 
     if (themeName && themeName !== 'dark-grid') {
         document.body.classList.add(`theme-${themeName}`);
+    }
+    
+    updateBackgroundVisibility(themeName);
+}
+
+function updateBackgroundVisibility(currentTheme) {
+    const theme = currentTheme || state.settings.theme || 'dark-grid';
+    const isGridTheme = theme === 'dark-grid' || theme === 'light-grid';
+    
+    if (state.settings.customBg && isGridTheme) {
+        canvasGrid.classList.add('custom-bg');
+        canvasGrid.style.setProperty('--bg-image', `url(${state.settings.customBg})`);
+    } else {
+        canvasGrid.classList.remove('custom-bg');
+        canvasGrid.style.removeProperty('--bg-image');
     }
 }
 

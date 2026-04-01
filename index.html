@@ -347,7 +347,16 @@
                 <span class="value-display">1.5x</span>
             </div>
             <div class="setting-item" style="position: relative;">
-                <label>Arka Plan Teması</label>
+                <label>Uygulama Teması</label>
+                <select id="app-theme-select" class="theme-dropdown">
+                    <option value="dark">Karanlık Mode</option>
+                    <option value="light">Açık Mode</option>
+                    <option value="system">Sistem Varsayılanı</option>
+                </select>
+                <i data-lucide="chevron-down" style="position: absolute; right: 12px; bottom: 10px; width: 16px; pointer-events: none; opacity: 0.5;"></i>
+            </div>
+            <div class="setting-item" style="position: relative;">
+                <label>Tuval Teması</label>
                 <select id="theme-select" class="theme-dropdown">
                     <option value="dark-grid">Koyu Izgara</option>
                     <option value="light-grid">Açık Izgara</option>
@@ -361,13 +370,26 @@
                     style="position: absolute; right: 12px; bottom: 10px; width: 16px; pointer-events: none; opacity: 0.5;"></i>
             </div>
             <div class="setting-item">
+                <label>Arka Plan Resmi</label>
+                <div style="display: flex; gap: 8px;">
+                    <button class="save-btn" id="btn-upload-bg" style="margin-top:0; font-size: 0.6rem; padding: 6px 12px; height: 30px; flex:1;">RESİM YÜKLE</button>
+                    <button class="save-btn" id="btn-clear-bg" style="margin-top:0; font-size: 0.6rem; padding: 6px 12px; height: 30px; background: #334155; flex:1;">TEMİZLE</button>
+                </div>
+                <input type="file" id="bg-upload" accept="image/*" hidden>
+            </div>
+            <div class="setting-item">
+                <label>Parallax Şiddeti</label>
+                <input type="range" id="parallax-strength" min="0" max="50" value="20">
+                <span class="value-display">20%</span>
+            </div>
+            <div class="setting-item">
                 <label>Arka Plan Parlaklığı</label>
                 <input type="range" id="bg-opacity" min="0" max="100" value="100">
                 <span class="value-display">100%</span>
             </div>
             <div class="setting-item">
                 <label>Arka Plan Büyüklüğü</label>
-                <input type="range" id="bg-size" min="20" max="100value=" 100">
+                <input type="range" id="bg-size" min="20" max="250" value="100">
                 <span class="value-display">100%</span>
             </div>
         </div>
