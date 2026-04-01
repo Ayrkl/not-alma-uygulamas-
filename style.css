@@ -656,6 +656,14 @@ nav.tools,
     pointer-events: visibleStroke;
 }
 
+body.is-exporting .connection-handle,
+body.is-exporting .resize-handle,
+body.is-exporting .pin-indicator,
+body.is-exporting .floating-toolbar,
+body.is-exporting .selection-box {
+    display: none !important;
+}
+
 #selection-box {
     position: absolute;
     background: rgba(59, 130, 246, 0.1);

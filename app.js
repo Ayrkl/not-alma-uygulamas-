@@ -3137,7 +3137,7 @@ async function exportCanvas() {
     exportBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i>';
     if (typeof lucide !== 'undefined') lucide.createIcons({ root: exportBtn });
     
-    // Zoom/Pan resetle (Önemli: Ekran görüntüsü için her şeyi 1.0 zoomda ve 0,0 merkezde render etmeliyiz)
+    // Zoom/Pan resetle (1.0 zoomda ve 0,0 merkezde dondur)
     state.camX = 0; state.camY = 0; state.camZ = 1.0;
     state.targetX = 0; state.targetY = 0; state.targetZ = 1.0;
     
@@ -3146,82 +3146,139 @@ async function exportCanvas() {
     const controls = document.getElementById('controls');
     if (controls) controls.style.opacity = '0';
     
+    // UI öğelerini ve tutaçları gizlemek için sınıf ekle
+    document.body.classList.add('is-exporting');
+    
     renderObjects();
     renderConnections();
     
-    // 1. Alan hesapla (Bounding Box)
+    // 1. Alan hesapla (Bounding Box) - Tüm objeleri ve bağlantı uçlarını kapsa
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    
+    const updateBounds = (x, y) => {
+        if (x === null || x === undefined || isNaN(x)) return;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+    };
+
     state.objects.forEach(obj => {
         const el = document.getElementById(`obj-${obj.id}`);
         const w = (obj.width === 'auto' ? (el ? el.offsetWidth : 200) : obj.width);
         const h = (obj.height === 'auto' ? (el ? el.offsetHeight : 180) : obj.height);
-        minX = Math.min(minX, obj.x);
-        minY = Math.min(minY, obj.y);
-        maxX = Math.max(maxX, obj.x + w);
-        maxY = Math.max(maxY, obj.y + h);
+        updateBounds(obj.x, obj.y);
+        updateBounds(obj.x + w, obj.y + h);
     });
     
-    // 2. Bağlantıları da hesaba kat (Ok uçları için limitleri genişlet)
     state.connections.forEach(conn => {
-        if (conn.fromX !== null) { minX = Math.min(minX, conn.fromX); minY = Math.min(minY, conn.fromY); }
-        if (conn.toX !== null) { maxX = Math.max(maxX, conn.toX); maxY = Math.max(maxY, conn.toY); }
+        const fromObj = conn.fromId ? state.objects.find(o => o.id === conn.fromId) : null;
+        const toObj = conn.toId ? state.objects.find(o => o.id === conn.toId) : null;
+
+        if (fromObj) {
+            const fw = (fromObj.width === 'auto' ? 200 : fromObj.width);
+            const fh = (fromObj.height === 'auto' ? (fromObj.type === 'note' ? 180 : 100) : fromObj.height);
+            updateBounds(fromObj.x + (conn.fromOffX || fw/2), fromObj.y + (conn.fromOffY || fh/2));
+        } else {
+            updateBounds(conn.fromX, conn.fromY);
+        }
+
+        if (toObj) {
+            const tw = (toObj.width === 'auto' ? 200 : toObj.width);
+            const th = (toObj.height === 'auto' ? (toObj.type === 'note' ? 180 : 100) : toObj.height);
+            updateBounds(toObj.x + (conn.toOffX || tw/2), toObj.y + (conn.toOffY || th/2));
+        } else {
+            updateBounds(conn.toX, conn.toY);
+        }
     });
 
-    // Pay bırak (Padding)
-    const padding = 100;
+    // Boş kanvas kontrolü
+    if (minX === Infinity) { minX = -500; minY = -500; maxX = 500; maxY = 500; }
+
+    const padding = 150;
     minX -= padding; minY -= padding;
     maxX += padding; maxY += padding;
     const width = maxX - minX;
     const height = maxY - minY;
 
-    // Bekleme suresi (Render tamamlanması için)
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 800));
 
     try {
         const canvas = await html2canvas(canvasContent, {
             backgroundColor: '#0f172a',
             useCORS: true,
             allowTaint: true,
-            scale: 2, // Yüksek kalite
+            scale: 2,
             x: minX + (window.innerWidth / 2),
             y: minY + (window.innerHeight / 2),
             width: width,
             height: height,
             onclone: (clonedDoc) => {
                 const clonedContent = clonedDoc.getElementById('canvas-content');
-                
-                // SVG Marker Fix: html2canvas markers'ları render edemezse, path'leri incelt ve markerları temizle
-                // Alternatif olarak tüm SVG'leri inline etmeliyiz.
-                const svgs = clonedContent.querySelectorAll('svg');
-                svgs.forEach(svg => {
-                    svg.setAttribute('width', '100%');
-                    svg.setAttribute('height', '100%');
+                const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#60a5fa';
+
+                // --- SVG Marker Fix: Okları manuel çiz ---
+                const paths = clonedContent.querySelectorAll('path.connection-path');
+                paths.forEach(path => {
+                    const d = path.getAttribute('d');
+                    if (!d) return;
+                    
+                    const parts = d.replace(/[MC,]/g, ' ').split(/\s+/).filter(x => x.length > 0).map(Number);
+                    if (parts.length < 8) return;
+
+                    const x1 = parts[0], y1 = parts[1];
+                    const cx1 = parts[2], cy1 = parts[3];
+                    const cx2 = parts[4], cy2 = parts[5];
+                    const x2 = parts[6], y2 = parts[7];
+                    const svg = path.closest('svg');
+
+                    const rotateP = (px, py, angle) => ({
+                        x: px * Math.cos(angle) - py * Math.sin(angle),
+                        y: px * Math.sin(angle) + py * Math.cos(angle)
+                    });
+
+                    // Arrow End
+                    if (path.getAttribute('marker-end')) {
+                        const angle = Math.atan2(y2 - cy2, x2 - cx2);
+                        const poly = clonedDoc.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                        const p1 = rotateP(0, -5, angle), p2 = rotateP(12, 0, angle), p3 = rotateP(0, 5, angle);
+                        poly.setAttribute("points", `${x2+p1.x},${y2+p1.y} ${x2+p2.x},${y2+p2.y} ${x2+p3.x},${y2+p3.y}`);
+                        poly.setAttribute("fill", accentColor);
+                        svg.appendChild(poly);
+                        path.removeAttribute('marker-end');
+                    }
+                    // Arrow Start
+                    if (path.getAttribute('marker-start')) {
+                        const angle = Math.atan2(y1 - cy1, x1 - cx1);
+                        const poly = clonedDoc.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                        const p1 = rotateP(0, -5, angle), p2 = rotateP(-12, 0, angle), p3 = rotateP(0, 5, angle);
+                        poly.setAttribute("points", `${x1+p1.x},${y1+p1.y} ${x1+p2.x},${y1+p2.y} ${x1+p3.x},${y1+p3.y}`);
+                        poly.setAttribute("fill", accentColor);
+                        svg.appendChild(poly);
+                        path.removeAttribute('marker-start');
+                    }
+                    path.style.stroke = accentColor;
                 });
                 
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons({ root: clonedContent });
-                }
+                if (typeof lucide !== 'undefined') lucide.createIcons({ root: clonedContent });
             }
         });
         
         const link = document.createElement('a');
-        link.download = `lumina-export-${Date.now()}.png`;
+        link.download = `lumina-notlar-${Date.now()}.png`;
         link.href = canvas.toDataURL('image/png', 1.0);
         link.click();
     } catch (err) {
         console.error('Export Error:', err);
-        alert("Görsel oluşturulurken bir hata oluştu.");
     } finally {
-        // Geri yükle
         state.isExporting = false;
+        document.body.classList.remove('is-exporting');
         state.camX = originalX; state.camY = originalY; state.camZ = originalZ;
         state.targetX = originalX; state.targetY = originalY; state.targetZ = originalZ;
-        
         if (canvasGrid) canvasGrid.style.display = 'block';
         if (controls) controls.style.opacity = '1';
         exportBtn.innerHTML = originalHTML;
         if (typeof lucide !== 'undefined') lucide.createIcons({ root: exportBtn });
-        
         renderObjects();
         renderConnections();
     }
