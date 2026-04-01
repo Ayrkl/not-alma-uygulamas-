@@ -45,7 +45,10 @@ const state = {
     // Connection Dragging
     isDraggingConnEnd: false,
     dragConnId: null,
-    dragConnEndType: null // 'from' or 'to'
+    dragConnEndType: null, // 'from' or 'to'
+    
+    // Bookmarks
+    bookmarks: []
 };
 
 // --- Utils ---
@@ -262,6 +265,7 @@ async function saveState() {
             activeWs.data = {
                 objects: state.objects,
                 connections: state.connections,
+                bookmarks: state.bookmarks,
                 cam: { x: state.targetX, y: state.targetY, z: state.targetZ },
                 settings: state.settings
             };
@@ -288,6 +292,7 @@ function switchWorkspace(id) {
         if (activeWs && activeWs.data) {
             state.objects = activeWs.data.objects || [];
             state.connections = activeWs.data.connections || [];
+            state.bookmarks = activeWs.data.bookmarks || [];
             state.targetX = activeWs.data.cam?.x || 0;
             state.targetY = activeWs.data.cam?.y || 0;
             state.targetZ = activeWs.data.cam?.z || 1.0;
@@ -456,6 +461,7 @@ function setupWorkspacesUI() {
             if (isActive) {
                 const searchPanel = document.getElementById('search-panel');
                 if (searchPanel) searchPanel.classList.remove('active');
+                document.getElementById('bookmarks-panel')?.classList.remove('active');
             }
         });
         
@@ -466,6 +472,7 @@ function setupWorkspacesUI() {
                 document.activeElement.getAttribute('contenteditable') !== 'true') {
                 e.preventDefault();
                 workspacesPanel.classList.add('active');
+                document.getElementById('bookmarks-panel')?.classList.remove('active');
                 const searchPanel = document.getElementById('search-panel');
                 if (searchPanel) searchPanel.classList.remove('active');
             }
@@ -478,6 +485,7 @@ function setupWorkspacesUI() {
         if (canvasContainer) {
             canvasContainer.addEventListener('mousedown', () => {
                 workspacesPanel.classList.remove('active');
+                document.getElementById('bookmarks-panel')?.classList.remove('active');
             });
         }
     }
@@ -491,6 +499,14 @@ function setupWorkspacesUI() {
 
 // --- Search & Navigation Logic ---
 function setupSearchListeners() {
+    const searchBtn = document.getElementById('tool-search');
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            document.getElementById('bookmarks-panel')?.classList.remove('active');
+            document.getElementById('workspaces-panel')?.classList.remove('active');
+        });
+    }
+
     const searchInput = document.getElementById('canvas-search');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -504,7 +520,95 @@ function setupSearchListeners() {
             }
         });
     }
+
+    // --- Bookmarks Logic ---
+    const bookmarkBtn = document.getElementById('tool-bookmarks');
+    const bookmarkPanel = document.getElementById('bookmarks-panel');
+    const newBookmarkBtn = document.getElementById('btn-new-bookmark');
+
+    if (bookmarkBtn && bookmarkPanel) {
+        bookmarkBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isActive = bookmarkPanel.classList.toggle('active');
+            if (isActive) {
+                renderBookmarksList();
+                // Close other panels
+                document.getElementById('search-panel')?.classList.remove('active');
+                document.getElementById('workspaces-panel')?.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'b' && !e.ctrlKey && !e.metaKey && 
+                document.activeElement.tagName !== 'INPUT' && 
+                document.activeElement.getAttribute('contenteditable') !== 'true') {
+                e.preventDefault();
+                bookmarkBtn.click();
+            }
+        });
+    }
+
+    if (newBookmarkBtn) {
+        newBookmarkBtn.addEventListener('click', () => {
+            const name = prompt("Yer işareti adı:", `Görünüm ${state.bookmarks.length + 1}`);
+            if (name) {
+                addBookmark(name);
+            }
+        });
+    }
 }
+
+function addBookmark(name) {
+    const newBookmark = {
+        id: 'bm-' + Date.now(),
+        name: name,
+        x: state.targetX,
+        y: state.targetY,
+        z: state.targetZ
+    };
+    state.bookmarks.push(newBookmark);
+    renderBookmarksList();
+    saveState();
+}
+
+function deleteBookmark(id) {
+    state.bookmarks = state.bookmarks.filter(bm => bm.id !== id);
+    renderBookmarksList();
+    saveState();
+}
+
+function gotoBookmark(id) {
+    const bm = state.bookmarks.find(b => b.id === id);
+    if (bm) {
+        flyTo(bm.x, bm.y, bm.z);
+    }
+}
+
+function renderBookmarksList() {
+    const listEl = document.getElementById('bookmarks-list');
+    if (!listEl) return;
+
+    if (state.bookmarks.length === 0) {
+        listEl.innerHTML = '<div class="search-result-item" style="cursor:default; opacity:0.5;">Henüz yer işareti yok</div>';
+        return;
+    }
+
+    listEl.innerHTML = state.bookmarks.map(bm => `
+        <div class="workspace-item" onclick="gotoBookmark('${bm.id}')">
+            <div class="workspace-name">${bm.name}</div>
+            <div class="workspace-actions" onclick="event.stopPropagation();">
+                <button class="workspace-action-btn delete-btn" onclick="deleteBookmark('${bm.id}')" title="Sil">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+
+    if (window.lucide) lucide.createIcons({ root: listEl });
+}
+
+window.gotoBookmark = gotoBookmark;
+window.deleteBookmark = deleteBookmark;
 
 function updateSearchResults(query) {
     const resultsEl = document.getElementById('search-results');
@@ -624,6 +728,16 @@ function updateCanvas() {
     zoomLevelEl.innerText = `${Math.round(state.camZ * 100)}%`;
     coordXEl.innerText = `X: ${Math.round(state.camX)}`;
     coordYEl.innerText = `Y: ${Math.round(state.camY)}`;
+}
+
+function flyTo(x, y, z = null) {
+    state.targetX = x;
+    state.targetY = y;
+    if (z !== null) state.targetZ = z;
+    
+    // Ensure animation loop is active (it usually is)
+    updateCanvas();
+    updateMiniMap();
 }
 
 function setupEventListeners() {
@@ -1320,13 +1434,23 @@ function updateMiniMap() {
     state.miniMapBounds = { minX, minY, maxX, maxY };
 
     // Draw Objects
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.5)';
     state.objects.forEach(obj => {
+        // Color by Type
+        if (obj.type === 'note') ctx.fillStyle = 'rgba(250, 204, 21, 0.6)'; // Yellow
+        else if (obj.type === 'image') ctx.fillStyle = 'rgba(59, 130, 246, 0.6)'; // Blue
+        else if (obj.type === 'video' || obj.type === 'embed' || obj.type === 'pdf') ctx.fillStyle = 'rgba(168, 85, 247, 0.6)'; // Purple
+        else ctx.fillStyle = 'rgba(255, 255, 255, 0.3)'; // Default
+
         const ox = ((obj.x - minX) / rangeX) * canvas.width;
         const oy = ((obj.y - minY) / rangeY) * canvas.height;
         const ow = ((obj.width === 'auto' ? 200 : obj.width) / rangeX) * canvas.width;
         const oh = ((obj.height === 'auto' ? 100 : obj.height) / rangeY) * canvas.height;
-        ctx.fillRect(ox, oy, Math.max(2, ow), Math.max(2, oh));
+        
+        // Rounded rectangles on mini-map
+        const r = 2;
+        ctx.beginPath();
+        ctx.roundRect(ox, oy, Math.max(3, ow), Math.max(2, oh), r);
+        ctx.fill();
     });
 
     // Draw Viewport
@@ -1357,8 +1481,7 @@ function setupMiniMapListeners() {
         const worldX = state.miniMapBounds.minX + mx * (state.miniMapBounds.maxX - state.miniMapBounds.minX);
         const worldY = state.miniMapBounds.minY + my * (state.miniMapBounds.maxY - state.miniMapBounds.minY);
         
-        state.targetX = worldX;
-        state.targetY = worldY;
+        flyTo(worldX, worldY);
     };
 
     canvas.addEventListener('mousedown', (e) => {

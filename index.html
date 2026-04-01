@@ -36,6 +36,9 @@
                 <button class="tool-btn" id="tool-workspaces" title="Kanvaslar (W)">
                     <i data-lucide="layers"></i>
                 </button>
+                <button class="tool-btn" id="tool-bookmarks" title="Yer İşaretleri (B)">
+                    <i data-lucide="bookmark"></i>
+                </button>
                 <div class="tool-separator"></div>
                 <button class="tool-btn active" id="tool-pan" title="Kaydır (H)">
                     <i data-lucide="hand"></i>
@@ -117,6 +120,17 @@
             </div>
             <div id="workspaces-list" class="workspaces-results-list">
                 <!-- Kanvas listesi buraya gelecek -->
+            </div>
+        </div>
+
+        <!-- Bookmarks Panel (Slide-out) -->
+        <div id="bookmarks-panel" class="glass">
+            <div class="workspaces-header">
+                <h3>Yer İşaretleri</h3>
+                <button id="btn-new-bookmark" class="tool-btn" title="Görünümü Kaydet"><i data-lucide="bookmark-plus"></i></button>
+            </div>
+            <div id="bookmarks-list" class="workspaces-results-list">
+                <!-- Yer işaretleri buraya gelecek -->
             </div>
         </div>
 
