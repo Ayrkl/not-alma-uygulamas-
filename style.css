@@ -636,6 +636,27 @@ nav.tools,
     filter: drop-shadow(0 0 15px var(--accent-glow));
 }
 
+.connection-handle {
+    fill: #ffffff;
+    stroke: var(--accent-color);
+    stroke-width: 2;
+    cursor: grab;
+    transition: transform 0.2s, stroke-width 0.2s;
+    pointer-events: auto;
+    filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+}
+
+.connection-handle:hover {
+    transform: scale(1.3);
+    stroke-width: 3;
+    fill: var(--accent-color);
+}
+
+.connection-hitbox {
+    cursor: pointer;
+    pointer-events: visibleStroke;
+}
+
 #selection-box {
     position: absolute;
     background: rgba(59, 130, 246, 0.1);

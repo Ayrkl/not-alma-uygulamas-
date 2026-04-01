@@ -40,7 +40,12 @@ const state = {
 
     // Multi-canvas
     workspaces: [],
-    activeWorkspaceId: null
+    activeWorkspaceId: null,
+
+    // Connection Dragging
+    isDraggingConnEnd: false,
+    dragConnId: null,
+    dragConnEndType: null // 'from' or 'to'
 };
 
 // --- Utils ---
@@ -54,6 +59,33 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+function screenToWorld(clientX, clientY) {
+    const rect = canvasContainer.getBoundingClientRect();
+    const halfW = rect.width / 2;
+    const halfH = rect.height / 2;
+    return {
+        x: (clientX - rect.left - halfW) / state.camZ + state.camX,
+        y: (clientY - rect.top - halfH) / state.camZ + state.camY
+    };
+}
+
+function getObjectAt(worldX, worldY) {
+    // Top-most pick
+    for (let i = state.objects.length - 1; i >= 0; i--) {
+        const obj = state.objects[i];
+        if (obj.type === 'point') continue; // Points are too small to grab easily as connection targets
+        
+        const w = (obj.width === 'auto' ? 200 : obj.width);
+        const h = (obj.height === 'auto' ? (obj.type === 'note' ? 180 : 100) : obj.height);
+        
+        if (worldX >= obj.x && worldX <= obj.x + w &&
+            worldY >= obj.y && worldY <= obj.y + h) {
+            return obj;
+        }
+    }
+    return null;
 }
 
 // --- Undo (Geri Alma) ---
@@ -640,7 +672,23 @@ function setupEventListeners() {
     });
 
     window.addEventListener('mousemove', e => {
-        if (state.isPanning) {
+        const worldCoords = screenToWorld(e.clientX, e.clientY);
+
+        if (state.isDraggingConnEnd && state.dragConnId) {
+            const conn = state.connections.find(c => c.id === state.dragConnId);
+            if (conn) {
+                if (state.dragConnEndType === 'from') {
+                    conn.fromX = worldCoords.x;
+                    conn.fromY = worldCoords.y;
+                    conn.fromId = null;
+                } else {
+                    conn.toX = worldCoords.x;
+                    conn.toY = worldCoords.y;
+                    conn.toId = null;
+                }
+                renderConnections();
+            }
+        } else if (state.isPanning) {
             const dx = (e.clientX - state.startMouseX) / state.camZ;
             const dy = (e.clientY - state.startMouseY) / state.camZ;
             state.targetX = state.startCamX - dx;
@@ -699,7 +747,29 @@ function setupEventListeners() {
         }
     });
 
-    window.addEventListener('mouseup', () => {
+    window.addEventListener('mouseup', (e) => {
+        if (state.isDraggingConnEnd && state.dragConnId) {
+            const worldCoords = screenToWorld(e.clientX, e.clientY);
+            const targetObj = getObjectAt(worldCoords.x, worldCoords.y);
+            const conn = state.connections.find(c => c.id === state.dragConnId);
+            
+            if (conn) {
+                if (targetObj) {
+                    if (state.dragConnEndType === 'from') {
+                        conn.fromId = targetObj.id;
+                        conn.fromX = null; conn.fromY = null;
+                    } else {
+                        conn.toId = targetObj.id;
+                        conn.toX = null; conn.toY = null;
+                    }
+                }
+                renderConnections();
+                saveState();
+            }
+            state.isDraggingConnEnd = false;
+            state.dragConnId = null;
+        }
+
         if (state.isPanning) {
             state.isPanning = false;
             canvasContainer.classList.remove('panning');
@@ -2107,6 +2177,26 @@ function renderObjects() {
     renderConnections();
 }
 
+function renderConnectionHandle(svg, connId, x, y, type) {
+    let handle = document.getElementById(`conn-handle-${type}-${connId}`);
+    if (!handle) {
+        handle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        handle.id = `conn-handle-${type}-${connId}`;
+        handle.setAttribute("class", "connection-handle");
+        handle.setAttribute("r", "8");
+        handle.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            state.isDraggingConnEnd = true;
+            state.dragConnId = connId;
+            state.dragConnEndType = type;
+            pushHistory();
+        });
+        svg.appendChild(handle);
+    }
+    handle.setAttribute("cx", x);
+    handle.setAttribute("cy", y);
+}
+
 function renderConnections() {
     const svg = document.getElementById('connection-layer');
     if (!svg) return;
@@ -2115,11 +2205,11 @@ function renderConnections() {
     const validIds = new Set(state.connections.map(c => c.id));
     
     // Remove stale paths selectively instead of .innerHTML clearing
-    const existingPaths = svg.querySelectorAll('.connection-path, .connection-hitbox');
-    existingPaths.forEach(p => {
+    const existingElements = svg.querySelectorAll('.connection-path, .connection-hitbox, .connection-handle');
+    existingElements.forEach(p => {
         let idStr = p.id;
         if (idStr) {
-            let actualId = idStr.replace('conn-hitbox-', '').replace('conn-', '');
+            let actualId = idStr.replace('conn-hitbox-', '').replace('conn-handle-from-', '').replace('conn-handle-to-', '').replace('conn-', '');
             if (!validIds.has(actualId)) p.remove();
         } else {
             p.remove();
@@ -2203,6 +2293,17 @@ function renderConnections() {
             
             if (conn.flow === 'both') p.setAttribute("marker-start", "url(#arrowstart)");
             else p.removeAttribute("marker-start");
+
+            // Add Handles if selected
+            if (state.selectedConnId === conn.id) {
+                renderConnectionHandle(svg, conn.id, startX, startY, 'from');
+                renderConnectionHandle(svg, conn.id, endX, endY, 'to');
+            } else {
+                const hFrom = document.getElementById(`conn-handle-from-${conn.id}`);
+                if (hFrom) hFrom.remove();
+                const hTo = document.getElementById(`conn-handle-to-${conn.id}`);
+                if (hTo) hTo.remove();
+            }
         }
     });
 }
