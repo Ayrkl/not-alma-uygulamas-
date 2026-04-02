@@ -796,7 +796,7 @@ function insertTemplate(type) {
     pushHistory();
     
     if (type === 'mindmap') {
-        const mainId = addObject('note', cx, cy, '<h1 style="text-align:center;">Ana Fikir</h1>', 'default');
+        const mainId = addObject('note', cx, cy, '<h1 style="text-align:center;">Ana Fikir</h1>', 'default', 300, 100);
         const branches = [
             { x: cx - 300, y: cy - 150, text: 'Alt Konu 1' },
             { x: cx + 300, y: cy - 150, text: 'Alt Konu 2' },
@@ -813,11 +813,11 @@ function insertTemplate(type) {
         // Kanban columns as structured notes or special container
         // Let's create 3 large notes that act as column headers
         const titles = ['YAPILACAKLAR', 'YAPILIYOR', 'BİTTİ'];
-        const colors = ['#fee2e2', '#fef9c yellow', '#dcfce7']; // Reddish, Yellowish, Greenish
+        const colors = ['#fee2e2', '#fef9c3', '#dcfce7']; // Reddish, Yellowish, Greenish
         
         titles.forEach((title, i) => {
             const tx = cx - 400 + (i * 400);
-            addObject('note', tx, cy - 300, `<h2 style="text-align:center;">#${title}</h2>`, 'default', 350, 600);
+            addObject('note', tx, cy - 300, `<h2 style="text-align:center;">#${title}</h2>`, colors[i], 350, 600);
         });
     }
     else if (type === 'swot') {
@@ -828,8 +828,7 @@ function insertTemplate(type) {
             { x: cx + 10, y: cy + 10, t: 'Tehditler', c: '#f3e8ff' }
         ];
         swot.forEach(s => {
-            addObject('note', s.x, s.y, `<h3>${s.t}</h3><ul><li>...</li></ul>`, 'default', 200, 200);
-            // We set color after adding or handle in addObject
+            addObject('note', s.x, s.y, `<h3>${s.t}</h3><ul><li>...</li></ul>`, s.c, 200, 200);
         });
     }
     else if (type === 'planner') {
@@ -1798,7 +1797,7 @@ function handlePdfFile(file) {
 }
 
 // --- Object Logic ---
-function addObject(type, x, y, content = '', width = null, height = null) {
+function addObject(type, x, y, content = '', color = 'default', width = null, height = null) {
     // If coordinates are not provided, use canvas center
     if (x === undefined || y === undefined) {
         const center = getCanvasCenter();
@@ -1828,7 +1827,7 @@ function addObject(type, x, y, content = '', width = null, height = null) {
         pdfPage: type === 'pdf' ? 1 : undefined,
         fontFamily: 'Inter',
         fontSize: '16px',
-        color: 'default',
+        color: color || 'default',
         textColor: 'default',
         newlyCreated: true
     };
