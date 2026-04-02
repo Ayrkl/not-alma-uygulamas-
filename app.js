@@ -832,16 +832,50 @@ function insertTemplate(type) {
         });
     }
     else if (type === 'planner') {
-        addObject('note', cx, cy, `
-            <h2>📅 Günlük Plan</h2>
-            <hr>
-            <h3>Morning</h3>
-            <ul class="checklist"><li>[ ] </li></ul>
-            <h3>Afternoon</h3>
-            <ul class="checklist"><li>[ ] </li></ul>
-            <h3>Evening</h3>
-            <ul class="checklist"><li>[ ] </li></ul>
-        `, 'default', 400, 500);
+        const id = addObject('note', cx, cy, `
+            <div class="planner-card">
+                <div class="planner-header-main">
+                    <i data-lucide="calendar-days"></i>
+                    <h2>Günlük Plan</h2>
+                </div>
+                <div class="planner-section">
+                    <div class="planner-section-header">
+                        <i data-lucide="sun"></i>
+                        <h3>Sabah</h3>
+                    </div>
+                    <ul class="checklist">
+                        <li>[ ] Güne başlangıç ritüeli</li>
+                        <li>[ ] En önemli görev (MIT)</li>
+                    </ul>
+                </div>
+                <div class="planner-section">
+                    <div class="planner-section-header">
+                        <i data-lucide="cloud-sun"></i>
+                        <h3>Öğle</h3>
+                    </div>
+                    <ul class="checklist">
+                        <li>[ ] Toplantılar ve yazışmalar</li>
+                        <li>[ ] İkincil görevler</li>
+                    </ul>
+                </div>
+                <div class="planner-section">
+                    <div class="planner-section-header">
+                        <i data-lucide="moon"></i>
+                        <h3>Akşam</h3>
+                    </div>
+                    <ul class="checklist">
+                        <li>[ ] Günün değerlendirmesi</li>
+                        <li>[ ] Yarının planlanması</li>
+                    </ul>
+                </div>
+            </div>
+        `, 'default', 450, 650);
+        
+        // Redraw icons immediately for the new object
+        setTimeout(() => {
+            const el = document.getElementById(`obj-${id}`);
+            if (el && window.lucide) lucide.createIcons({ root: el });
+        }, 100);
     }
     
     saveState();

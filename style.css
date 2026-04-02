@@ -2776,3 +2776,92 @@ body.theme-blueprint #canvas-grid {
     border-color: white;
     box-shadow: 0 0 10px var(--accent-glow);
 }
+
+/* --- Improved Planner Template Styles --- */
+.planner-card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 10px 5px;
+}
+
+.planner-header-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 5px;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 10px;
+}
+
+.planner-header-main i {
+    color: var(--accent-color);
+    width: 24px;
+    height: 24px;
+}
+
+.planner-header-main h2 {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.planner-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.2s;
+}
+
+.planner-section:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.planner-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    color: var(--accent-color);
+}
+
+.planner-section-header i {
+    width: 18px;
+    height: 18px;
+    opacity: 0.8;
+}
+
+.planner-section-header h3 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+.planner-card .checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.planner-card .checklist li {
+    padding: 4px 0;
+    font-size: 0.95rem;
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.planner-card hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent-color), transparent);
+    margin: 10px 0;
+    opacity: 0.3;
+}
