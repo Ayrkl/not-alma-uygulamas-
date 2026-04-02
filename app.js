@@ -45,10 +45,7 @@ const state = {
     // Connection Dragging
     isDraggingConnEnd: false,
     dragConnId: null,
-    dragConnEndType: null, // 'from' or 'to'
-    
-    // Bookmarks
-    bookmarks: []
+    dragConnEndType: null // 'from' or 'to'
 };
 
 // --- Utils ---
@@ -265,7 +262,6 @@ async function saveState() {
             activeWs.data = {
                 objects: state.objects,
                 connections: state.connections,
-                bookmarks: state.bookmarks,
                 cam: { x: state.targetX, y: state.targetY, z: state.targetZ },
                 settings: state.settings
             };
@@ -292,7 +288,6 @@ function switchWorkspace(id) {
         if (activeWs && activeWs.data) {
             state.objects = activeWs.data.objects || [];
             state.connections = activeWs.data.connections || [];
-            state.bookmarks = activeWs.data.bookmarks || [];
             state.targetX = activeWs.data.cam?.x || 0;
             state.targetY = activeWs.data.cam?.y || 0;
             state.targetZ = activeWs.data.cam?.z || 1.0;
@@ -559,28 +554,46 @@ function setupSearchListeners() {
 }
 
 function addBookmark(name) {
+    const id = 'bm-' + Date.now();
     const newBookmark = {
-        id: 'bm-' + Date.now(),
-        name: name,
-        x: state.targetX,
-        y: state.targetY,
-        z: state.targetZ
+        id: id,
+        type: 'bookmark',
+        name: name, // For sidebar
+        content: name, // For canvas label
+        x: state.camX,
+        y: state.camY,
+        z: state.camZ,
+        color: 'default',
+        width: 'auto',
+        height: 'auto'
     };
-    state.bookmarks.push(newBookmark);
+    state.objects.push(newBookmark);
+    renderObject(newBookmark);
     renderBookmarksList();
     saveState();
+    
+    // Smoothly fly to it if not already there (though we usually are)
+    flyTo(state.camX, state.camY, state.camZ);
 }
 
 function deleteBookmark(id) {
-    state.bookmarks = state.bookmarks.filter(bm => bm.id !== id);
+    state.objects = state.objects.filter(o => o.id !== id);
+    const el = document.getElementById(`obj-${id}`);
+    if (el) el.remove();
     renderBookmarksList();
     saveState();
 }
 
 function gotoBookmark(id) {
-    const bm = state.bookmarks.find(b => b.id === id);
+    const bm = state.objects.find(o => o.id === id);
     if (bm) {
         flyTo(bm.x, bm.y, bm.z);
+        // Highlight it
+        const el = document.getElementById(`obj-${id}`);
+        if (el) {
+            el.classList.add('selected');
+            setTimeout(() => el.classList.remove('selected'), 2000);
+        }
     }
 }
 
@@ -588,14 +601,16 @@ function renderBookmarksList() {
     const listEl = document.getElementById('bookmarks-list');
     if (!listEl) return;
 
-    if (state.bookmarks.length === 0) {
+    const bookmarks = state.objects.filter(o => o.type === 'bookmark');
+
+    if (bookmarks.length === 0) {
         listEl.innerHTML = '<div class="search-result-item" style="cursor:default; opacity:0.5;">Henüz yer işareti yok</div>';
         return;
     }
 
-    listEl.innerHTML = state.bookmarks.map(bm => `
+    listEl.innerHTML = bookmarks.map(bm => `
         <div class="workspace-item" onclick="gotoBookmark('${bm.id}')">
-            <div class="workspace-name">${bm.name}</div>
+            <div class="workspace-name">${bm.content || bm.name || 'İsimsiz'}</div>
             <div class="workspace-actions" onclick="event.stopPropagation();">
                 <button class="workspace-action-btn delete-btn" onclick="deleteBookmark('${bm.id}')" title="Sil">
                     <i data-lucide="trash-2"></i>
@@ -1868,6 +1883,52 @@ function renderObject(obj) {
     if (!el) {
         el = document.createElement('div');
         el.id = `obj-${obj.id}`;
+    }
+
+    if (obj.type === 'bookmark') {
+        el.className = `canvas-obj bookmark-obj fade-in ${state.selectedId === obj.id ? 'selected' : ''}`;
+        el.style.left = `${obj.x}px`;
+        el.style.top = `${obj.y}px`;
+        
+        if (!isUpdate) {
+            const pin = document.createElement('div');
+            pin.className = 'bookmark-pin';
+            pin.innerHTML = '<i data-lucide="map-pin"></i>';
+            
+            const label = document.createElement('div');
+            label.className = 'bookmark-label';
+            label.contentEditable = 'true';
+            label.innerText = obj.content || obj.name || 'Yer İşareti';
+            
+            el.appendChild(pin);
+            el.appendChild(label);
+            
+            label.addEventListener('input', () => {
+                obj.content = label.innerText;
+                obj.name = label.innerText;
+                renderBookmarksList(); // Sync sidebar
+                saveState();
+            });
+            
+            label.addEventListener('mousedown', e => e.stopPropagation());
+            
+            el.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                selectObject(obj.id);
+            });
+            
+            if (window.lucide) lucide.createIcons({ root: el });
+        } else {
+            const label = el.querySelector('.bookmark-label');
+            if (label && label !== document.activeElement) {
+                label.innerText = obj.content || obj.name || 'Yer İşareti';
+            }
+        }
+
+        if (el.parentNode !== canvasContent) {
+            canvasContent.appendChild(el);
+        }
+        return;
     }
 
     if (obj.type === 'point') {

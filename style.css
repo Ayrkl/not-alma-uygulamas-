@@ -2640,3 +2640,74 @@ body.theme-blueprint #canvas-grid {
 
 
 
+
+/* --- Bookmark Marker Styles --- */
+.bookmark-obj {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 4px !important;
+    cursor: pointer !important;
+    z-index: 50 !important;
+    pointer-events: auto !important;
+}
+
+.bookmark-obj.selected .bookmark-pin {
+    transform: rotate(-45deg) scale(1.2);
+    box-shadow: 0 5px 15px var(--accent-glow);
+    border-color: var(--accent-color);
+}
+
+.bookmark-pin {
+    width: 32px;
+    height: 32px;
+    background: var(--accent-color);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.bookmark-pin i {
+    transform: rotate(45deg);
+    color: white;
+    width: 16px;
+    height: 16px;
+}
+
+.bookmark-label {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: 6px;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: center;
+    min-width: 40px;
+    outline: none;
+    transition: all 0.2s;
+    user-select: text;
+}
+
+.bookmark-obj:hover .bookmark-pin {
+    transform: rotate(-45deg) scale(1.1);
+}
+
+.bookmark-label:focus {
+    background: var(--accent-color);
+    border-color: white;
+    box-shadow: 0 0 10px var(--accent-glow);
+}
