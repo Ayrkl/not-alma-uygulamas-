@@ -2865,3 +2865,48 @@ body.theme-blueprint #canvas-grid {
     margin: 10px 0;
     opacity: 0.3;
 }
+
+/* --- Improved SWOT Template Styles --- */
+.swot-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.swot-header i {
+    width: 20px;
+    height: 20px;
+    opacity: 0.9;
+}
+
+.swot-header h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.swot-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.swot-list li {
+    font-size: 0.9rem;
+    padding: 3px 0;
+    opacity: 0.85;
+    position: relative;
+    padding-left: 15px;
+}
+
+.swot-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: inherit;
+    font-weight: bold;
+}

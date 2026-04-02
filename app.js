@@ -840,13 +840,28 @@ function insertTemplate(type) {
     }
     else if (type === 'swot') {
         const swot = [
-            { x: cx - 210, y: cy - 210, t: 'Güçlü Yönler', c: '#dcfce7' },
-            { x: cx + 10, y: cy - 210, t: 'Zayıf Yönler', c: '#fee2e2' },
-            { x: cx - 210, y: cy + 10, t: 'Fırsatlar', c: '#dbeafe' },
-            { x: cx + 10, y: cy + 10, t: 'Tehditler', c: '#f3e8ff' }
+            { x: cx - 220, y: cy - 220, t: 'Güçlü Yönler', c: '#dcfce7', i: 'award' },
+            { x: cx + 20, y: cy - 220, t: 'Zayıf Yönler', c: '#fee2e2', i: 'trending-down' },
+            { x: cx - 220, y: cy + 20, t: 'Fırsatlar', c: '#dbeafe', i: 'lightbulb' },
+            { x: cx + 20, y: cy + 20, t: 'Tehditler', c: '#f3e8ff', i: 'shield-alert' }
         ];
         swot.forEach(s => {
-            addObject('note', s.x, s.y, `<h3>${s.t}</h3><ul><li>...</li></ul>`, s.c, 200, 200);
+            const id = addObject('note', s.x, s.y, `
+                <div class="swot-header">
+                    <i data-lucide="${s.i}"></i>
+                    <h3>${s.t}</h3>
+                </div>
+                <ul class="swot-list">
+                    <li>İlgi çekici içerik...</li>
+                    <li>...</li>
+                </ul>
+            `, s.c, 240, 240);
+            
+            // Redraw icons for each quadrant
+            setTimeout(() => {
+                const el = document.getElementById(`obj-${id}`);
+                if (el && window.lucide) lucide.createIcons({ root: el });
+            }, 150);
         });
     }
     else if (type === 'planner') {
@@ -1126,11 +1141,13 @@ function setupEventListeners() {
         }
         
         if (state.isDragging && state.dragTarget) {
-            const dx = (e.clientX - state.dragStartX) / state.camZ;
-            const dy = (e.clientY - state.dragStartY) / state.camZ;
-            
             const obj = state.objects.find(o => o.id === state.dragTarget);
             if (obj) {
+                // Determine movement deltas
+                // If pinned, we use raw screen deltas. If not, we scale by camZ.
+                const dx = (e.clientX - state.dragStartX) / (obj.pinned ? 1 : state.camZ);
+                const dy = (e.clientY - state.dragStartY) / (obj.pinned ? 1 : state.camZ);
+
                 if (state.isResizing) {
                     obj.width = Math.max(100, state.resizeStartWidth + dx);
                     obj.height = Math.max(50, state.resizeStartHeight + dy);
@@ -1140,19 +1157,28 @@ function setupEventListeners() {
                         el.style.height = `${obj.height}px`;
                     }
                 } else {
-                    // Update movement for all selected objects if the target is part of a multi-selection
                     const isMultiDrag = state.selectedIds.includes(state.dragTarget);
                     const targets = isMultiDrag ? state.selectedIds : [state.dragTarget];
                     
                     targets.forEach(id => {
                         const o = state.objects.find(obj => obj.id === id);
                         if (o) {
-                            o.x += dx;
-                            o.y += dy;
-                            const el = document.getElementById(`obj-${o.id}`);
-                            if (el) {
-                                el.style.left = `${o.x}px`;
-                                el.style.top = `${o.y}px`;
+                            if (o.pinned) {
+                                o.pinX = (o.pinX || 0) + dx;
+                                o.pinY = (o.pinY || 0) + dy;
+                                const el = document.getElementById(`obj-${o.id}`);
+                                if (el) {
+                                    el.style.left = `${o.pinX}px`;
+                                    el.style.top = `${o.pinY}px`;
+                                }
+                            } else {
+                                o.x += dx;
+                                o.y += dy;
+                                const el = document.getElementById(`obj-${o.id}`);
+                                if (el) {
+                                    el.style.left = `${o.x}px`;
+                                    el.style.top = `${o.y}px`;
+                                }
                             }
                         }
                     });
