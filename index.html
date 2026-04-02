@@ -1,631 +1,1054 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sonsuz Tuval - Notlarım</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Roboto:wght@400;700&family=Montserrat:wght@400;700&family=Playfair+Display:wght@400;700&family=Lora:wght@400;700&family=Fira+Code:wght@400;700&family=Poppins:wght@400;600&family=Ubuntu:wght@400;700&family=Merriweather:wght@400;700&family=Oswald:wght@400;600&family=Caveat:wght@400;700&family=Shadows+Into+Light&family=Dancing+Script:wght@400;700&family=Source+Code+Pro:wght@400;700&display=swap"
-        rel="stylesheet">
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Roboto:wght@400;700&family=Montserrat:wght@400;700&family=Playfair+Display:wght@400;700&family=Lora:wght@400;700&family=Fira+Code:wght@400;700&family=Poppins:wght@400;600&family=Ubuntu:wght@400;700&family=Merriweather:wght@400;700&family=Oswald:wght@400;600&family=Caveat:wght@400;700&family=Shadows+Into+Light&family=Dancing+Script:wght@400;700&family=Source+Code+Pro:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-</head>
+  </head>
 
-<body>
+  <body>
     <div id="app">
-        <!-- Electron Window Support -->
-        <div class="drag-region"></div>
+      <!-- Electron Window Support -->
+      <div class="drag-region"></div>
 
-        <!-- Dashboard / Sidebar -->
-        <aside id="sidebar" class="glass">
-            <button id="sidebar-toggle"><i data-lucide="chevron-left"></i></button>
-            <div class="logo">
-                <i data-lucide="infinity" class="logo-icon"></i>
-                <span class="logo-text">Lumina</span>
-            </div>
-
-            <nav class="tools">
-                <button class="tool-btn" id="tool-search" title="Ara (F)">
-                    <i data-lucide="search"></i>
-                </button>
-                <button class="tool-btn" id="tool-workspaces" title="Kanvaslar (W)">
-                    <i data-lucide="layers"></i>
-                </button>
-                <button class="tool-btn" id="tool-bookmarks" title="Yer İşaretleri (B)">
-                    <i data-lucide="bookmark"></i>
-                </button>
-                <button class="tool-btn" id="tool-tags" title="Etiketler (G)">
-                    <i data-lucide="tag"></i>
-                </button>
-                <div class="tool-separator"></div>
-                <button class="tool-btn active" id="tool-pan" title="Kaydır (H)">
-                    <i data-lucide="hand"></i>
-                </button>
-                <div class="tool-separator"></div>
-
-                <!-- Oluştur Alt Menüsü -->
-                <div class="tool-group" id="create-group">
-                    <button class="tool-btn group-trigger" id="tool-create" title="Oluştur">
-                        <i data-lucide="plus-circle"></i>
-                    </button>
-                    <div class="tool-submenu glass">
-                        <div class="submenu-label">Oluştur</div>
-                        <button class="tool-btn" id="tool-text" title="Metin Ekle (T)">
-                            <i data-lucide="type"></i>
-                        </button>
-                        <button class="tool-btn" id="tool-note" title="Not Kağıdı (N)">
-                            <i data-lucide="sticky-note"></i>
-                        </button>
-                        <button class="tool-btn" id="tool-image" title="Resim Ekle (I)">
-                            <i data-lucide="image"></i>
-                        </button>
-                        <button class="tool-btn" id="tool-checklist" title="Yapılacaklar (C)">
-                            <i data-lucide="list-todo"></i>
-                        </button>
-                        <button class="tool-btn" id="tool-video" title="Video Ekle (M)">
-                            <i data-lucide="video"></i>
-                        </button>
-                        <button class="tool-btn" id="tool-embed" title="Göm (Spotify/Web)">
-                            <i data-lucide="proportions"></i>
-                        </button>
-                        <button class="tool-btn" id="tool-pdf" title="PDF Ekle (P)">
-                            <i data-lucide="file-text"></i>
-                        </button>
-                        <div class="tool-separator"></div>
-                        <div class="submenu-label">Şablonlar</div>
-                        <button class="tool-btn" id="tpl-mindmap" title="Zihin Haritası">
-                            <i data-lucide="git-branch"></i>
-                        </button>
-                        <button class="tool-btn" id="tpl-kanban" title="Kanban Panosu">
-                            <i data-lucide="columns-3"></i>
-                        </button>
-                        <button class="tool-btn" id="tpl-swot" title="SWOT Analizi">
-                            <i data-lucide="grid-3x3"></i>
-                        </button>
-                        <button class="tool-btn" id="tpl-planner" title="Günlük Plan">
-                            <i data-lucide="calendar-check"></i>
-                        </button>
-                        <div class="tool-separator"></div>
-                        <button class="tool-btn" id="tool-connect" title="Bağlantı Kur (L)">
-                            <i data-lucide="share-2"></i>
-                        </button>
-                        <div class="tool-separator"></div>
-                        <button class="tool-btn" id="tool-focus" title="Odak Modu">
-                            <i data-lucide="headphones"></i>
-                        </button>
-                    </div>
-                </div>
-            </nav>
-
-            <div class="bottom-tools">
-                <div class="tool-group-row">
-                    <button class="tool-btn" id="undo-btn" title="Geri Al (Ctrl+Z)" style="opacity: 0.3;">
-                        <i data-lucide="undo-2"></i>
-                    </button>
-                    <button class="tool-btn" id="save-btn" title="Kaydet">
-                        <i data-lucide="save"></i>
-                    </button>
-                    <div class="tool-group" id="export-group">
-                        <button class="tool-btn group-trigger" id="export-btn" title="Dışa Aktar">
-                            <i data-lucide="download"></i>
-                        </button>
-                        <div class="tool-submenu glass" style="bottom: 0; top: auto; transform: translateY(0) translateX(-8px) scale(0.95); left: auto; right: calc(100% + 14px);">
-                            <div class="submenu-label">Dışa Aktar</div>
-                            <button class="tool-btn" id="export-png" title="PNG Olarak Kaydet">
-                                <i data-lucide="image"></i>
-                            </button>
-                            <button class="tool-btn" id="export-pdf" title="PDF Olarak Kaydet">
-                                <i data-lucide="file-text"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="tool-separator"></div>
-                <button class="tool-btn" id="open-settings" title="Ayarlar">
-                    <i data-lucide="settings"></i>
-                </button>
-            </div>
-        </aside>
-
-        <!-- Search Panel (Slide-out) -->
-        <div id="search-panel" class="glass">
-            <div class="search-input-wrapper">
-                <i data-lucide="search" class="search-icon"></i>
-                <input type="text" id="canvas-search" placeholder="Notlarda ara...">
-            </div>
-            <div id="search-results" class="search-results-list"></div>
+      <!-- Dashboard / Sidebar -->
+      <aside id="sidebar" class="glass">
+        <button id="sidebar-toggle"><i data-lucide="chevron-left"></i></button>
+        <div class="logo">
+          <i data-lucide="infinity" class="logo-icon"></i>
+          <span class="logo-text">Lumina</span>
         </div>
 
-        <!-- Workspaces Panel (Slide-out) -->
-        <div id="workspaces-panel" class="glass">
-            <div class="workspaces-header">
-                <h3>Kanvaslar</h3>
-                <button id="btn-new-workspace" class="tool-btn" title="Yeni Kanvas"><i data-lucide="plus"></i></button>
-            </div>
-            <div id="workspaces-list" class="workspaces-results-list">
-                <!-- Kanvas listesi buraya gelecek -->
-            </div>
-        </div>
+        <nav class="tools">
+          <button class="tool-btn" id="tool-search" title="Ara (F)">
+            <i data-lucide="search"></i>
+          </button>
+          <button class="tool-btn" id="tool-workspaces" title="Kanvaslar (W)">
+            <i data-lucide="layers"></i>
+          </button>
+          <button
+            class="tool-btn"
+            id="tool-bookmarks"
+            title="Yer İşaretleri (B)"
+          >
+            <i data-lucide="bookmark"></i>
+          </button>
+          <button class="tool-btn" id="tool-tags" title="Etiketler (G)">
+            <i data-lucide="tag"></i>
+          </button>
+          <div class="tool-separator"></div>
+          <button class="tool-btn active" id="tool-pan" title="Kaydır (H)">
+            <i data-lucide="hand"></i>
+          </button>
+          <div class="tool-separator"></div>
 
-        <!-- Bookmarks Panel (Slide-out) -->
-        <div id="bookmarks-panel" class="glass">
-            <div class="workspaces-header">
-                <h3>Yer İşaretleri</h3>
-                <button id="btn-new-bookmark" class="tool-btn" title="Görünümü Kaydet"><i data-lucide="bookmark-plus"></i></button>
+          <!-- Oluştur Alt Menüsü -->
+          <div class="tool-group" id="create-group">
+            <button
+              class="tool-btn group-trigger"
+              id="tool-create"
+              title="Oluştur"
+            >
+              <i data-lucide="plus-circle"></i>
+            </button>
+            <div class="tool-submenu glass">
+              <div class="submenu-label">Oluştur</div>
+              <button class="tool-btn" id="tool-text" title="Metin Ekle (T)">
+                <i data-lucide="type"></i>
+              </button>
+              <button class="tool-btn" id="tool-note" title="Not Kağıdı (N)">
+                <i data-lucide="sticky-note"></i>
+              </button>
+              <button class="tool-btn" id="tool-image" title="Resim Ekle (I)">
+                <i data-lucide="image"></i>
+              </button>
+              <button
+                class="tool-btn"
+                id="tool-checklist"
+                title="Yapılacaklar (C)"
+              >
+                <i data-lucide="list-todo"></i>
+              </button>
+              <button class="tool-btn" id="tool-video" title="Video Ekle (M)">
+                <i data-lucide="video"></i>
+              </button>
+              <button class="tool-btn" id="tool-pdf" title="PDF Ekle (P)">
+                <i data-lucide="file-text"></i>
+              </button>
+              <div class="tool-separator"></div>
+              <div class="submenu-label">Şablonlar</div>
+              <button class="tool-btn" id="tpl-mindmap" title="Zihin Haritası">
+                <i data-lucide="git-branch"></i>
+              </button>
+              <button class="tool-btn" id="tpl-kanban" title="Kanban Panosu">
+                <i data-lucide="columns-3"></i>
+              </button>
+              <button class="tool-btn" id="tpl-swot" title="SWOT Analizi">
+                <i data-lucide="grid-3x3"></i>
+              </button>
+              <button class="tool-btn" id="tpl-planner" title="Günlük Plan">
+                <i data-lucide="calendar-check"></i>
+              </button>
+              <div class="tool-separator"></div>
+              <button
+                class="tool-btn"
+                id="tool-connect"
+                title="Bağlantı Kur (L)"
+              >
+                <i data-lucide="share-2"></i>
+              </button>
+              <div class="tool-separator"></div>
+              <button class="tool-btn" id="tool-focus" title="Odak Modu">
+                <i data-lucide="headphones"></i>
+              </button>
             </div>
-            <div id="bookmarks-list" class="workspaces-results-list">
-                <!-- Yer işaretleri buraya gelecek -->
-            </div>
-        </div>
+          </div>
+        </nav>
 
-        <!-- Tags Panel (Slide-out) -->
-        <div id="tags-panel" class="glass">
-            <div class="workspaces-header">
-                <h3>Etiketler</h3>
-                <button id="btn-clear-tags" class="tool-btn" title="Filtreyi Temizle" style="display:none;"><i data-lucide="filter-x"></i></button>
-            </div>
-            <div id="tags-list" class="workspaces-results-list">
-                <!-- Etiket listesi buraya gelecek -->
-            </div>
-        </div>
-
-        <!-- Floating Formatting Toolbar -->
-        <div id="floating-toolbar" class="glass">
-            <div class="toolbar-group">
-                <button class="toolbar-btn" data-cmd="bold" title="Kalın (Ctrl+B)"><i data-lucide="bold"></i></button>
-                <button class="toolbar-btn" data-cmd="italic" title="İtalik (Ctrl+I)"><i
-                        data-lucide="italic"></i></button>
-            </div>
-            <div class="toolbar-divider"></div>
-            <div class="toolbar-group">
-                <button class="toolbar-btn" data-format="h1">H1</button>
-                <button class="toolbar-btn" data-format="h2">H2</button>
-                <button class="toolbar-btn" data-format="p">P</button>
-            </div>
-            <div class="toolbar-divider"></div>
-            <div class="toolbar-group">
-                <div class="custom-dropdown" id="font-dropdown">
-                    <div class="dropdown-selected">Normal (Inter)</div>
-                    <div class="dropdown-options">
-                        <div class="dropdown-opt" data-value="Inter" style="font-family:'Inter'">Normal (Inter)</div>
-                        <div class="dropdown-opt" data-value="Outfit" style="font-family:'Outfit'">Modern (Outfit)</div>
-                        <div class="dropdown-opt" data-value="Poppins" style="font-family:'Poppins'">Yumuşak (Poppins)
-                        </div>
-                        <div class="dropdown-opt" data-value="Roboto" style="font-family:'Roboto'">İş (Roboto)</div>
-                        <div class="dropdown-opt" data-value="Montserrat" style="font-family:'Montserrat'">Vurgulu
-                            (Montserrat)</div>
-                        <div class="dropdown-opt" data-value="Ubuntu" style="font-family:'Ubuntu'">Keskin (Ubuntu)</div>
-                        <div class="dropdown-opt" data-value="Playfair Display" style="font-family:'Playfair Display'">
-                            Zarif (Playfair)</div>
-                        <div class="dropdown-opt" data-value="Lora" style="font-family:'Lora'">Kitap (Lora)</div>
-                        <div class="dropdown-opt" data-value="Merriweather" style="font-family:'Merriweather'">Klasik
-                            (Merriweather)</div>
-                        <div class="dropdown-opt" data-value="Oswald" style="font-family:'Oswald'">Sert (Oswald)</div>
-                        <div class="dropdown-opt" data-value="Caveat" style="font-family:'Caveat'">El Yazısı (Caveat)
-                        </div>
-                        <div class="dropdown-opt" data-value="Dancing Script" style="font-family:'Dancing Script'">El
-                            Yazısı (Dancing)</div>
-                        <div class="dropdown-opt" data-value="Shadows Into Light"
-                            style="font-family:'Shadows Into Light'">Not Defteri</div>
-                        <div class="dropdown-opt" data-value="Fira Code" style="font-family:'Fira Code'">Kod (Fira Code)
-                        </div>
-                        <div class="dropdown-opt" data-value="Source Code Pro" style="font-family:'Source Code Pro'">Kod
-                            (Source)</div>
-                        <div class="dropdown-opt" data-value="monospace" style="font-family:'monospace'">Sistem Kodu
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="toolbar-divider"></div>
-            <div class="toolbar-group">
-                <div class="custom-dropdown" id="size-dropdown" style="width: 80px;">
-                    <div class="dropdown-selected">16px</div>
-                    <div class="dropdown-options">
-                        <div class="dropdown-opt" data-value="12px">12px</div>
-                        <div class="dropdown-opt" data-value="14px">14px</div>
-                        <div class="dropdown-opt" data-value="16px">16px</div>
-                        <div class="dropdown-opt" data-value="18px">18px</div>
-                        <div class="dropdown-opt" data-value="20px">20px</div>
-                        <div class="dropdown-opt" data-value="24px">24px</div>
-                        <div class="dropdown-opt" data-value="28px">28px</div>
-                        <div class="dropdown-opt" data-value="32px">32px</div>
-                        <div class="dropdown-opt" data-value="48px">48px</div>
-                        <div class="dropdown-opt" data-value="64px">64px</div>
-                        <div class="dropdown-opt" data-value="80px">80px</div>
-                    </div>
-                </div>
-            </div>
-            <div class="toolbar-divider"></div>
-            <div class="toolbar-group">
-                <button class="toolbar-btn" data-cmd="justifyLeft" title="Sola Yasla">
-                    <i data-lucide="align-left"></i>
+        <div class="bottom-tools">
+          <div class="tool-group-row">
+            <button
+              class="tool-btn"
+              id="undo-btn"
+              title="Geri Al (Ctrl+Z)"
+              style="opacity: 0.3"
+            >
+              <i data-lucide="undo-2"></i>
+            </button>
+            <button class="tool-btn" id="save-btn" title="Kaydet">
+              <i data-lucide="save"></i>
+            </button>
+            <div class="tool-group" id="export-group">
+              <button
+                class="tool-btn group-trigger"
+                id="export-btn"
+                title="Dışa Aktar"
+              >
+                <i data-lucide="download"></i>
+              </button>
+              <div
+                class="tool-submenu glass"
+                style="
+                  bottom: 0;
+                  top: auto;
+                  transform: translateY(0) translateX(-8px) scale(0.95);
+                  left: auto;
+                  right: calc(100% + 14px);
+                "
+              >
+                <div class="submenu-label">Dışa Aktar</div>
+                <button
+                  class="tool-btn"
+                  id="export-png"
+                  title="PNG Olarak Kaydet"
+                >
+                  <i data-lucide="image"></i>
                 </button>
-                <button class="toolbar-btn" data-cmd="justifyCenter" title="Ortala">
-                    <i data-lucide="align-center"></i>
+                <button
+                  class="tool-btn"
+                  id="export-pdf"
+                  title="PDF Olarak Kaydet"
+                >
+                  <i data-lucide="file-text"></i>
                 </button>
-                <button class="toolbar-btn" data-cmd="justifyRight" title="Sağa Yasla">
-                    <i data-lucide="align-right"></i>
-                </button>
+              </div>
             </div>
-            <div class="toolbar-divider selection-only"></div>
-            <div class="toolbar-group selection-only">
-                <button class="toolbar-btn" id="btn-align-left" title="Sola Hizala">
-                    <i data-lucide="align-start-vertical"></i>
-                </button>
-                <button class="toolbar-btn" id="btn-align-center" title="Dikey Ortala">
-                    <i data-lucide="align-center-vertical"></i>
-                </button>
-                <button class="toolbar-btn" id="btn-align-top" title="Üste Hizala">
-                    <i data-lucide="align-start-horizontal"></i>
-                </button>
-            </div>
-            <div class="toolbar-divider"></div>
-            <div class="toolbar-group color-picker">
-                <button class="color-btn" data-color="default" title="Varsayılan"></button>
-                <button class="color-btn" data-color="#fef9c3" title="Sarı" style="background: #fef9c3;"></button>
-                <button class="color-btn" data-color="#dcfce7" title="Yeşil" style="background: #dcfce7;"></button>
-                <button class="color-btn" data-color="#dbeafe" title="Mavi" style="background: #dbeafe;"></button>
-                <button class="color-btn" data-color="#f3e8ff" title="Mor" style="background: #f3e8ff;"></button>
-                <button class="color-btn" data-color="#fee2e2" title="Kırmızı" style="background: #fee2e2;"></button>
-            </div>
-            <div class="toolbar-divider"></div>
-            <div class="toolbar-group text-color-picker">
-                <i data-lucide="baseline" style="width: 16px; opacity: 0.5;"></i>
-                <button class="text-color-btn" data-color="default" title="Varsayılan"
-                    style="background: var(--fg-color); border: 1px solid var(--glass-border);"></button>
-                <button class="text-color-btn" data-color="#ffffff" title="Beyaz" style="background: #ffffff;"></button>
-                <button class="text-color-btn" data-color="#0f172a" title="Koyu" style="background: #0f172a;"></button>
-                <button class="text-color-btn" data-color="#ef4444" title="Kırmızı"
-                    style="background: #ef4444;"></button>
-                <button class="text-color-btn" data-color="#f59e0b" title="Turuncu"
-                    style="background: #f59e0b;"></button>
-                <button class="text-color-btn" data-color="#10b981" title="Yeşil" style="background: #10b981;"></button>
-            </div>
-            <div class="toolbar-divider"></div>
-            <div class="toolbar-group">
-                <button class="toolbar-btn" id="btn-icon-picker" title="İkon Ekle">
-                    <i data-lucide="smile"></i>
-                </button>
-            </div>
-            <div class="toolbar-divider"></div>
-            <div class="toolbar-group">
-                <button class="toolbar-btn" id="toolbar-delete" title="Sil (Del)"><i data-lucide="trash-2"></i></button>
-                <button class="toolbar-btn pin-btn" id="toolbar-pin" title="Ekrana Sabitle">
-                    <i data-lucide="pin"></i>
-                </button>
-            </div>
+          </div>
+          <div class="tool-separator"></div>
+          <button class="tool-btn" id="open-settings" title="Ayarlar">
+            <i data-lucide="settings"></i>
+          </button>
         </div>
+      </aside>
 
-        <!-- Icon Picker Popup -->
-        <div id="icon-picker-popup" class="glass hidden">
-            <div class="picker-header">
-                <span>İkon Seç</span>
-                <button id="close-picker"><i data-lucide="x"></i></button>
-            </div>
-            <div class="picker-search">
-                <i data-lucide="search"></i>
-                <input type="text" id="icon-search" placeholder="İkonlarda ara...">
-            </div>
-            <div class="picker-content">
-                <div id="icons-grid" class="picker-grid active">
-                    <!-- Icons will be here -->
-                </div>
-            </div>
+      <!-- Search Panel (Slide-out) -->
+      <div id="search-panel" class="glass">
+        <div class="search-input-wrapper">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" id="canvas-search" placeholder="Notlarda ara..." />
         </div>
+        <div id="search-results" class="search-results-list"></div>
+      </div>
 
-        <!-- Media URL Input Modal (Combined Video & Embed) -->
-        <div id="media-url-modal" class="glass hidden">
-            <div class="modal-header">
-                <i data-lucide="plus-square" class="modal-type-icon"></i>
-                <span>Medya Ekle</span>
-                <button id="close-media-modal"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="media-info-grid">
-                    <div class="info-item">
-                        <i data-lucide="youtube"></i>
-                        <span class="info-text">YouTube / Vimeo</span>
-                    </div>
-                    <div class="info-item">
-                        <i data-lucide="file-video"></i>
-                        <span class="info-text">Yerel MP4 Dosyaları</span>
-                    </div>
-                </div>
-
-                <div class="url-input-group">
-                    <input type="text" id="media-url-input" placeholder="URL'yi buraya yapıştırın...">
-                    <button id="btn-add-media-url">Ekle</button>
-                </div>
-
-                <div class="modal-divider">
-                    <span>VEYA</span>
-                </div>
-
-                <button id="btn-trigger-media-upload" class="upload-btn">
-                    <i data-lucide="upload"></i> Bilgisayardan Dosya Seç (MP4/WebM)
-                </button>
-            </div>
+      <!-- Workspaces Panel (Slide-out) -->
+      <div id="workspaces-panel" class="glass">
+        <div class="workspaces-header">
+          <h3>Kanvaslar</h3>
+          <button id="btn-new-workspace" class="tool-btn" title="Yeni Kanvas">
+            <i data-lucide="plus"></i>
+          </button>
         </div>
-
-        <!-- Connection Customization Toolbar -->
-        <div id="connection-toolbar" class="glass">
-            <div class="toolbar-group">
-                <span class="toolbar-label" style="font-size: 0.75rem; opacity: 0.6; margin-right: 4px;">Yön:</span>
-                <button class="toolbar-btn active" data-flow="forward" title="Tektaraflı Ok"><i
-                        data-lucide="arrow-right"></i></button>
-                <button class="toolbar-btn" data-flow="both" title="Çift Taraflı Ok"><i
-                        data-lucide="arrow-left-right"></i></button>
-                <button class="toolbar-btn" data-flow="none" title="Düz Çizgi"><i data-lucide="minus"></i></button>
-            </div>
-            <div class="toolbar-divider"></div>
-            <div class="toolbar-group">
-                <span class="toolbar-label" style="font-size: 0.75rem; opacity: 0.6; margin-right: 4px;">Stil:</span>
-                <button class="toolbar-btn active" data-style="curved" title="Kavisli"><i
-                        data-lucide="spline"></i></button>
-                <button class="toolbar-btn" data-style="dashed" title="Kesikli"><i
-                        data-lucide="more-horizontal"></i></button>
-            </div>
-            <div class="toolbar-divider"></div>
-            <div class="toolbar-group">
-                <button class="toolbar-btn" id="cancel-connection" title="Vazgeç" style="color: #ef4444;"><i
-                        data-lucide="x-circle"></i></button>
-            </div>
+        <div id="workspaces-list" class="workspaces-results-list">
+          <!-- Kanvas listesi buraya gelecek -->
         </div>
+      </div>
 
-        <!-- Mini-Map (Radar) -->
-        <div id="mini-map-container" class="glass">
-            <canvas id="mini-map-canvas"></canvas>
-            <div id="mini-map-label">RADAR</div>
+      <!-- Bookmarks Panel (Slide-out) -->
+      <div id="bookmarks-panel" class="glass">
+        <div class="workspaces-header">
+          <h3>Yer İşaretleri</h3>
+          <button
+            id="btn-new-bookmark"
+            class="tool-btn"
+            title="Görünümü Kaydet"
+          >
+            <i data-lucide="bookmark-plus"></i>
+          </button>
         </div>
-
-        <!-- Main Canvas Area -->
-        <!-- Settings Panel -->
-        <div id="settings-panel" class="glass">
-            <div class="settings-header">
-                <h3>Kişiselleştir</h3>
-                <button id="close-settings"><i data-lucide="x"></i></button>
-            </div>
-            <div class="setting-item">
-                <label>Zoom Akıcılığı</label>
-                <input type="range" id="zoom-smoothness" min="0" max="95" value="80">
-                <span class="value-display">80%</span>
-            </div>
-            <div class="setting-item">
-                <label>Zoom Hassasiyeti</label>
-                <input type="range" id="zoom-sensitivity" min="5" max="30" value="15">
-                <span class="value-display">1.5x</span>
-            </div>
-            <div class="setting-item" style="position: relative;">
-                <label>Uygulama Teması</label>
-                <select id="app-theme-select" class="theme-dropdown">
-                    <option value="dark">Karanlık Mode</option>
-                    <option value="light">Açık Mode</option>
-                    <option value="system">Sistem Varsayılanı</option>
-                </select>
-                <i data-lucide="chevron-down" style="position: absolute; right: 12px; bottom: 10px; width: 16px; pointer-events: none; opacity: 0.5;"></i>
-            </div>
-            <div class="setting-item" style="position: relative;">
-                <label>Tuval Teması</label>
-                <select id="theme-select" class="theme-dropdown">
-                    <option value="dark-grid">Koyu Izgara</option>
-                    <option value="light-grid">Açık Izgara</option>
-                    <option value="corkboard">Mantar Pano</option>
-                    <option value="dot-grid">Noktalı Kağıt</option>
-                    <option value="chalkboard">Kara Tahta</option>
-                    <option value="space">Derin Uzay</option>
-                    <option value="blueprint">Mavi Çizim Planı</option>
-                </select>
-                <i data-lucide="chevron-down"
-                    style="position: absolute; right: 12px; bottom: 10px; width: 16px; pointer-events: none; opacity: 0.5;"></i>
-            </div>
-            <div class="setting-item">
-                <label>Arka Plan Resmi</label>
-                <div style="display: flex; gap: 8px;">
-                    <button class="save-btn" id="btn-upload-bg" style="margin-top:0; font-size: 0.6rem; padding: 6px 12px; height: 30px; flex:1;">RESİM YÜKLE</button>
-                    <button class="save-btn" id="btn-clear-bg" style="margin-top:0; font-size: 0.6rem; padding: 6px 12px; height: 30px; background: #334155; flex:1;">TEMİZLE</button>
-                </div>
-                <input type="file" id="bg-upload" accept="image/*" hidden>
-            </div>
-            <div class="setting-item">
-                <label>Parallax Şiddeti</label>
-                <input type="range" id="parallax-strength" min="0" max="50" value="20">
-                <span class="value-display">20%</span>
-            </div>
-            <div class="setting-item">
-                <label>Arka Plan Parlaklığı</label>
-                <input type="range" id="bg-opacity" min="0" max="100" value="100">
-                <span class="value-display">100%</span>
-            </div>
-            <div class="setting-item">
-                <label>Arka Plan Büyüklüğü</label>
-                <input type="range" id="bg-size" min="20" max="250" value="100">
-                <span class="value-display">100%</span>
-            </div>
+        <div id="bookmarks-list" class="workspaces-results-list">
+          <!-- Yer işaretleri buraya gelecek -->
         </div>
+      </div>
 
-        <main id="canvas-container">
-            <div id="canvas-grid" class="infinite-bg"></div>
-            <div id="canvas-content">
-                <svg id="connection-layer">
-                    <defs>
-                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                            <polygon points="0 0, 10 3.5, 0 7" fill="var(--accent-color)" />
-                        </marker>
-                        <marker id="arrowstart" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto">
-                            <polygon points="10 0, 0 3.5, 10 7" fill="var(--accent-color)" />
-                        </marker>
-                    </defs>
-                </svg>
-                <!-- Objects will be rendered here dynamically -->
-            </div>
-        </main>
-
-        <!-- Controls / Floating UI -->
-        <div id="controls" class="glass">
-            <div class="zoom-controls">
-                <button id="zoom-out"><i data-lucide="minus"></i></button>
-                <span id="zoom-level">100%</span>
-                <button id="zoom-in"><i data-lucide="plus"></i></button>
-            </div>
-            <div class="divider"></div>
-            <div class="coord-info">
-                <span id="coord-x">X: 0</span>
-                <span id="coord-y">Y: 0</span>
-            </div>
+      <!-- Tags Panel (Slide-out) -->
+      <div id="tags-panel" class="glass">
+        <div class="workspaces-header">
+          <h3>Etiketler</h3>
+          <button
+            id="btn-clear-tags"
+            class="tool-btn"
+            title="Filtreyi Temizle"
+            style="display: none"
+          >
+            <i data-lucide="filter-x"></i>
+          </button>
         </div>
-
-        <!-- Pinned / Sticky Layer -->
-        <div id="pinned-layer"></div>
-
-        <!-- Hidden input for images -->
-        <input type="file" id="image-upload" accept="image/*" hidden>
-        <!-- Hidden input for videos -->
-        <input type="file" id="video-upload" accept="video/*" hidden>
-        <!-- Hidden input for PDFs -->
-        <input type="file" id="pdf-upload" accept="application/pdf" hidden>
-        <!-- Focus / Pomodoro Widget -->
-        <div id="focus-widget" class="glass hidden draggable-panel">
-            <div class="panel-header" id="focus-drag-handle">
-                <i data-lucide="timer" class="panel-icon"></i>
-                <span>Odak Modu</span>
-                <button id="close-focus" class="panel-close"><i data-lucide="x"></i></button>
-            </div>
-            <div class="focus-body">
-                <div id="focus-status">ODAK</div>
-                <div class="timer-settings" style="gap: 20px;">
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-                        <input type="number" id="focus-minutes" value="25" min="1" max="999" title="Odak Süresi (Dakika)">
-                        <span class="settings-label">ODAK (DK)</span>
-                    </div>
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-                        <input type="number" id="break-minutes" value="5" min="1" max="999" title="Mola Süresi (Dakika)">
-                        <span class="settings-label">MOLA (DK)</span>
-                    </div>
-                </div>
-                <div class="timer-display">
-                    <span id="time-left">25:00</span>
-                </div>
-                <div class="timer-controls">
-                    <button class="focus-btn" id="timer-start" title="Başlat/Durdur"><i data-lucide="play"></i></button>
-                    <button class="focus-btn" id="timer-reset" title="Sıfırla"><i data-lucide="rotate-ccw"></i></button>
-                </div>
-                <div class="focus-divider"></div>
-                <!-- Ambient Audio Controls -->
-                <div class="ambient-controls">
-                    <button class="ambient-btn" id="audio-rain"
-                        data-src="https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg" title="Yağmur Sesi">
-                        <i data-lucide="cloud-rain"></i>
-                    </button>
-                    <button class="ambient-btn" id="audio-coffee"
-                        data-src="https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg" title="Kafe Sesleri">
-                        <i data-lucide="coffee"></i>
-                    </button>
-                    <button class="ambient-btn" id="audio-lofi" data-src="https://stream.zeno.fm/f3wvbbqmdg8uv"
-                        title="Lo-Fi Radyo">
-                        <i data-lucide="music"></i>
-                    </button>
-                    <button class="ambient-btn-settings" id="toggle-ambient-settings" title="Sesleri Özelleştir">
-                        <i data-lucide="settings-2"></i>
-                    </button>
-                </div>
-
-                <!-- Volume Slider -->
-                <div class="volume-control">
-                    <i data-lucide="volume-2" style="width: 14px; opacity: 0.6;"></i>
-                    <input type="range" id="ambient-volume" min="0" max="100" value="50" class="volume-slider">
-                </div>
-
-                <!-- Ambient Settings Panel (Hidden by default) -->
-                <div id="ambient-settings-panel" class="hidden">
-                    <div class="setting-input-group">
-                        <label><i data-lucide="cloud-rain"></i> Yağmur URL</label>
-                        <input type="text" id="input-rain-url" placeholder="Ses URL'si yapıştırın...">
-                        <div class="mixer-control">
-                            <i data-lucide="volume-2"></i>
-                            <input type="range" id="volume-rain" min="0" max="100" value="50">
-                        </div>
-                    </div>
-                    <div class="setting-input-group">
-                        <label><i data-lucide="coffee"></i> Kafe URL</label>
-                        <input type="text" id="input-coffee-url" placeholder="Ses URL'si yapıştırın...">
-                        <div class="mixer-control">
-                            <i data-lucide="volume-2"></i>
-                            <input type="range" id="volume-coffee" min="0" max="100" value="50">
-                        </div>
-                    </div>
-                    <div class="setting-input-group">
-                        <label><i data-lucide="music"></i> Radyo URL</label>
-                        <input type="text" id="input-lofi-url" placeholder="Ses URL'si yapıştırın...">
-                        <div class="mixer-control">
-                            <i data-lucide="volume-2"></i>
-                            <input type="range" id="volume-lofi" min="0" max="100" value="50">
-                        </div>
-                    </div>
-
-
-                    <div class="focus-settings-divider">GÖRÜNÜM</div>
-
-
-                    <div class="setting-row">
-                        <div class="setting-input-group">
-                            <label>Metin</label>
-                            <input type="color" id="input-timer-color" value="#ffffff">
-                        </div>
-                        <div class="setting-input-group">
-                            <label>Vurgu</label>
-                            <input type="color" id="input-accent-color" value="#3b82f6">
-                        </div>
-                        <div class="setting-input-group">
-                            <label>Panel</label>
-                            <input type="color" id="input-bg-color" value="#0f0f14">
-                        </div>
-                    </div>
-
-                    <div class="setting-input-group">
-                        <label>Yazı Tipi</label>
-                        <select id="select-timer-font">
-                            <option value="modern">Modern (Sans)</option>
-                            <option value="classic">Klasik (Serif)</option>
-                            <option value="mono">Yazılım (Mono)</option>
-                            <option value="retro">Retro (Display)</option>
-                            <option value="elegant">Zarif (Elegant)</option>
-                            <option value="digital">Digital (Neon)</option>
-                            <option value="handwriting">El Yazısı (Brush)</option>
-                            <option value="fira">Kod (Clean Mono)</option>
-                        </select>
-                    </div>
-
-                    <div class="setting-input-group">
-                        <label>Arka Plan Bulanıklığı</label>
-                        <input type="range" id="input-bg-blur" min="0" max="40" value="20">
-                    </div>
-
-                    <div class="setting-input-group">
-                        <label>Yazı Parlaması (Glow)</label>
-                        <input type="range" id="input-text-glow" min="0" max="20" value="5">
-                    </div>
-
-                    <button id="save-ambient-settings" class="save-btn">AYARLARI KAYDET</button>
-                </div>
-
-            </div>
+        <div id="tags-list" class="workspaces-results-list">
+          <!-- Etiket listesi buraya gelecek -->
         </div>
+      </div>
 
+      <!-- Floating Formatting Toolbar -->
+      <div id="floating-toolbar" class="glass">
+        <div class="toolbar-group">
+          <button class="toolbar-btn" data-cmd="bold" title="Kalın (Ctrl+B)">
+            <i data-lucide="bold"></i>
+          </button>
+          <button class="toolbar-btn" data-cmd="italic" title="İtalik (Ctrl+I)">
+            <i data-lucide="italic"></i>
+          </button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group">
+          <button class="toolbar-btn" data-format="h1">H1</button>
+          <button class="toolbar-btn" data-format="h2">H2</button>
+          <button class="toolbar-btn" data-format="p">P</button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group">
+          <div class="custom-dropdown" id="font-dropdown">
+            <div class="dropdown-selected">Normal (Inter)</div>
+            <div class="dropdown-options">
+              <div
+                class="dropdown-opt"
+                data-value="Inter"
+                style="font-family: &quot;Inter&quot;"
+              >
+                Normal (Inter)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Outfit"
+                style="font-family: &quot;Outfit&quot;"
+              >
+                Modern (Outfit)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Poppins"
+                style="font-family: &quot;Poppins&quot;"
+              >
+                Yumuşak (Poppins)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Roboto"
+                style="font-family: &quot;Roboto&quot;"
+              >
+                İş (Roboto)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Montserrat"
+                style="font-family: &quot;Montserrat&quot;"
+              >
+                Vurgulu (Montserrat)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Ubuntu"
+                style="font-family: &quot;Ubuntu&quot;"
+              >
+                Keskin (Ubuntu)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Playfair Display"
+                style="font-family: &quot;Playfair Display&quot;"
+              >
+                Zarif (Playfair)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Lora"
+                style="font-family: &quot;Lora&quot;"
+              >
+                Kitap (Lora)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Merriweather"
+                style="font-family: &quot;Merriweather&quot;"
+              >
+                Klasik (Merriweather)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Oswald"
+                style="font-family: &quot;Oswald&quot;"
+              >
+                Sert (Oswald)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Caveat"
+                style="font-family: &quot;Caveat&quot;"
+              >
+                El Yazısı (Caveat)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Dancing Script"
+                style="font-family: &quot;Dancing Script&quot;"
+              >
+                El Yazısı (Dancing)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Shadows Into Light"
+                style="font-family: &quot;Shadows Into Light&quot;"
+              >
+                Not Defteri
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Fira Code"
+                style="font-family: &quot;Fira Code&quot;"
+              >
+                Kod (Fira Code)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="Source Code Pro"
+                style="font-family: &quot;Source Code Pro&quot;"
+              >
+                Kod (Source)
+              </div>
+              <div
+                class="dropdown-opt"
+                data-value="monospace"
+                style="font-family: &quot;monospace&quot;"
+              >
+                Sistem Kodu
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group">
+          <div class="custom-dropdown" id="size-dropdown" style="width: 80px">
+            <div class="dropdown-selected">16px</div>
+            <div class="dropdown-options">
+              <div class="dropdown-opt" data-value="12px">12px</div>
+              <div class="dropdown-opt" data-value="14px">14px</div>
+              <div class="dropdown-opt" data-value="16px">16px</div>
+              <div class="dropdown-opt" data-value="18px">18px</div>
+              <div class="dropdown-opt" data-value="20px">20px</div>
+              <div class="dropdown-opt" data-value="24px">24px</div>
+              <div class="dropdown-opt" data-value="28px">28px</div>
+              <div class="dropdown-opt" data-value="32px">32px</div>
+              <div class="dropdown-opt" data-value="48px">48px</div>
+              <div class="dropdown-opt" data-value="64px">64px</div>
+              <div class="dropdown-opt" data-value="80px">80px</div>
+            </div>
+          </div>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group">
+          <button class="toolbar-btn" data-cmd="justifyLeft" title="Sola Yasla">
+            <i data-lucide="align-left"></i>
+          </button>
+          <button class="toolbar-btn" data-cmd="justifyCenter" title="Ortala">
+            <i data-lucide="align-center"></i>
+          </button>
+          <button
+            class="toolbar-btn"
+            data-cmd="justifyRight"
+            title="Sağa Yasla"
+          >
+            <i data-lucide="align-right"></i>
+          </button>
+        </div>
+        <div class="toolbar-divider selection-only"></div>
+        <div class="toolbar-group selection-only">
+          <button class="toolbar-btn" id="btn-align-left" title="Sola Hizala">
+            <i data-lucide="align-start-vertical"></i>
+          </button>
+          <button
+            class="toolbar-btn"
+            id="btn-align-center"
+            title="Dikey Ortala"
+          >
+            <i data-lucide="align-center-vertical"></i>
+          </button>
+          <button class="toolbar-btn" id="btn-align-top" title="Üste Hizala">
+            <i data-lucide="align-start-horizontal"></i>
+          </button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group color-picker">
+          <button
+            class="color-btn"
+            data-color="default"
+            title="Varsayılan"
+          ></button>
+          <button
+            class="color-btn"
+            data-color="#fef9c3"
+            title="Sarı"
+            style="background: #fef9c3"
+          ></button>
+          <button
+            class="color-btn"
+            data-color="#dcfce7"
+            title="Yeşil"
+            style="background: #dcfce7"
+          ></button>
+          <button
+            class="color-btn"
+            data-color="#dbeafe"
+            title="Mavi"
+            style="background: #dbeafe"
+          ></button>
+          <button
+            class="color-btn"
+            data-color="#f3e8ff"
+            title="Mor"
+            style="background: #f3e8ff"
+          ></button>
+          <button
+            class="color-btn"
+            data-color="#fee2e2"
+            title="Kırmızı"
+            style="background: #fee2e2"
+          ></button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group text-color-picker">
+          <i data-lucide="baseline" style="width: 16px; opacity: 0.5"></i>
+          <button
+            class="text-color-btn"
+            data-color="default"
+            title="Varsayılan"
+            style="
+              background: var(--fg-color);
+              border: 1px solid var(--glass-border);
+            "
+          ></button>
+          <button
+            class="text-color-btn"
+            data-color="#ffffff"
+            title="Beyaz"
+            style="background: #ffffff"
+          ></button>
+          <button
+            class="text-color-btn"
+            data-color="#0f172a"
+            title="Koyu"
+            style="background: #0f172a"
+          ></button>
+          <button
+            class="text-color-btn"
+            data-color="#ef4444"
+            title="Kırmızı"
+            style="background: #ef4444"
+          ></button>
+          <button
+            class="text-color-btn"
+            data-color="#f59e0b"
+            title="Turuncu"
+            style="background: #f59e0b"
+          ></button>
+          <button
+            class="text-color-btn"
+            data-color="#10b981"
+            title="Yeşil"
+            style="background: #10b981"
+          ></button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group">
+          <button class="toolbar-btn" id="btn-icon-picker" title="İkon Ekle">
+            <i data-lucide="smile"></i>
+          </button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group">
+          <button class="toolbar-btn" id="toolbar-delete" title="Sil (Del)">
+            <i data-lucide="trash-2"></i>
+          </button>
+          <button
+            class="toolbar-btn pin-btn"
+            id="toolbar-pin"
+            title="Ekrana Sabitle"
+          >
+            <i data-lucide="pin"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Icon Picker Popup -->
+      <div id="icon-picker-popup" class="glass hidden">
+        <div class="picker-header">
+          <span>İkon Seç</span>
+          <button id="close-picker"><i data-lucide="x"></i></button>
+        </div>
+        <div class="picker-search">
+          <i data-lucide="search"></i>
+          <input type="text" id="icon-search" placeholder="İkonlarda ara..." />
+        </div>
+        <div class="picker-content">
+          <div id="icons-grid" class="picker-grid active">
+            <!-- Icons will be here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Media URL Input Modal (Combined Video & Embed) -->
+      <div id="media-url-modal" class="glass hidden">
+        <div class="modal-header">
+          <i data-lucide="plus-square" class="modal-type-icon"></i>
+          <span>Medya Ekle</span>
+          <button id="close-media-modal"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="media-info-grid">
+            <div class="info-item">
+              <i data-lucide="youtube"></i>
+              <span class="info-text">YouTube / Vimeo</span>
+            </div>
+            <div class="info-item">
+              <i data-lucide="file-video"></i>
+              <span class="info-text">Yerel MP4 Dosyaları</span>
+            </div>
+          </div>
+
+          <div class="url-input-group">
+            <input
+              type="text"
+              id="media-url-input"
+              placeholder="URL'yi buraya yapıştırın..."
+            />
+            <button id="btn-add-media-url">Ekle</button>
+          </div>
+
+          <div class="modal-divider">
+            <span>VEYA</span>
+          </div>
+
+          <button id="btn-trigger-media-upload" class="upload-btn">
+            <i data-lucide="upload"></i> Bilgisayardan Dosya Seç (MP4/WebM)
+          </button>
+        </div>
+      </div>
+
+      <!-- Connection Customization Toolbar -->
+      <div id="connection-toolbar" class="glass">
+        <div class="toolbar-group">
+          <span
+            class="toolbar-label"
+            style="font-size: 0.75rem; opacity: 0.6; margin-right: 4px"
+            >Yön:</span
+          >
+          <button
+            class="toolbar-btn active"
+            data-flow="forward"
+            title="Tektaraflı Ok"
+          >
+            <i data-lucide="arrow-right"></i>
+          </button>
+          <button class="toolbar-btn" data-flow="both" title="Çift Taraflı Ok">
+            <i data-lucide="arrow-left-right"></i>
+          </button>
+          <button class="toolbar-btn" data-flow="none" title="Düz Çizgi">
+            <i data-lucide="minus"></i>
+          </button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group">
+          <span
+            class="toolbar-label"
+            style="font-size: 0.75rem; opacity: 0.6; margin-right: 4px"
+            >Stil:</span
+          >
+          <button
+            class="toolbar-btn active"
+            data-style="curved"
+            title="Kavisli"
+          >
+            <i data-lucide="spline"></i>
+          </button>
+          <button class="toolbar-btn" data-style="dashed" title="Kesikli">
+            <i data-lucide="more-horizontal"></i>
+          </button>
+        </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group">
+          <button
+            class="toolbar-btn"
+            id="cancel-connection"
+            title="Vazgeç"
+            style="color: #ef4444"
+          >
+            <i data-lucide="x-circle"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mini-Map (Radar) -->
+      <div id="mini-map-container" class="glass">
+        <canvas id="mini-map-canvas"></canvas>
+        <div id="mini-map-label">RADAR</div>
+      </div>
+
+      <!-- Main Canvas Area -->
+      <!-- Settings Panel -->
+      <div id="settings-panel" class="glass">
+        <div class="settings-header">
+          <h3>Kişiselleştir</h3>
+          <button id="close-settings"><i data-lucide="x"></i></button>
+        </div>
+        <div class="setting-item">
+          <label>Zoom Akıcılığı</label>
+          <input
+            type="range"
+            id="zoom-smoothness"
+            min="0"
+            max="95"
+            value="80"
+          />
+          <span class="value-display">80%</span>
+        </div>
+        <div class="setting-item">
+          <label>Zoom Hassasiyeti</label>
+          <input
+            type="range"
+            id="zoom-sensitivity"
+            min="5"
+            max="30"
+            value="15"
+          />
+          <span class="value-display">1.5x</span>
+        </div>
+        <div class="setting-item" style="position: relative">
+          <label>Uygulama Teması</label>
+          <select id="app-theme-select" class="theme-dropdown">
+            <option value="dark">Karanlık Mode</option>
+            <option value="light">Açık Mode</option>
+            <option value="system">Sistem Varsayılanı</option>
+          </select>
+          <i
+            data-lucide="chevron-down"
+            style="
+              position: absolute;
+              right: 12px;
+              bottom: 10px;
+              width: 16px;
+              pointer-events: none;
+              opacity: 0.5;
+            "
+          ></i>
+        </div>
+        <div class="setting-item" style="position: relative">
+          <label>Tuval Teması</label>
+          <select id="theme-select" class="theme-dropdown">
+            <option value="dark-grid">Koyu Izgara</option>
+            <option value="light-grid">Açık Izgara</option>
+            <option value="corkboard">Mantar Pano</option>
+            <option value="dot-grid">Noktalı Kağıt</option>
+            <option value="chalkboard">Kara Tahta</option>
+            <option value="space">Derin Uzay</option>
+            <option value="blueprint">Mavi Çizim Planı</option>
+          </select>
+          <i
+            data-lucide="chevron-down"
+            style="
+              position: absolute;
+              right: 12px;
+              bottom: 10px;
+              width: 16px;
+              pointer-events: none;
+              opacity: 0.5;
+            "
+          ></i>
+        </div>
+        <div class="setting-item">
+          <label>Arka Plan Resmi</label>
+          <div style="display: flex; gap: 8px">
+            <button
+              class="save-btn"
+              id="btn-upload-bg"
+              style="
+                margin-top: 0;
+                font-size: 0.6rem;
+                padding: 6px 12px;
+                height: 30px;
+                flex: 1;
+              "
+            >
+              RESİM YÜKLE
+            </button>
+            <button
+              class="save-btn"
+              id="btn-clear-bg"
+              style="
+                margin-top: 0;
+                font-size: 0.6rem;
+                padding: 6px 12px;
+                height: 30px;
+                background: #334155;
+                flex: 1;
+              "
+            >
+              TEMİZLE
+            </button>
+          </div>
+          <input type="file" id="bg-upload" accept="image/*" hidden />
+        </div>
+        <div class="setting-item">
+          <label>Parallax Şiddeti</label>
+          <input
+            type="range"
+            id="parallax-strength"
+            min="0"
+            max="50"
+            value="20"
+          />
+          <span class="value-display">20%</span>
+        </div>
+        <div class="setting-item">
+          <label>Arka Plan Parlaklığı</label>
+          <input type="range" id="bg-opacity" min="0" max="100" value="100" />
+          <span class="value-display">100%</span>
+        </div>
+        <div class="setting-item">
+          <label>Arka Plan Büyüklüğü</label>
+          <input type="range" id="bg-size" min="20" max="250" value="100" />
+          <span class="value-display">100%</span>
+        </div>
+      </div>
+
+      <main id="canvas-container">
+        <div id="canvas-grid" class="infinite-bg"></div>
+        <div id="canvas-content">
+          <svg id="connection-layer">
+            <defs>
+              <marker
+                id="arrowhead"
+                markerWidth="10"
+                markerHeight="7"
+                refX="9"
+                refY="3.5"
+                orient="auto"
+              >
+                <polygon points="0 0, 10 3.5, 0 7" fill="var(--accent-color)" />
+              </marker>
+              <marker
+                id="arrowstart"
+                markerWidth="10"
+                markerHeight="7"
+                refX="1"
+                refY="3.5"
+                orient="auto"
+              >
+                <polygon
+                  points="10 0, 0 3.5, 10 7"
+                  fill="var(--accent-color)"
+                />
+              </marker>
+            </defs>
+          </svg>
+          <!-- Objects will be rendered here dynamically -->
+        </div>
+      </main>
+
+      <!-- Controls / Floating UI -->
+      <div id="controls" class="glass">
+        <div class="zoom-controls">
+          <button id="zoom-out"><i data-lucide="minus"></i></button>
+          <span id="zoom-level">100%</span>
+          <button id="zoom-in"><i data-lucide="plus"></i></button>
+        </div>
+        <div class="divider"></div>
+        <div class="coord-info">
+          <span id="coord-x">X: 0</span>
+          <span id="coord-y">Y: 0</span>
+        </div>
+      </div>
+
+      <!-- Pinned / Sticky Layer -->
+      <div id="pinned-layer"></div>
+
+      <!-- Hidden input for images -->
+      <input type="file" id="image-upload" accept="image/*" hidden />
+      <!-- Hidden input for videos -->
+      <input type="file" id="video-upload" accept="video/*" hidden />
+      <!-- Hidden input for PDFs -->
+      <input type="file" id="pdf-upload" accept="application/pdf" hidden />
+      <!-- Focus / Pomodoro Widget -->
+      <div id="focus-widget" class="glass hidden draggable-panel">
+        <div class="panel-header" id="focus-drag-handle">
+          <i data-lucide="timer" class="panel-icon"></i>
+          <span>Odak Modu</span>
+          <button id="close-focus" class="panel-close">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="focus-body">
+          <div id="focus-status">ODAK</div>
+          <div class="timer-settings" style="gap: 20px">
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+              "
+            >
+              <input
+                type="number"
+                id="focus-minutes"
+                value="25"
+                min="1"
+                max="999"
+                title="Odak Süresi (Dakika)"
+              />
+              <span class="settings-label">ODAK (DK)</span>
+            </div>
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+              "
+            >
+              <input
+                type="number"
+                id="break-minutes"
+                value="5"
+                min="1"
+                max="999"
+                title="Mola Süresi (Dakika)"
+              />
+              <span class="settings-label">MOLA (DK)</span>
+            </div>
+          </div>
+          <div class="timer-display">
+            <span id="time-left">25:00</span>
+          </div>
+          <div class="timer-controls">
+            <button class="focus-btn" id="timer-start" title="Başlat/Durdur">
+              <i data-lucide="play"></i>
+            </button>
+            <button class="focus-btn" id="timer-reset" title="Sıfırla">
+              <i data-lucide="rotate-ccw"></i>
+            </button>
+          </div>
+          <div class="focus-divider"></div>
+          <!-- Ambient Audio Controls -->
+          <div class="ambient-controls">
+            <button
+              class="ambient-btn"
+              id="audio-rain"
+              data-src="https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg"
+              title="Yağmur Sesi"
+            >
+              <i data-lucide="cloud-rain"></i>
+            </button>
+            <button
+              class="ambient-btn"
+              id="audio-coffee"
+              data-src="https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg"
+              title="Kafe Sesleri"
+            >
+              <i data-lucide="coffee"></i>
+            </button>
+            <button
+              class="ambient-btn"
+              id="audio-lofi"
+              data-src="https://stream.zeno.fm/f3wvbbqmdg8uv"
+              title="Lo-Fi Radyo"
+            >
+              <i data-lucide="music"></i>
+            </button>
+            <button
+              class="ambient-btn-settings"
+              id="toggle-ambient-settings"
+              title="Sesleri Özelleştir"
+            >
+              <i data-lucide="settings-2"></i>
+            </button>
+          </div>
+
+          <!-- Volume Slider -->
+          <div class="volume-control">
+            <i data-lucide="volume-2" style="width: 14px; opacity: 0.6"></i>
+            <input
+              type="range"
+              id="ambient-volume"
+              min="0"
+              max="100"
+              value="50"
+              class="volume-slider"
+            />
+          </div>
+
+          <!-- Ambient Settings Panel (Hidden by default) -->
+          <div id="ambient-settings-panel" class="hidden">
+            <div class="setting-input-group">
+              <label><i data-lucide="cloud-rain"></i> Yağmur URL</label>
+              <input
+                type="text"
+                id="input-rain-url"
+                placeholder="Ses URL'si yapıştırın..."
+              />
+              <div class="mixer-control">
+                <i data-lucide="volume-2"></i>
+                <input
+                  type="range"
+                  id="volume-rain"
+                  min="0"
+                  max="100"
+                  value="50"
+                />
+              </div>
+            </div>
+            <div class="setting-input-group">
+              <label><i data-lucide="coffee"></i> Kafe URL</label>
+              <input
+                type="text"
+                id="input-coffee-url"
+                placeholder="Ses URL'si yapıştırın..."
+              />
+              <div class="mixer-control">
+                <i data-lucide="volume-2"></i>
+                <input
+                  type="range"
+                  id="volume-coffee"
+                  min="0"
+                  max="100"
+                  value="50"
+                />
+              </div>
+            </div>
+            <div class="setting-input-group">
+              <label><i data-lucide="music"></i> Radyo URL</label>
+              <input
+                type="text"
+                id="input-lofi-url"
+                placeholder="Ses URL'si yapıştırın..."
+              />
+              <div class="mixer-control">
+                <i data-lucide="volume-2"></i>
+                <input
+                  type="range"
+                  id="volume-lofi"
+                  min="0"
+                  max="100"
+                  value="50"
+                />
+              </div>
+            </div>
+
+            <div class="focus-settings-divider">GÖRÜNÜM</div>
+
+            <div class="setting-row">
+              <div class="setting-input-group">
+                <label>Metin</label>
+                <input type="color" id="input-timer-color" value="#ffffff" />
+              </div>
+              <div class="setting-input-group">
+                <label>Vurgu</label>
+                <input type="color" id="input-accent-color" value="#3b82f6" />
+              </div>
+              <div class="setting-input-group">
+                <label>Panel</label>
+                <input type="color" id="input-bg-color" value="#0f0f14" />
+              </div>
+            </div>
+
+            <div class="setting-input-group">
+              <label>Yazı Tipi</label>
+              <select id="select-timer-font">
+                <option value="modern">Modern (Sans)</option>
+                <option value="classic">Klasik (Serif)</option>
+                <option value="mono">Yazılım (Mono)</option>
+                <option value="retro">Retro (Display)</option>
+                <option value="elegant">Zarif (Elegant)</option>
+                <option value="digital">Digital (Neon)</option>
+                <option value="handwriting">El Yazısı (Brush)</option>
+                <option value="fira">Kod (Clean Mono)</option>
+              </select>
+            </div>
+
+            <div class="setting-input-group">
+              <label>Arka Plan Bulanıklığı</label>
+              <input
+                type="range"
+                id="input-bg-blur"
+                min="0"
+                max="40"
+                value="20"
+              />
+            </div>
+
+            <div class="setting-input-group">
+              <label>Yazı Parlaması (Glow)</label>
+              <input
+                type="range"
+                id="input-text-glow"
+                min="0"
+                max="20"
+                value="5"
+              />
+            </div>
+
+            <button id="save-ambient-settings" class="save-btn">
+              AYARLARI KAYDET
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Modals ve Scripts -->
     <div id="ambient-container-rain" class="hidden"></div>
     <div id="ambient-container-coffee" class="hidden"></div>
     <div id="ambient-container-lofi" class="hidden"></div>
-    <div id="ambient-yt-container" style="display:none;"></div>
-    
-    <script src="app.js"></script>
-</body>
+    <div id="ambient-yt-container" style="display: none"></div>
 
+    <script src="app.js"></script>
+  </body>
 </html>
