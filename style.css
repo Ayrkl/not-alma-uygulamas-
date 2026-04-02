@@ -380,7 +380,7 @@ nav.tools,
     border-radius: 12px;
 }
 
-#search-panel, #workspaces-panel, #bookmarks-panel {
+#search-panel, #workspaces-panel, #bookmarks-panel, #tags-panel {
     position: fixed;
     left: calc(var(--sidebar-width) + var(--sidebar-gap) + 20px);
     top: 50%;
@@ -397,7 +397,7 @@ nav.tools,
     gap: 12px;
 }
 
-#search-panel.active, #workspaces-panel.active, #bookmarks-panel.active {
+#search-panel.active, #workspaces-panel.active, #bookmarks-panel.active, #tags-panel.active {
     opacity: 1;
     pointer-events: all;
     transform: translateY(-50%) translateX(0);
@@ -796,6 +796,70 @@ body.is-exporting .selection-box {
     transform: translateZ(0);
     overscroll-behavior: none;
     animation: obj-entrance 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+
+.canvas-obj.dimmed {
+    opacity: 0.15;
+    filter: blur(2px) grayscale(0.5);
+    pointer-events: none;
+    transition: all 0.5s ease;
+}
+
+/* Kanban Elements */
+.kanban-container {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    min-width: 900px;
+}
+
+.kanban-column {
+    flex: 1;
+    min-width: 280px;
+    min-height: 500px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+}
+
+.kanban-header {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--accent-color);
+}
+
+/* Tag Badges */
+.tag-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-right: 4px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.tag-badge:hover {
+    transform: scale(1.1);
+}
+
+.tag-filter-active .tag-badge:not(.active-filter) {
+    opacity: 0.5;
 }
 
 @keyframes obj-entrance {
@@ -2398,6 +2462,7 @@ body.theme-blueprint #canvas-grid {
 
 #ambient-settings-panel input[type="color"] {
     -webkit-appearance: none;
+    appearance: none;
     border: none;
     width: 32px;
     height: 32px;

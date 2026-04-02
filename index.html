@@ -14,6 +14,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 
 <body>
@@ -38,6 +39,9 @@
                 </button>
                 <button class="tool-btn" id="tool-bookmarks" title="Yer İşaretleri (B)">
                     <i data-lucide="bookmark"></i>
+                </button>
+                <button class="tool-btn" id="tool-tags" title="Etiketler (G)">
+                    <i data-lucide="tag"></i>
                 </button>
                 <div class="tool-separator"></div>
                 <button class="tool-btn active" id="tool-pan" title="Kaydır (H)">
@@ -73,6 +77,21 @@
                         <button class="tool-btn" id="tool-pdf" title="PDF Ekle (P)">
                             <i data-lucide="file-text"></i>
                         </button>
+                        <div class="tool-separator"></div>
+                        <div class="submenu-label">Şablonlar</div>
+                        <button class="tool-btn" id="tpl-mindmap" title="Zihin Haritası">
+                            <i data-lucide="git-branch"></i>
+                        </button>
+                        <button class="tool-btn" id="tpl-kanban" title="Kanban Panosu">
+                            <i data-lucide="columns-3"></i>
+                        </button>
+                        <button class="tool-btn" id="tpl-swot" title="SWOT Analizi">
+                            <i data-lucide="grid-3x3"></i>
+                        </button>
+                        <button class="tool-btn" id="tpl-planner" title="Günlük Plan">
+                            <i data-lucide="calendar-check"></i>
+                        </button>
+                        <div class="tool-separator"></div>
                         <button class="tool-btn" id="tool-connect" title="Bağlantı Kur (L)">
                             <i data-lucide="share-2"></i>
                         </button>
@@ -92,9 +111,20 @@
                     <button class="tool-btn" id="save-btn" title="Kaydet">
                         <i data-lucide="save"></i>
                     </button>
-                    <button class="tool-btn" id="export-btn" title="Görüntü Olarak Dışa Aktar">
-                        <i data-lucide="download"></i>
-                    </button>
+                    <div class="tool-group" id="export-group">
+                        <button class="tool-btn group-trigger" id="export-btn" title="Dışa Aktar">
+                            <i data-lucide="download"></i>
+                        </button>
+                        <div class="tool-submenu glass" style="bottom: 0; top: auto; transform: translateY(0) translateX(-8px) scale(0.95); left: auto; right: calc(100% + 14px);">
+                            <div class="submenu-label">Dışa Aktar</div>
+                            <button class="tool-btn" id="export-png" title="PNG Olarak Kaydet">
+                                <i data-lucide="image"></i>
+                            </button>
+                            <button class="tool-btn" id="export-pdf" title="PDF Olarak Kaydet">
+                                <i data-lucide="file-text"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="tool-separator"></div>
                 <button class="tool-btn" id="open-settings" title="Ayarlar">
@@ -131,6 +161,17 @@
             </div>
             <div id="bookmarks-list" class="workspaces-results-list">
                 <!-- Yer işaretleri buraya gelecek -->
+            </div>
+        </div>
+
+        <!-- Tags Panel (Slide-out) -->
+        <div id="tags-panel" class="glass">
+            <div class="workspaces-header">
+                <h3>Etiketler</h3>
+                <button id="btn-clear-tags" class="tool-btn" title="Filtreyi Temizle" style="display:none;"><i data-lucide="filter-x"></i></button>
+            </div>
+            <div id="tags-list" class="workspaces-results-list">
+                <!-- Etiket listesi buraya gelecek -->
             </div>
         </div>
 

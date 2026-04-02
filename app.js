@@ -45,7 +45,9 @@ const state = {
     // Connection Dragging
     isDraggingConnEnd: false,
     dragConnId: null,
-    dragConnEndType: null // 'from' or 'to'
+    dragConnEndType: null, // 'from' or 'to'
+    
+    activeTagFilter: null
 };
 
 // --- Utils ---
@@ -235,10 +237,19 @@ async function init() {
             state.activeWorkspaceId = 'default';
         }
 
+        document.getElementById('export-btn').addEventListener('click', () => exportCanvas('png'));
+        const exportPngBtn = document.getElementById('export-png');
+        const exportPdfBtn = document.getElementById('export-pdf');
+        if (exportPngBtn) exportPngBtn.addEventListener('click', (e) => { e.stopPropagation(); exportCanvas('png'); });
+        if (exportPdfBtn) exportPdfBtn.addEventListener('click', (e) => { e.stopPropagation(); exportCanvas('pdf'); });
+
         setupWorkspacesUI();
+        setupTagsUI();
+        setupTemplateListeners();
 
         initFocusWidget();
         renderObjects();
+        renderTagsList();
         renderConnections();
         setupEventListeners();
         setupSettingsListeners();
@@ -457,6 +468,7 @@ function setupWorkspacesUI() {
                 const searchPanel = document.getElementById('search-panel');
                 if (searchPanel) searchPanel.classList.remove('active');
                 document.getElementById('bookmarks-panel')?.classList.remove('active');
+                document.getElementById('tags-panel')?.classList.remove('active');
             }
         });
         
@@ -468,6 +480,7 @@ function setupWorkspacesUI() {
                 e.preventDefault();
                 workspacesPanel.classList.add('active');
                 document.getElementById('bookmarks-panel')?.classList.remove('active');
+                document.getElementById('tags-panel')?.classList.remove('active');
                 const searchPanel = document.getElementById('search-panel');
                 if (searchPanel) searchPanel.classList.remove('active');
             }
@@ -481,6 +494,7 @@ function setupWorkspacesUI() {
             canvasContainer.addEventListener('mousedown', () => {
                 workspacesPanel.classList.remove('active');
                 document.getElementById('bookmarks-panel')?.classList.remove('active');
+                document.getElementById('tags-panel')?.classList.remove('active');
             });
         }
     }
@@ -492,6 +506,41 @@ function setupWorkspacesUI() {
     }
 }
 
+// --- Tags Panel Logic ---
+function setupTagsUI() {
+    const tagsBtn = document.getElementById('tool-tags');
+    const tagsPanel = document.getElementById('tags-panel');
+    const clearTagsBtn = document.getElementById('btn-clear-tags');
+
+    if (tagsBtn && tagsPanel) {
+        tagsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isActive = tagsPanel.classList.toggle('active');
+            if (isActive) {
+                renderTagsList();
+                document.getElementById('search-panel')?.classList.remove('active');
+                document.getElementById('workspaces-panel')?.classList.remove('active');
+                document.getElementById('bookmarks-panel')?.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'g' && !e.ctrlKey && !e.metaKey && 
+                document.activeElement.tagName !== 'INPUT' && 
+                document.activeElement.getAttribute('contenteditable') !== 'true') {
+                e.preventDefault();
+                tagsBtn.click();
+            }
+        });
+    }
+
+    if (clearTagsBtn) {
+        clearTagsBtn.addEventListener('click', () => {
+            clearTagFilter();
+        });
+    }
+}
+
 // --- Search & Navigation Logic ---
 function setupSearchListeners() {
     const searchBtn = document.getElementById('tool-search');
@@ -499,6 +548,7 @@ function setupSearchListeners() {
         searchBtn.addEventListener('click', () => {
             document.getElementById('bookmarks-panel')?.classList.remove('active');
             document.getElementById('workspaces-panel')?.classList.remove('active');
+            document.getElementById('tags-panel')?.classList.remove('active');
         });
     }
 
@@ -581,6 +631,7 @@ function deleteBookmark(id) {
     const el = document.getElementById(`obj-${id}`);
     if (el) el.remove();
     renderBookmarksList();
+    renderTagsList(); // Refresh tags too
     saveState();
 }
 
@@ -624,6 +675,178 @@ function renderBookmarksList() {
 
 window.gotoBookmark = gotoBookmark;
 window.deleteBookmark = deleteBookmark;
+
+// --- Tags Filtering Logic ---
+function extractTags(content) {
+    if (!content) return [];
+    const cleanContent = content.replace(/<[^>]*>/g, ' ');
+    const tags = cleanContent.match(/#[\wığüşöçİĞÜŞÖÇ]+/g);
+    return tags ? [...new Set(tags)] : [];
+}
+
+function renderTagsList() {
+    const listEl = document.getElementById('tags-list');
+    if (!listEl) return;
+
+    const allTagsMap = {};
+    state.objects.forEach(obj => {
+        const tags = extractTags(obj.content);
+        tags.forEach(tag => {
+            allTagsMap[tag] = (allTagsMap[tag] || 0) + 1;
+        });
+    });
+
+    const sortedTags = Object.keys(allTagsMap).sort((a, b) => allTagsMap[b] - allTagsMap[a]);
+
+    if (sortedTags.length === 0) {
+        listEl.innerHTML = '<div class="search-result-item" style="cursor:default; opacity:0.5;">Filtrelenecek etiket yok</div>';
+        document.getElementById('btn-clear-tags').style.display = 'none';
+        return;
+    }
+
+    listEl.innerHTML = sortedTags.map(tag => `
+        <div class="workspace-item ${state.activeTagFilter === tag ? 'active-workspace' : ''}" onclick="filterByTag('${tag}')">
+            <div class="workspace-name"><i data-lucide="tag" style="width:12px; display:inline; margin-right:6px; opacity:0.5;"></i>${tag}</div>
+            <div style="font-size:0.7rem; opacity:0.5;">${allTagsMap[tag]}</div>
+        </div>
+    `).join('');
+
+    if (window.lucide) lucide.createIcons({ root: listEl });
+}
+
+function filterByTag(tag) {
+    if (state.activeTagFilter === tag) {
+        clearTagFilter();
+        return;
+    }
+
+    state.activeTagFilter = tag;
+    document.getElementById('btn-clear-tags').style.display = 'flex';
+    
+    state.objects.forEach(obj => {
+        const el = document.getElementById(`obj-${obj.id}`);
+        if (!el) return;
+
+        const tags = extractTags(obj.content);
+        if (tags.includes(tag)) {
+            el.classList.remove('dimmed');
+        } else {
+            el.classList.add('dimmed');
+        }
+    });
+
+    renderTagsList();
+}
+
+function clearTagFilter() {
+    state.activeTagFilter = null;
+    document.getElementById('btn-clear-tags').style.display = 'none';
+    
+    state.objects.forEach(obj => {
+        const el = document.getElementById(`obj-${obj.id}`);
+        if (el) el.classList.remove('dimmed');
+    });
+
+    renderTagsList();
+}
+
+window.filterByTag = filterByTag;
+
+// Helper to create a connection between two objects
+function addConnection(fromId, toId) {
+    state.connections.push({
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+        fromId,
+        fromX: null, fromY: null,
+        toId,
+        toX: null, toY: null,
+        flow: 'forward',
+        style: 'solid'
+    });
+    renderConnections();
+}
+
+// --- Template Library ---
+function setupTemplateListeners() {
+    const templates = {
+        'tpl-mindmap': 'mindmap',
+        'tpl-kanban': 'kanban',
+        'tpl-swot': 'swot',
+        'tpl-planner': 'planner'
+    };
+
+    Object.entries(templates).forEach(([id, type]) => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.addEventListener('click', () => {
+                insertTemplate(type);
+                // Close tool menu
+                document.getElementById('create-group').querySelector('.tool-submenu').style.opacity = '0';
+                setTimeout(() => document.getElementById('create-group').querySelector('.tool-submenu').style.removeProperty('opacity'), 100);
+            });
+        }
+    });
+}
+
+function insertTemplate(type) {
+    const center = getCanvasCenter();
+    const cx = center.x;
+    const cy = center.y;
+    
+    pushHistory();
+    
+    if (type === 'mindmap') {
+        const mainId = addObject('note', cx, cy, '<h1 style="text-align:center;">Ana Fikir</h1>', 'default');
+        const branches = [
+            { x: cx - 300, y: cy - 150, text: 'Alt Konu 1' },
+            { x: cx + 300, y: cy - 150, text: 'Alt Konu 2' },
+            { x: cx - 300, y: cy + 150, text: 'Alt Konu 3' },
+            { x: cx + 300, y: cy + 150, text: 'Alt Konu 4' }
+        ];
+        
+        branches.forEach(b => {
+            const sid = addObject('note', b.x, b.y, b.text, 'default');
+            addConnection(mainId, sid);
+        });
+    } 
+    else if (type === 'kanban') {
+        // Kanban columns as structured notes or special container
+        // Let's create 3 large notes that act as column headers
+        const titles = ['YAPILACAKLAR', 'YAPILIYOR', 'BİTTİ'];
+        const colors = ['#fee2e2', '#fef9c yellow', '#dcfce7']; // Reddish, Yellowish, Greenish
+        
+        titles.forEach((title, i) => {
+            const tx = cx - 400 + (i * 400);
+            addObject('note', tx, cy - 300, `<h2 style="text-align:center;">#${title}</h2>`, 'default', 350, 600);
+        });
+    }
+    else if (type === 'swot') {
+        const swot = [
+            { x: cx - 210, y: cy - 210, t: 'Güçlü Yönler', c: '#dcfce7' },
+            { x: cx + 10, y: cy - 210, t: 'Zayıf Yönler', c: '#fee2e2' },
+            { x: cx - 210, y: cy + 10, t: 'Fırsatlar', c: '#dbeafe' },
+            { x: cx + 10, y: cy + 10, t: 'Tehditler', c: '#f3e8ff' }
+        ];
+        swot.forEach(s => {
+            addObject('note', s.x, s.y, `<h3>${s.t}</h3><ul><li>...</li></ul>`, 'default', 200, 200);
+            // We set color after adding or handle in addObject
+        });
+    }
+    else if (type === 'planner') {
+        addObject('note', cx, cy, `
+            <h2>📅 Günlük Plan</h2>
+            <hr>
+            <h3>Morning</h3>
+            <ul class="checklist"><li>[ ] </li></ul>
+            <h3>Afternoon</h3>
+            <ul class="checklist"><li>[ ] </li></ul>
+            <h3>Evening</h3>
+            <ul class="checklist"><li>[ ] </li></ul>
+        `, 'default', 400, 500);
+    }
+    
+    saveState();
+}
 
 function updateSearchResults(query) {
     const resultsEl = document.getElementById('search-results');
@@ -1575,7 +1798,7 @@ function handlePdfFile(file) {
 }
 
 // --- Object Logic ---
-function addObject(type, x, y, content = '') {
+function addObject(type, x, y, content = '', width = null, height = null) {
     // If coordinates are not provided, use canvas center
     if (x === undefined || y === undefined) {
         const center = getCanvasCenter();
@@ -1600,8 +1823,8 @@ function addObject(type, x, y, content = '') {
         x,
         y: y + 20, // Vertical offset
         content: finalContent || '',
-        width: type === 'note' || type === 'checklist' ? 250 : (type === 'image' ? 300 : (type === 'video' || type === 'pdf' || type === 'embed' ? 450 : (type === 'point' ? 8 : 200))),
-        height: type === 'note' ? 180 : (type === 'checklist' ? 'auto' : (type === 'video' ? 225 : (type === 'pdf' ? 630 : (type === 'embed' ? 350 : (type === 'point' ? 8 : 'auto'))))),
+        width: width || (type === 'note' || type === 'checklist' ? 250 : (type === 'image' ? 300 : (type === 'video' || type === 'pdf' || type === 'embed' ? 450 : (type === 'point' ? 8 : 200)))),
+        height: height || (type === 'note' ? 180 : (type === 'checklist' ? 'auto' : (type === 'video' ? 225 : (type === 'pdf' ? 630 : (type === 'embed' ? 350 : (type === 'point' ? 8 : 'auto')))))),
         pdfPage: type === 'pdf' ? 1 : undefined,
         fontFamily: 'Inter',
         fontSize: '16px',
@@ -2250,6 +2473,7 @@ function renderObject(obj) {
 
             editor.addEventListener('input', () => {
                 obj.content = editor.innerHTML;
+                renderTagsList(); // Auto-refresh tags in sidebar
                 debouncedPush();
             });
 
@@ -3476,22 +3700,14 @@ async function renderPdfPage(obj, canvas, pageInfoEl) {
     }
 }
 
-async function exportCanvas() {
-    if (state.isExporting) return;
+async function captureCanvasToDataUrl() {
     if (state.objects.length === 0) {
         alert("Dışa aktarılacak bir nesne bulunamadı.");
-        return;
+        return null;
     }
 
-    state.isExporting = true;
-    const exportBtn = document.getElementById('export-btn');
-    const originalHTML = exportBtn.innerHTML;
-    exportBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i>';
-    if (typeof lucide !== 'undefined') lucide.createIcons({ root: exportBtn });
-
-    // 1. Alan hesapla (Bounding Box)
+    // 1. Bounding Box hesapla
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    
     const updateBounds = (x, y, w = 0, h = 0) => {
         if (x === null || x === undefined || isNaN(x)) return;
         minX = Math.min(minX, x);
@@ -3520,11 +3736,7 @@ async function exportCanvas() {
         };
         const p1 = getPt(fromObj, conn.fromOffX, conn.fromOffY, conn.fromX, conn.fromY);
         const p2 = getPt(toObj, conn.toOffX, conn.toOffY, conn.toX, conn.toY);
-
-        // GEÇERSİZ BAĞLANTI KONTROLÜ: Boyut hesaplarken yarım kalmış bağları atla
-        if (!p1 || !p2 || p1.x === null || p1.y === null || p2.x === null || p2.y === null) return;
-        if (isNaN(p1.x) || isNaN(p1.y) || isNaN(p2.x) || isNaN(p2.y)) return;
-
+        if (!p1 || !p2 || isNaN(p1.x) || isNaN(p2.x)) return;
         updateBounds(p1.x, p1.y);
         updateBounds(p2.x, p2.y);
     });
@@ -3533,10 +3745,10 @@ async function exportCanvas() {
     const width = maxX - minX + padding * 2;
     const height = maxY - minY + padding * 2;
 
-    // 2. Geçici Export Elementi Oluştur (Off-screen)
+    // 2. Geçici export konteyneri oluştur
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#60a5fa';
     const tempExport = document.createElement('div');
     tempExport.id = 'temp-export-container';
-    // Mevcut döküman stillerini ve değişkenlerini miras alması için body'nin bir kopyası gibi davranmalı
     tempExport.style.cssText = `
         position: absolute; left: -9999px; top: -9999px;
         width: ${width}px; height: ${height}px;
@@ -3544,32 +3756,24 @@ async function exportCanvas() {
         overflow: hidden;
         z-index: -1000;
     `;
-    
-    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#60a5fa';
-    
-    // Arka plan ızgarası (Grid) ekle
     tempExport.style.setProperty('--accent-color', accentColor);
-    tempExport.style.backgroundImage = `
-        radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0)
-    `;
+    tempExport.style.backgroundImage = `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)`;
     tempExport.style.backgroundSize = '40px 40px';
-    
     document.body.appendChild(tempExport);
 
-    // 3. İçerikleri Klonla ve Yeniden Konumlandır
+    // 3. İçerikleri klonla
     state.objects.forEach(obj => {
         const originalEl = document.getElementById(`obj-${obj.id}`);
         if (!originalEl) return;
         const clone = originalEl.cloneNode(true);
-        // Yeni (0,0) noktası minX, minY olacak şekilde ötele
         clone.style.left = (obj.x - minX + padding) + 'px';
         clone.style.top = (obj.y - minY + padding) + 'px';
         clone.style.transform = 'none';
-        clone.classList.remove('selected', 'active'); // Temiz kopya
+        clone.classList.remove('selected', 'active', 'dimmed');
         tempExport.appendChild(clone);
     });
 
-    // 4. Bağlantıları Klonla (SVG Layer)
+    // 4. Bağlantıları klonla (SVG)
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.style.cssText = `position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none;`;
     tempExport.appendChild(svg);
@@ -3587,15 +3791,10 @@ async function exportCanvas() {
         };
         const p1 = getPt(fromObj, conn.fromOffX, conn.fromOffY, conn.fromX, conn.fromY);
         const p2 = getPt(toObj, conn.toOffX, conn.toOffY, conn.toX, conn.toY);
+        if (!p1 || !p2 || isNaN(p1.x) || isNaN(p2.x)) return;
 
-        // GEÇERSİZ BAĞLANTI KONTROLÜ: Eğer bir uç boşsa veya geçersizse bu oku atla
-        if (!p1 || !p2 || p1.x === null || p1.y === null || p2.x === null || p2.y === null) return;
-        if (isNaN(p1.x) || isNaN(p1.y) || isNaN(p2.x) || isNaN(p2.y)) return;
-
-        // Yeni koordinatlar (Kırpılmış alana göre)
         const sx = p1.x - minX + padding, sy = p1.y - minY + padding;
         const ex = p2.x - minX + padding, ey = p2.y - minY + padding;
-
         const cpX1 = sx + (ex - sx) * 0.5, cpY1 = sy;
         const cpX2 = sx + (ex - sx) * 0.5, cpY2 = ey;
         const d = `M ${sx} ${sy} C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${ex} ${ey}`;
@@ -3608,12 +3807,10 @@ async function exportCanvas() {
         if (conn.style === 'dashed') path.setAttribute("stroke-dasharray", "8,8");
         svg.appendChild(path);
 
-        // BAKE MARKERS: Ok uçlarını manuel çiz (html2canvas desteği için)
         const rotateP = (px, py, angle) => ({
             x: px * Math.cos(angle) - py * Math.sin(angle),
             y: px * Math.sin(angle) + py * Math.cos(angle)
         });
-
         if (conn.flow === 'forward' || conn.flow === 'both') {
             const angle = Math.atan2(ey - cpY2, ex - cpX2);
             const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
@@ -3632,8 +3829,8 @@ async function exportCanvas() {
         }
     });
 
-    // 5. Fotografla ve İndir
-    await new Promise(r => setTimeout(r, 1000)); // Render için bekle
+    // 5. Render için bekle
+    await new Promise(r => setTimeout(r, 1000));
 
     try {
         const canvas = await html2canvas(tempExport, {
@@ -3641,22 +3838,58 @@ async function exportCanvas() {
             useCORS: true,
             allowTaint: true,
             scale: 2,
-            width: width,
-            height: height
+            width,
+            height
         });
-        
-        const link = document.createElement('a');
-        link.download = `lumina-export-${Date.now()}.png`;
-        link.href = canvas.toDataURL('image/png', 1.0);
-        link.click();
+        return { dataUrl: canvas.toDataURL('image/png', 1.0), width, height };
     } catch (err) {
-        console.error('Export Error:', err);
+        console.error('Capture error:', err);
+        return null;
     } finally {
         tempExport.remove();
-        state.isExporting = false;
-        exportBtn.innerHTML = originalHTML;
-        if (typeof lucide !== 'undefined') lucide.createIcons({ root: exportBtn });
     }
+}
+
+async function exportCanvas(format = 'png') {
+    if (state.isExporting) return;
+    state.isExporting = true;
+
+    const exportBtn = document.getElementById('export-btn');
+    const originalHTML = exportBtn.innerHTML;
+    exportBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i>';
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: exportBtn });
+
+    const result = await captureCanvasToDataUrl();
+
+    if (result) {
+        if (format === 'pdf') {
+            try {
+                const { jsPDF } = window.jspdf;
+                const { dataUrl, width, height } = result;
+                // A4 landscape if wide, portrait if tall
+                const isLandscape = width > height;
+                const pdf = new jsPDF({
+                    orientation: isLandscape ? 'landscape' : 'portrait',
+                    unit: 'px',
+                    format: [width / 2, height / 2] // scale: 2 fix
+                });
+                pdf.addImage(dataUrl, 'PNG', 0, 0, width / 2, height / 2);
+                pdf.save(`lumina-export-${Date.now()}.pdf`);
+            } catch (err) {
+                console.error('PDF export error:', err);
+                alert('PDF dışa aktarım hatası: ' + err.message);
+            }
+        } else {
+            const link = document.createElement('a');
+            link.download = `lumina-export-${Date.now()}.png`;
+            link.href = result.dataUrl;
+            link.click();
+        }
+    }
+
+    state.isExporting = false;
+    exportBtn.innerHTML = originalHTML;
+    if (typeof lucide !== 'undefined') lucide.createIcons({ root: exportBtn });
 }
 
 function initIconPicker() {
