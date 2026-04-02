@@ -63,6 +63,24 @@ function debounce(func, wait) {
     };
 }
 
+function getContrastColor(hexColor) {
+    if (!hexColor || hexColor === 'default') return 'default';
+    
+    // Remove # if present
+    const color = hexColor.replace('#', '');
+    
+    // Convert to RGB
+    const r = parseInt(color.substr(0, 2), 16);
+    const g = parseInt(color.substr(2, 2), 16);
+    const b = parseInt(color.substr(4, 2), 16);
+    
+    // Calculate relative luminance (YIQ formula)
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    
+    // Return black for light backgrounds, white for dark backgrounds
+    return (yiq >= 128) ? '#0f172a' : '#f8fafc';
+}
+
 function screenToWorld(clientX, clientY) {
     const rect = canvasContainer.getBoundingClientRect();
     const halfW = rect.width / 2;
@@ -1831,7 +1849,11 @@ function handlePdfFile(file) {
 }
 
 // --- Object Logic ---
-function addObject(type, x, y, content = '', color = 'default', width = null, height = null) {
+function addObject(type, x, y, content = '', color = 'default', width = null, height = null, textColor = 'default') {
+    // If textColor is default but a hex color is provided, auto-calculate contrast
+    if (textColor === 'default' && color !== 'default' && color.startsWith('#')) {
+        textColor = getContrastColor(color);
+    }
     // If coordinates are not provided, use canvas center
     if (x === undefined || y === undefined) {
         const center = getCanvasCenter();
@@ -1862,7 +1884,7 @@ function addObject(type, x, y, content = '', color = 'default', width = null, he
         fontFamily: 'Inter',
         fontSize: '16px',
         color: color || 'default',
-        textColor: 'default',
+        textColor: textColor || 'default',
         newlyCreated: true
     };
     state.objects.push(newObj);
