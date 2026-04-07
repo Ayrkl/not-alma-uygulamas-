@@ -1135,9 +1135,6 @@ body.is-exporting .selection-box {
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
-    max-height: 250px;
-    overflow-y: auto;
-    padding-right: 8px;
 }
 
 .keybinding-list::-webkit-scrollbar {
