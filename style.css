@@ -1126,6 +1126,31 @@ body.is-exporting .selection-box {
     margin-bottom: 0.4rem;
 }
 
+.note-editor code {
+    font-family: 'Fira Code', monospace;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--accent-color);
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.note-editor pre {
+    font-family: 'Fira Code', monospace;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--accent-color);
+    font-size: 0.9em;
+    margin: 8px 0;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    display: block;
+}
+
 /* Floating Toolbars (Global) */
 #floating-toolbar, #connection-toolbar {
     position: fixed;

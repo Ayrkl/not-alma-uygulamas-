@@ -1469,6 +1469,15 @@ function setupEventListeners() {
             undoAction();
             return;
         }
+
+        // Ctrl+E: Kod formatına çevir
+        if (e.ctrlKey && key === 'e') {
+            if (isEditing) {
+                e.preventDefault();
+                toggleCodeFormat();
+                return;
+            }
+        }
         
         // If typing, only allow tool shortcuts if Ctrl is pressed or it's not a letter
         if (isEditing) {
@@ -1555,7 +1564,11 @@ function setupEventListeners() {
             const format = btn.getAttribute('data-format');
             
             if (cmd) {
-                document.execCommand(cmd, false, null);
+                if (cmd === 'code') {
+                    toggleCodeFormat();
+                } else {
+                    document.execCommand(cmd, false, null);
+                }
             } else if (format) {
                 document.execCommand('formatBlock', false, `<${format}>`);
             } else if (btn.id === 'toolbar-delete') {
@@ -1574,7 +1587,7 @@ function setupEventListeners() {
         });
     });
 
-    // Object Alignment Actions
+// Object Alignment Actions
     document.getElementById('btn-align-left').addEventListener('click', (e) => {
         e.stopPropagation();
         pushHistory();
@@ -4140,6 +4153,42 @@ function insertAtomicIcon(iconName) {
 
 function insertTextAtCursor(text) {
     document.execCommand('insertText', false, text);
+}
+
+function toggleCodeFormat() {
+    const selection = window.getSelection();
+    if (!selection || !selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    if (range.collapsed) return; // Don't format empty selection
+
+    const selectedContent = range.extractContents();
+    
+    // Check if the current selection is already inside a <code> tag
+    let parent = range.commonAncestorContainer;
+    if (parent.nodeType === 3) parent = parent.parentNode;
+    
+    if (parent.tagName === 'CODE') {
+        // Unwrap
+        const parentNode = parent.parentNode;
+        while (parent.firstChild) {
+            parentNode.insertBefore(parent.firstChild, parent);
+        }
+        parentNode.removeChild(parent);
+    } else {
+        // Wrap
+        const code = document.createElement('code');
+        code.appendChild(selectedContent);
+        range.insertNode(code);
+        
+        // Reselect
+        selection.removeAllRanges();
+        const newRange = document.createRange();
+        newRange.selectNode(code);
+        selection.addRange(newRange);
+    }
+    
+    saveState();
 }
 
 // Initialize the app
