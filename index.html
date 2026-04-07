@@ -651,176 +651,195 @@
           <h3>Kişiselleştir</h3>
           <button id="close-settings"><i data-lucide="x"></i></button>
         </div>
-        <div class="setting-item">
-          <label>Zoom Akıcılığı</label>
-          <input
-            type="range"
-            id="zoom-smoothness"
-            min="0"
-            max="95"
-            value="80"
-          />
-          <span class="value-display">80%</span>
-        </div>
-        <div class="setting-item">
-          <label>Zoom Hassasiyeti</label>
-          <input
-            type="range"
-            id="zoom-sensitivity"
-            min="5"
-            max="30"
-            value="15"
-          />
-          <span class="value-display">1.5x</span>
-        </div>
-        <div class="setting-item" style="position: relative">
-          <label>Uygulama Teması</label>
-          <select id="app-theme-select" class="theme-dropdown">
-            <option value="dark">Karanlık Mode</option>
-            <option value="light">Açık Mode</option>
-            <option value="system">Sistem Varsayılanı</option>
-          </select>
-          <i
-            data-lucide="chevron-down"
-            style="
-              position: absolute;
-              right: 12px;
-              bottom: 10px;
-              width: 16px;
-              pointer-events: none;
-              opacity: 0.5;
-            "
-          ></i>
-        </div>
-        <div class="setting-item" style="position: relative">
-          <label>Tuval Teması</label>
-          <select id="theme-select" class="theme-dropdown">
-            <option value="dark-grid">Koyu Izgara</option>
-            <option value="light-grid">Açık Izgara</option>
-            <option value="corkboard">Mantar Pano</option>
-            <option value="dot-grid">Noktalı Kağıt</option>
-            <option value="chalkboard">Kara Tahta</option>
-            <option value="space">Derin Uzay</option>
-            <option value="blueprint">Mavi Çizim Planı</option>
-          </select>
-          <i
-            data-lucide="chevron-down"
-            style="
-              position: absolute;
-              right: 12px;
-              bottom: 10px;
-              width: 16px;
-              pointer-events: none;
-              opacity: 0.5;
-            "
-          ></i>
-        </div>
-        <div class="setting-item">
-          <label>Arka Plan Resmi</label>
-          <div style="display: flex; gap: 8px">
-            <button
-              class="save-btn"
-              id="btn-upload-bg"
-              style="
-                margin-top: 0;
-                font-size: 0.6rem;
-                padding: 6px 12px;
-                height: 30px;
-                flex: 1;
-              "
-            >
-              RESİM YÜKLE
-            </button>
-            <button
-              class="save-btn"
-              id="btn-clear-bg"
-              style="
-                margin-top: 0;
-                font-size: 0.6rem;
-                padding: 6px 12px;
-                height: 30px;
-                background: #334155;
-                flex: 1;
-              "
-            >
-              TEMİZLE
-            </button>
+        <div class="settings-body">
+          <div class="setting-item">
+            <label>Zoom Akıcılığı</label>
+            <input
+              type="range"
+              id="zoom-smoothness"
+              min="0"
+              max="95"
+              value="80"
+            />
+            <span class="value-display">80%</span>
           </div>
-          <input type="file" id="bg-upload" accept="image/*" hidden />
+          <div class="setting-item">
+            <label>Zoom Hassasiyeti</label>
+            <input
+              type="range"
+              id="zoom-sensitivity"
+              min="5"
+              max="30"
+              value="15"
+            />
+            <span class="value-display">1.5x</span>
+          </div>
+          <div class="setting-item" style="position: relative">
+            <label>Uygulama Teması</label>
+            <select id="app-theme-select" class="theme-dropdown">
+              <option value="dark">Karanlık Mode</option>
+              <option value="light">Açık Mode</option>
+              <option value="system">Sistem Varsayılanı</option>
+            </select>
+            <i
+              data-lucide="chevron-down"
+              style="
+                position: absolute;
+                right: 12px;
+                bottom: 10px;
+                width: 16px;
+                pointer-events: none;
+                opacity: 0.5;
+              "
+            ></i>
+          </div>
+          <div class="setting-item" style="position: relative">
+            <label>Tuval Teması</label>
+            <select id="theme-select" class="theme-dropdown">
+              <option value="dark-grid">Koyu Izgara</option>
+              <option value="light-grid">Açık Izgara</option>
+              <option value="corkboard">Mantar Pano</option>
+              <option value="dot-grid">Noktalı Kağıt</option>
+              <option value="chalkboard">Kara Tahta</option>
+              <option value="space">Derin Uzay</option>
+              <option value="blueprint">Mavi Çizim Planı</option>
+            </select>
+            <i
+              data-lucide="chevron-down"
+              style="
+                position: absolute;
+                right: 12px;
+                bottom: 10px;
+                width: 16px;
+                pointer-events: none;
+                opacity: 0.5;
+              "
+            ></i>
+          </div>
+          <div class="setting-item">
+            <label>Arka Plan Resmi</label>
+            <div style="display: flex; gap: 8px">
+              <button
+                class="save-btn"
+                id="btn-upload-bg"
+                style="
+                  margin-top: 0;
+                  font-size: 0.6rem;
+                  padding: 6px 12px;
+                  height: 30px;
+                  flex: 1;
+                "
+              >
+                RESİM YÜKLE
+              </button>
+              <button
+                class="save-btn"
+                id="btn-clear-bg"
+                style="
+                  margin-top: 0;
+                  font-size: 0.6rem;
+                  padding: 6px 12px;
+                  height: 30px;
+                  background: #334155;
+                  flex: 1;
+                "
+              >
+                TEMİZLE
+              </button>
+            </div>
+            <input type="file" id="bg-upload" accept="image/*" hidden />
+          </div>
+          <div class="setting-item">
+            <label>Parallax Şiddeti</label>
+            <input
+              type="range"
+              id="parallax-strength"
+              min="0"
+              max="50"
+              value="20"
+            />
+            <span class="value-display">20%</span>
+          </div>
+          <div class="setting-item">
+            <label>Arka Plan Parlaklığı</label>
+            <input type="range" id="bg-opacity" min="0" max="100" value="100" />
+            <span class="value-display">100%</span>
+          </div>
+          <div class="setting-item">
+            <label>Arka Plan Büyüklüğü</label>
+            <input type="range" id="bg-size" min="20" max="250" value="100" />
+            <span class="value-display">100%</span>
+          </div>
+  
+  
+          <div class="setting-divider"></div>
+          <button class="menu-item-btn" id="btn-toggle-keybindings">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i data-lucide="keyboard"></i>
+              <span>TUŞ ATAMALARI</span>
+            </div>
+            <i data-lucide="chevron-right"></i>
+          </button>
         </div>
-        <div class="setting-item">
-          <label>Parallax Şiddeti</label>
-          <input
-            type="range"
-            id="parallax-strength"
-            min="0"
-            max="50"
-            value="20"
-          />
-          <span class="value-display">20%</span>
-        </div>
-        <div class="setting-item">
-          <label>Arka Plan Parlaklığı</label>
-          <input type="range" id="bg-opacity" min="0" max="100" value="100" />
-          <span class="value-display">100%</span>
-        </div>
-        <div class="setting-item">
-          <label>Arka Plan Büyüklüğü</label>
-          <input type="range" id="bg-size" min="20" max="250" value="100" />
-          <span class="value-display">100%</span>
-        </div>
+      </div>
 
-        <div class="setting-divider"></div>
-        <h3>Tuş Atamaları</h3>
-        <div class="keybinding-list">
-          <div class="keybinding-item">
-            <label>Kaydır (Pan)</label>
-            <button class="key-assign-btn" data-key="pan">H</button>
-          </div>
-          <div class="keybinding-item">
-            <label>Seç (Select)</label>
-            <button class="key-assign-btn" data-key="select">V</button>
-          </div>
-          <div class="keybinding-item">
-            <label>Metin (Text)</label>
-            <button class="key-assign-btn" data-key="text">T</button>
-          </div>
-          <div class="keybinding-item">
-            <label>Resim (Image)</label>
-            <button class="key-assign-btn" data-key="image">I</button>
-          </div>
-          <div class="keybinding-item">
-            <label>Video</label>
-            <button class="key-assign-btn" data-key="video">M</button>
-          </div>
-          <div class="keybinding-item">
-            <label>PDF</label>
-            <button class="key-assign-btn" data-key="pdf">P</button>
-          </div>
-          <div class="keybinding-item">
-            <label>Not Kağıdı</label>
-            <button class="key-assign-btn" data-key="note">N</button>
-          </div>
-          <div class="keybinding-item">
-            <label>Bağlantı Kur</label>
-            <button class="key-assign-btn" data-key="connect">L</button>
-          </div>
-          <div class="keybinding-item">
-            <label>Ara (Search)</label>
-            <button class="key-assign-btn" data-key="search">F</button>
-          </div>
-          <div class="keybinding-item">
-            <label>Kanvaslar</label>
-            <button class="key-assign-btn" data-key="workspaces">W</button>
-          </div>
-          <div class="keybinding-item">
-            <label>Yer İşaretleri</label>
-            <button class="key-assign-btn" data-key="bookmarks">B</button>
-          </div>
-          <div class="keybinding-item">
-            <label>Etiketler</label>
-            <button class="key-assign-btn" data-key="tags">G</button>
-          </div>
+      <!-- Keybinding Side Drawer -->
+      <div id="keybinding-drawer" class="glass">
+        <div class="settings-header">
+          <h3>TUŞ ATAMALARI</h3>
+          <button id="close-keybindings"><i data-lucide="x"></i></button>
+        </div>
+        <div class="settings-body">
+            <div class="keybinding-list">
+                <div class="keybinding-item">
+                    <label>Kaydır (Pan)</label>
+                    <button class="key-assign-btn" data-key="pan">H</button>
+                </div>
+                <div class="keybinding-item">
+                    <label>Seç (Select)</label>
+                    <button class="key-assign-btn" data-key="select">V</button>
+                </div>
+                <div class="keybinding-item">
+                    <label>Metin (Text)</label>
+                    <button class="key-assign-btn" data-key="text">T</button>
+                </div>
+                <div class="keybinding-item">
+                    <label>Resim (Image)</label>
+                    <button class="key-assign-btn" data-key="image">I</button>
+                </div>
+                <div class="keybinding-item">
+                    <label>Video</label>
+                    <button class="key-assign-btn" data-key="video">M</button>
+                </div>
+                <div class="keybinding-item">
+                    <label>PDF</label>
+                    <button class="key-assign-btn" data-key="pdf">P</button>
+                </div>
+                <div class="keybinding-item">
+                    <label>Not Kağıdı</label>
+                    <button class="key-assign-btn" data-key="note">N</button>
+                </div>
+                <div class="keybinding-item">
+                    <label>Bağlantı Kur</label>
+                    <button class="key-assign-btn" data-key="connect">L</button>
+                </div>
+                <div class="keybinding-item">
+                    <label>Ara (Search)</label>
+                    <button class="key-assign-btn" data-key="search">F</button>
+                </div>
+                <div class="keybinding-item">
+                    <label>Kanvaslar</label>
+                    <button class="key-assign-btn" data-key="workspaces">W</button>
+                </div>
+                <div class="keybinding-item">
+                    <label>Yer İşaretleri</label>
+                    <button class="key-assign-btn" data-key="bookmarks">B</button>
+                </div>
+                <div class="keybinding-item">
+                    <label>Etiketler</label>
+                    <button class="key-assign-btn" data-key="tags">G</button>
+                </div>
+            </div>
         </div>
       </div>
 

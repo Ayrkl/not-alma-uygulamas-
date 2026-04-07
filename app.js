@@ -3202,6 +3202,33 @@ function setupSettingsListeners() {
         });
     }
 
+    // Keybindings Side Drawer Toggle
+    const kbDrawer = document.getElementById('keybinding-drawer');
+    const kbToggleBtn = document.getElementById('btn-toggle-keybindings');
+    const kbCloseBtn = document.getElementById('close-keybindings');
+
+    if (kbToggleBtn && kbDrawer) {
+        kbToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            kbDrawer.classList.toggle('active');
+        });
+    }
+
+    if (kbCloseBtn && kbDrawer) {
+        kbCloseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            kbDrawer.classList.remove('active');
+        });
+    }
+
+    // Auto-close drawer when main settings panel closes
+    if (closeBtn) {
+        const originalClose = closeBtn.onclick || (() => {});
+        closeBtn.addEventListener('click', () => {
+            if (kbDrawer) kbDrawer.classList.remove('active');
+        });
+    }
+
     if (btnClearBg) {
         btnClearBg.addEventListener('click', () => {
             state.settings.customBg = null;
