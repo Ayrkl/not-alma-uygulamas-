@@ -907,14 +907,39 @@ body.is-exporting .selection-box {
     z-index: 20;
 }
 
+.canvas-obj.selected {
+    box-shadow: 0 0 0 2px var(--accent-color), 0 10px 30px rgba(0,0,0,0.3) !important;
+    z-index: 1000 !important;
+}
+
+.canvas-obj.grouped.selected {
+    box-shadow: 0 0 0 2px var(--accent-color), 0 0 0 5px rgba(59, 130, 246, 0.1), 0 10px 30px rgba(0,0,0,0.3) !important;
+    outline: 1px dashed var(--accent-color);
+    outline-offset: 4px;
+}
+
+.canvas-obj.multi-selected {
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.4) !important;
+}
+
+/* Floating Toolbars (Global) */
+.toolbar-btn {
+    padding: 8px;
+    border-radius: 6px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    cursor: pointer;
+    color: var(--fg-color);
+}
+
+.toolbar-btn:hover {
+    background: var(--accent-color);
+    color: white;
+}
+
 .canvas-obj:hover {
     box-shadow: 0 0 24px rgba(59, 130, 246, 0.25);
     border-color: rgba(59, 130, 246, 0.4);
-}
-
-.canvas-obj.selected {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
 .video-obj {

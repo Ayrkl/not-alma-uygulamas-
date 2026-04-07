@@ -1566,6 +1566,10 @@ function setupEventListeners() {
             if (cmd) {
                 if (cmd === 'code') {
                     toggleCodeFormat();
+                } else if (cmd === 'group') {
+                    groupSelected();
+                } else if (cmd === 'ungroup') {
+                    ungroupSelected();
                 } else {
                     document.execCommand(cmd, false, null);
                 }
@@ -2033,9 +2037,8 @@ function hitTestSelection(sx, sy, sw, sh) {
     const halfH = canvasHalfH;
 
     // 1. Check Objects
-    state.selectedIds = [];
+    const initialSelectedIds = [];
     state.objects.forEach(obj => {
-        const objEl = document.getElementById(`obj-${obj.id}`);
         const objRect = {
             x: obj.x * state.camZ + halfW - state.camX * state.camZ,
             y: obj.y * state.camZ + halfH - state.camY * state.camZ,
@@ -2045,10 +2048,30 @@ function hitTestSelection(sx, sy, sw, sh) {
 
         if (objRect.x < sx + sw && objRect.x + objRect.w > sx &&
             objRect.y < sy + sh && objRect.y + objRect.h > sy) {
-            state.selectedIds.push(obj.id);
-            if (objEl) objEl.classList.add('selected');
+            initialSelectedIds.push(obj.id);
+        }
+    });
+
+    // Expand selection to full groups
+    const finalSelectedIds = new Set();
+    initialSelectedIds.forEach(id => {
+        const obj = state.objects.find(o => o.id === id);
+        if (obj && obj.groupId) {
+            state.objects.forEach(o => {
+                if (o.groupId === obj.groupId) finalSelectedIds.add(o.id);
+            });
         } else {
-            if (objEl) objEl.classList.remove('selected');
+            finalSelectedIds.add(id);
+        }
+    });
+
+    state.selectedIds = Array.from(finalSelectedIds);
+    
+    // Update UI highlights
+    state.objects.forEach(obj => {
+        const objEl = document.getElementById(`obj-${obj.id}`);
+        if (objEl) {
+            objEl.classList.toggle('selected', state.selectedIds.includes(obj.id));
         }
     });
 
@@ -2103,6 +2126,18 @@ function hitTestSelection(sx, sy, sw, sh) {
     const floatingToolbar = document.getElementById('floating-toolbar');
     if (state.selectedIds.length > 0 || state.selectedConnIds.length > 0) {
         floatingToolbar.classList.add('active');
+        
+        // Grouping visibility
+        const hasGroup = state.selectedIds.some(id => {
+            const obj = state.objects.find(o => o.id === id);
+            return obj && obj.groupId;
+        });
+        const groupBtn = floatingToolbar.querySelector('[data-cmd="group"]');
+        const ungroupBtn = floatingToolbar.querySelector('[data-cmd="ungroup"]');
+        
+        if (groupBtn) groupBtn.style.display = state.selectedIds.length > 1 ? 'block' : 'none';
+        if (ungroupBtn) ungroupBtn.style.display = hasGroup ? 'block' : 'none';
+
         if (state.selectedIds.length > 1) {
             floatingToolbar.classList.add('multi-select');
         } else {
@@ -2290,7 +2325,7 @@ function renderObject(obj) {
         return;
     }
 
-    el.className = `canvas-obj fade-in ${obj.type}-obj ${state.selectedId === obj.id || state.selectedIds.includes(obj.id) ? 'selected' : ''}`;
+    el.className = `canvas-obj fade-in ${obj.type}-obj ${state.selectedId === obj.id || state.selectedIds.includes(obj.id) ? 'selected' : ''} ${obj.groupId ? 'grouped' : ''}`;
     el.style.left = `${obj.pinned ? obj.pinX : obj.x}px`;
     el.style.top = `${obj.pinned ? obj.pinY : obj.y}px`;
     el.style.width = obj.width === 'auto' ? 'auto' : `${obj.width}px`;
@@ -2683,12 +2718,25 @@ function renderObject(obj) {
 
 function selectObject(id) {
     state.selectedId = id;
+    state.selectedIds = [];
+    
+    if (id) {
+        const selectedObj = state.objects.find(o => o.id === id);
+        if (selectedObj && selectedObj.groupId) {
+            // Select all objects in the same group
+            state.selectedIds = state.objects.filter(o => o.groupId === selectedObj.groupId).map(o => o.id);
+        } else {
+            state.selectedIds = [id];
+        }
+    }
+
     const floatingToolbar = document.getElementById('floating-toolbar');
     const dropdownSelected = document.querySelector('#font-dropdown .dropdown-selected');
     const sizeSelected = document.querySelector('#size-dropdown .dropdown-selected');
     
     document.querySelectorAll('.canvas-obj').forEach(o => {
-        o.classList.toggle('selected', o.id === `obj-${id}`);
+        const objId = o.id.replace('obj-', '');
+        o.classList.toggle('selected', state.selectedIds.includes(objId));
     });
 
     if (id) {
@@ -2713,12 +2761,33 @@ function selectObject(id) {
             else pinBtn.classList.remove('active');
         }
 
+        // Grouping visibility
+        const groupBtn = floatingToolbar.querySelector('[data-cmd="group"]');
+        const ungroupBtn = floatingToolbar.querySelector('[data-cmd="ungroup"]');
+        if (groupBtn) groupBtn.style.display = state.selectedIds.length > 1 ? 'block' : 'none';
+        if (ungroupBtn) ungroupBtn.style.display = obj.groupId ? 'block' : 'none';
+
         floatingToolbar.classList.add('active');
-        floatingToolbar.classList.remove('multi-select'); // Single select mode
+        if (state.selectedIds.length > 1) {
+            floatingToolbar.classList.add('multi-select');
+        } else {
+            floatingToolbar.classList.remove('multi-select');
+        }
         document.getElementById('connection-toolbar').classList.remove('active');
     } else if (state.selectedIds.length > 1) {
+        // Multi-selection (called from hitTest usually, but just in case)
         floatingToolbar.classList.add('active');
-        floatingToolbar.classList.add('multi-select'); // Multi-select mode
+        floatingToolbar.classList.add('multi-select');
+
+        const hasGroup = state.selectedIds.some(id => {
+            const obj = state.objects.find(o => o.id === id);
+            return obj && obj.groupId;
+        });
+        const groupBtn = floatingToolbar.querySelector('[data-cmd="group"]');
+        const ungroupBtn = floatingToolbar.querySelector('[data-cmd="ungroup"]');
+        if (groupBtn) groupBtn.style.display = 'block';
+        if (ungroupBtn) ungroupBtn.style.display = hasGroup ? 'block' : 'none';
+
         document.getElementById('connection-toolbar').classList.remove('active');
     } else {
         floatingToolbar.classList.remove('active');
@@ -4149,6 +4218,41 @@ function insertAtomicIcon(iconName) {
         const event = new Event('input', { bubbles: true });
         activeEditor.dispatchEvent(event);
     }
+}
+
+function groupSelected() {
+    if (!state.selectedIds || state.selectedIds.length < 2) return;
+    
+    pushHistory();
+    const gid = 'group-' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    
+    state.selectedIds.forEach(id => {
+        const obj = state.objects.find(o => o.id === id);
+        if (obj) obj.groupId = gid;
+    });
+    
+    renderObjects();
+    saveState();
+}
+
+function ungroupSelected() {
+    if (!state.selectedIds || state.selectedIds.length === 0) return;
+    
+    pushHistory();
+    const gidsToClear = new Set();
+    state.selectedIds.forEach(id => {
+        const obj = state.objects.find(o => o.id === id);
+        if (obj && obj.groupId) gidsToClear.add(obj.groupId);
+    });
+    
+    state.objects.forEach(obj => {
+        if (obj.groupId && gidsToClear.has(obj.groupId)) {
+            delete obj.groupId;
+        }
+    });
+    
+    renderObjects();
+    saveState();
 }
 
 function insertTextAtCursor(text) {
