@@ -34,7 +34,21 @@ const state = {
     connStyle: 'curved', // curved, straight, dashed
     settings: {
         smoothness: 0.85,
-        sensitivity: 0.15
+        sensitivity: 0.15,
+        keyBindings: {
+            pan: 'h',
+            select: 'v',
+            text: 't',
+            image: 'i',
+            video: 'm',
+            pdf: 'p',
+            note: 'n',
+            connect: 'l',
+            search: 'f',
+            workspaces: 'w',
+            bookmarks: 'b',
+            tags: 'g'
+        }
     },
     undoHistory: [], // Geri alma geçmişi
 
@@ -271,6 +285,8 @@ async function init() {
         renderConnections();
         setupEventListeners();
         setupSettingsListeners();
+        updateKeyBindingUI();
+        setupKeyBindingListeners();
         
         updateCanvas();
         setupMiniMapListeners();
@@ -491,7 +507,8 @@ function setupWorkspacesUI() {
         });
         
         document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'w' && !e.ctrlKey && !e.metaKey && 
+            const kb = state.settings.keyBindings || {};
+            if (e.key.toLowerCase() === kb.workspaces && !e.ctrlKey && !e.metaKey && 
                 document.activeElement.tagName !== 'INPUT' && 
                 document.activeElement.tagName !== 'TEXTAREA' &&
                 document.activeElement.getAttribute('contenteditable') !== 'true') {
@@ -543,7 +560,8 @@ function setupTagsUI() {
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'g' && !e.ctrlKey && !e.metaKey && 
+            const kb = state.settings.keyBindings || {};
+            if (e.key.toLowerCase() === kb.tags && !e.ctrlKey && !e.metaKey && 
                 document.activeElement.tagName !== 'INPUT' && 
                 document.activeElement.getAttribute('contenteditable') !== 'true') {
                 e.preventDefault();
@@ -602,7 +620,8 @@ function setupSearchListeners() {
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'b' && !e.ctrlKey && !e.metaKey && 
+            const kb = state.settings.keyBindings || {};
+            if (e.key.toLowerCase() === kb.bookmarks && !e.ctrlKey && !e.metaKey && 
                 document.activeElement.tagName !== 'INPUT' && 
                 document.activeElement.getAttribute('contenteditable') !== 'true') {
                 e.preventDefault();
@@ -1458,13 +1477,16 @@ function setupEventListeners() {
             return;
         }
         
-        if (key === 'h') document.getElementById('tool-pan').click();
-        if (key === 'v') document.getElementById('tool-select').click();
-        if (key === 't') document.getElementById('tool-text').click();
-        if (key === 'i') document.getElementById('tool-image').click();
-        if (key === 'm') document.getElementById('tool-video').click();
-        if (key === 'p') document.getElementById('tool-pdf').click();
-        if (key === 'n') document.getElementById('tool-note').click();
+        const kb = state.settings.keyBindings || {};
+        
+        if (key === kb.pan) document.getElementById('tool-pan').click();
+        if (key === kb.select) document.getElementById('tool-select').click();
+        if (key === kb.text) document.getElementById('tool-text').click();
+        if (key === kb.image) document.getElementById('tool-image').click();
+        if (key === kb.video) document.getElementById('tool-video').click();
+        if (key === kb.pdf) document.getElementById('tool-pdf').click();
+        if (key === kb.note) document.getElementById('tool-note').click();
+        if (key === kb.connect) document.getElementById('tool-connect').click();
         
         if (key === 'delete' || (key === 'backspace' && !isEditing)) {
             if (state.selectedIds && state.selectedIds.length > 0) {
@@ -1506,7 +1528,8 @@ function setupEventListeners() {
         
         // Key shortcut 'f' for search
         document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey && 
+            const kb = state.settings.keyBindings || {};
+            if (e.key.toLowerCase() === kb.search && !e.ctrlKey && !e.metaKey && 
                 document.activeElement.tagName !== 'INPUT' && 
                 document.activeElement.getAttribute('contenteditable') !== 'true') {
                 e.preventDefault();
@@ -2891,6 +2914,64 @@ function getCanvasCenter() {
         x: state.camX,
         y: state.camY
     };
+}
+
+function updateKeyBindingUI() {
+    const kb = state.settings.keyBindings;
+    if (!kb) return;
+
+    document.querySelectorAll('.key-assign-btn').forEach(btn => {
+        const keyType = btn.getAttribute('data-key');
+        if (kb[keyType]) {
+            btn.textContent = kb[keyType].toUpperCase();
+        }
+    });
+}
+
+function setupKeyBindingListeners() {
+    const buttons = document.querySelectorAll('.key-assign-btn');
+    let activeBtn = null;
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            // If already recording, cancel that one
+            if (activeBtn) {
+                activeBtn.classList.remove('recording');
+                activeBtn.textContent = state.settings.keyBindings[activeBtn.getAttribute('data-key')].toUpperCase();
+            }
+
+            if (activeBtn === btn) {
+                activeBtn = null;
+                return;
+            }
+
+            activeBtn = btn;
+            btn.classList.add('recording');
+            btn.textContent = '...';
+        });
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (!activeBtn) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+
+        const newKey = e.key.toLowerCase();
+        const keyType = activeBtn.getAttribute('data-key');
+
+        // Update state
+        state.settings.keyBindings[keyType] = newKey;
+        
+        // Update UI
+        activeBtn.textContent = newKey.toUpperCase();
+        activeBtn.classList.remove('recording');
+        activeBtn = null;
+
+        saveState();
+    }, { capture: true });
 }
 
 function setupSettingsListeners() {

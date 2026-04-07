@@ -1003,6 +1003,81 @@ body.is-exporting .selection-box {
 .setting-item .value-display { align-self: flex-end; font-size: 0.75rem; font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent-color); }
 .setting-item input[type="color"] { width: 100%; height: 32px; border: none; border-radius: 4px; background: transparent; cursor: pointer; }
 
+.setting-divider {
+    height: 1px;
+    background: var(--glass-border);
+    margin: 0.5rem 0;
+    opacity: 0.5;
+}
+
+#settings-panel h3 {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--accent-color);
+}
+
+.keybinding-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.keybinding-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.keybinding-list::-webkit-scrollbar-thumb {
+    background: var(--glass-border);
+    border-radius: 4px;
+}
+
+.keybinding-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.keybinding-item label {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+.key-assign-btn {
+    min-width: 40px;
+    height: 24px;
+    padding: 0 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    color: var(--fg-color);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.key-assign-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-color);
+}
+
+.key-assign-btn.recording {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    animation: pulsate-border 1.5s infinite;
+}
+
+@keyframes pulsate-border {
+    0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
 /* Object Drag Handle (Top Header) */
 .obj-handle {
     height: 12px;
