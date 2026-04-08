@@ -971,20 +971,30 @@ window.focusOnCanvasObject = (id) => {
     if (!obj) return;
 
     // Remove previous highlights
-    document.querySelectorAll('.search-highlight').forEach(h => h.classList.remove('search-highlight'));
+    document.querySelectorAll('.search-highlight, .search-flash').forEach(h => {
+        h.classList.remove('search-highlight', 'search-flash');
+    });
 
-    // Teleport camera
-    state.targetX = obj.x + 100; // Offset to center better
-    state.targetY = obj.y + 50;
-    state.targetZ = 1.0; // Zoom in for readability
+    // Detect dimensions for perfect centering
+    const w = parseFloat(obj.width) || (obj.type === 'point' ? 8 : 250);
+    const h = parseFloat(obj.height) || (obj.type === 'point' ? 8 : 180);
 
-    // Highlight
+    // Teleport camera to absolute center
+    state.targetX = obj.x + w / 2;
+    state.targetY = obj.y + h / 2;
+    state.targetZ = 1.0; 
+
+    // Highlight and Flash
     const el = document.getElementById(`obj-${id}`);
     if (el) {
-        el.classList.add('search-highlight');
-        selectObject(id); // Select it too
+        el.classList.add('search-highlight', 'search-flash');
+        selectObject(id); 
 
-        // Auto-remove highlight after 3 seconds
+        // Auto-remove flash and highlight
+        setTimeout(() => {
+            el.classList.remove('search-flash');
+        }, 1200);
+
         setTimeout(() => {
             el.classList.remove('search-highlight');
         }, 3000);
